@@ -89,15 +89,26 @@ scramble (uint32_t v0, uint32_t v1=0, uint32_t v2=0)
 
 
 
+// Scramble four triples at once
+inline int4
+scramble (const int4& v0, const int4& v1, const int4& v2)
+{
+    return bjfinal (v0, v1, v2^int4(0xdeadbeef));
+}
+
+
+
 /* Static data ---------------------- */
 
-static float zero[] = { 0.0f, 0.0f, 0.0f, 0.0f };
+static OIIO_SIMD4_ALIGN float zero[] = { 0.0f, 0.0f, 0.0f, 0.0f };
 
 // Gradient table for 2D. These could be programmed the Ken Perlin way with
 // some clever bit-twiddling, but this is more clear, and not really slower.
-static float grad2lut[8][2] = {
-    { -1.0f, -1.0f }, { 1.0f,  0.0f }, { -1.0f, 0.0f }, { 1.0f,  1.0f },
-    { -1.0f,  1.0f }, { 0.0f, -1.0f }, {  0.0f, 1.0f }, { 1.0f, -1.0f }
+static OIIO_SIMD4_ALIGN float grad2lut[8][4] = {
+    { -1.0f, -1.0f, 0.0f, 0.0f }, { 1.0f,  0.0f, 0.0f, 0.0f },
+    { -1.0f,  0.0f, 0.0f, 0.0f }, { 1.0f,  1.0f, 0.0f, 0.0f },
+    { -1.0f,  1.0f, 0.0f, 0.0f }, { 0.0f, -1.0f, 0.0f, 0.0f },
+    {  0.0f,  1.0f, 0.0f, 0.0f }, { 1.0f, -1.0f, 0.0f, 0.0f }
 };
 
 // Gradient directions for 3D.
@@ -106,19 +117,19 @@ static float grad2lut[8][2] = {
 // but these 12 (including 4 repeats to make the array length a power
 // of two) work better. They are not random, they are carefully chosen
 // to represent a small, isotropic set of directions.
-static float grad3lut[16][3] = {
-    {  1.0f,  0.0f,  1.0f }, {  0.0f,  1.0f,  1.0f }, // 12 cube edges
-    { -1.0f,  0.0f,  1.0f }, {  0.0f, -1.0f,  1.0f },
-    {  1.0f,  0.0f, -1.0f }, {  0.0f,  1.0f, -1.0f },
-    { -1.0f,  0.0f, -1.0f }, {  0.0f, -1.0f, -1.0f },
-    {  1.0f, -1.0f,  0.0f }, {  1.0f,  1.0f,  0.0f },
-    { -1.0f,  1.0f,  0.0f }, { -1.0f, -1.0f,  0.0f },
-    {  1.0f,  0.0f,  1.0f }, { -1.0f,  0.0f,  1.0f }, // 4 repeats to make 16
-    {  0.0f,  1.0f, -1.0f }, {  0.0f, -1.0f, -1.0f }
+static OIIO_SIMD4_ALIGN float grad3lut[16][4] = {
+    {  1.0f,  0.0f,  1.0f, 0.0f }, {  0.0f,  1.0f,  1.0f, 0.0f }, // 12 cube edges
+    { -1.0f,  0.0f,  1.0f, 0.0f }, {  0.0f, -1.0f,  1.0f, 0.0f },
+    {  1.0f,  0.0f, -1.0f, 0.0f }, {  0.0f,  1.0f, -1.0f, 0.0f },
+    { -1.0f,  0.0f, -1.0f, 0.0f }, {  0.0f, -1.0f, -1.0f, 0.0f },
+    {  1.0f, -1.0f,  0.0f, 0.0f }, {  1.0f,  1.0f,  0.0f, 0.0f },
+    { -1.0f,  1.0f,  0.0f, 0.0f }, { -1.0f, -1.0f,  0.0f, 0.0f },
+    {  1.0f,  0.0f,  1.0f, 0.0f }, { -1.0f,  0.0f,  1.0f, 0.0f }, // 4 repeats to make 16
+    {  0.0f,  1.0f, -1.0f, 0.0f }, {  0.0f, -1.0f, -1.0f, 0.0f }
 };
 
 // Gradient directions for 4D
-static float grad4lut[32][4] = {
+static OIIO_SIMD4_ALIGN float grad4lut[32][4] = {
   { 0.0f, 1.0f, 1.0f, 1.0f }, { 0.0f, 1.0f, 1.0f, -1.0f }, { 0.0f, 1.0f, -1.0f, 1.0f }, { 0.0f, 1.0f, -1.0f, -1.0f }, // 32 tesseract edges
   { 0.0f, -1.0f, 1.0f, 1.0f }, { 0.0f, -1.0f, 1.0f, -1.0f }, { 0.0f, -1.0f, -1.0f, 1.0f }, { 0.0f, -1.0f, -1.0f, -1.0f },
   { 1.0f, 0.0f, 1.0f, 1.0f }, { 1.0f, 0.0f, 1.0f, -1.0f }, { 1.0f, 0.0f, -1.0f, 1.0f }, { 1.0f, 0.0f, -1.0f, -1.0f },
@@ -132,7 +143,7 @@ static float grad4lut[32][4] = {
 // A lookup table to traverse the simplex around a given point in 4D.
 // Details can be found where this table is used, in the 4D noise method.
 /* TODO: This should not be required, backport it from Bill's GLSL code! */
-static unsigned char simplex[64][4] = {
+static OIIO_SIMD4_ALIGN unsigned char simplex[64][4] = {
   {0,1,2,3},{0,1,3,2},{0,0,0,0},{0,2,3,1},{0,0,0,0},{0,0,0,0},{0,0,0,0},{1,2,3,0},
   {0,2,1,3},{0,0,0,0},{0,3,1,2},{0,3,2,1},{0,0,0,0},{0,0,0,0},{0,0,0,0},{1,3,2,0},
   {0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},
@@ -167,6 +178,12 @@ inline const float * grad2 (int i, int j, int seed)
 inline const float * grad3 (int i, int j, int k, int seed)
 {
     int h = scramble (i, j, scramble (k, seed));
+    return grad3lut[h & 15];
+}
+
+inline float4 grad3_simd (const int4& ijk, int seed)
+{
+    int h = scramble (ijk[0], ijk[1], scramble (ijk[2], seed));
     return grad3lut[h & 15];
 }
 
@@ -335,6 +352,7 @@ float simplexnoise2 (float x, float y, int seed,
 }
 
 
+#if 0
 
 // 3D simplex noise with derivatives.
 // If the last tthree arguments are not null, the analytic derivative
@@ -520,6 +538,193 @@ simplexnoise3 (float x, float y, float z, int seed,
     return noise;
 }
 
+#else
+
+// 3D simplex noise with derivatives.
+// If the last tthree arguments are not null, the analytic derivative
+// (the 3D gradient of the scalar noise field) is also calculated.
+float
+simplexnoise3 (float x, float y, float z, int seed,
+               float *dnoise_dx, float *dnoise_dy, float *dnoise_dz)
+{
+    // Skewing factors for 3D simplex grid:
+    const float F3 = 0.333333333;   // = 1/3
+    const float G3 = 0.166666667;   // = 1/6
+
+    // Gradients at simplex corners
+    const float *g0 = zero, *g1 = zero, *g2 = zero, *g3 = zero;
+
+    // Skew the input space to determine which simplex cell we're in
+    float s = (x+y+z)*F3; // Very nice and simple skew factor for 3D
+    float xs = x+s;
+    float ys = y+s;
+    float zs = z+s;
+    int i = quick_floor(xs);
+    int j = quick_floor(ys);
+    int k = quick_floor(zs);
+
+    float t = (float)(i+j+k)*G3; 
+    float X0 = i-t; // Unskew the cell origin back to (x,y,z) space
+    float Y0 = j-t;
+    float Z0 = k-t;
+    float x0 = x-X0; // The x,y,z distances from the cell origin
+    float y0 = y-Y0;
+    float z0 = z-Z0;
+
+    // For the 3D case, the simplex shape is a slightly irregular tetrahedron.
+    // Determine which simplex we are in.
+    int i1, j1, k1; // Offsets for second corner of simplex in (i,j,k) coords
+    int i2, j2, k2; // Offsets for third corner of simplex in (i,j,k) coords
+
+#if 1
+    // TODO: This code would benefit from a backport from the GLSL version!
+    // (no it can't... see note below)
+    if (x0>=y0) {
+        if (y0>=z0) {
+            i1=1; j1=0; k1=0; i2=1; j2=1; k2=0;  /* X Y Z order */
+        } else if (x0>=z0) {
+            i1=1; j1=0; k1=0; i2=1; j2=0; k2=1;  /* X Z Y order */
+        } else {
+            i1=0; j1=0; k1=1; i2=1; j2=0; k2=1;  /* Z X Y order */
+        }
+    } else { // x0<y0
+        if (y0<z0) {
+            i1=0; j1=0; k1=1; i2=0; j2=1; k2=1;  /* Z Y X order */
+        } else if (x0<z0) {
+            i1=0; j1=1; k1=0; i2=0; j2=1; k2=1;  /* Y Z X order */
+        } else {
+            i1=0; j1=1; k1=0; i2=1; j2=1; k2=0;  /* Y X Z order */
+        }
+    }
+#else
+    // Here's the logic "from the GLSL version", near as I (LG) could
+    // translate it from GLSL to non-SIMD C++.  It was slower.  I'm
+    // keeping this code here for reference anyway.
+    {
+        // vec3 g = step(x0.yzx, x0.xyz);
+        // vec3 l = 1.0 - g;
+        bool g0 = (x0 >= y0), l0 = !g0;
+        bool g1 = (y0 >= z0), l1 = !g1;
+        bool g2 = (z0 >= x0), l2 = !g2;
+        // vec3 i1 = min (g.xyz, l.zxy);  // min of bools is &
+        // vec3 i2 = max (g.xyz, l.zxy);  // max of bools is |
+        i1 = g0 & l2;
+        j1 = g1 & l0;
+        k1 = g2 & l1;
+        i2 = g0 | l2;
+        j2 = g1 | l0;
+        k2 = g2 | l1;
+    }
+#endif
+
+    // A step of (1,0,0) in (i,j,k) means a step of (1-c,-c,-c) in (x,y,z),
+    // a step of (0,1,0) in (i,j,k) means a step of (-c,1-c,-c) in (x,y,z), and
+    // a step of (0,0,1) in (i,j,k) means a step of (-c,-c,1-c) in (x,y,z),
+    // where c = 1/6.
+    float x1 = x0 - i1 + G3; // Offsets for second corner in (x,y,z) coords
+    float y1 = y0 - j1 + G3;
+    float z1 = z0 - k1 + G3;
+    float x2 = x0 - i2 + 2.0f * G3; // Offsets for third corner in (x,y,z) coords
+    float y2 = y0 - j2 + 2.0f * G3;
+    float z2 = z0 - k2 + 2.0f * G3;
+    float x3 = x0 - 1.0f + 3.0f * G3; // Offsets for last corner in (x,y,z) coords
+    float y3 = y0 - 1.0f + 3.0f * G3;
+    float z3 = z0 - 1.0f + 3.0f * G3;
+
+    float t20 = 0.0f, t40 = 0.0f;
+    float t21 = 0.0f, t41 = 0.0f;
+    float t22 = 0.0f, t42 = 0.0f;
+    float t23 = 0.0f, t43 = 0.0f;
+    float n0=0.0f, n1=0.0f, n2=0.0f, n3=0.0f; // Noise contributions from the four simplex corners
+
+    // Calculate the contribution from the four corners
+    float t0 = 0.5f - x0*x0 - y0*y0 - z0*z0;
+    if (t0 >= 0.0f) {
+        g0 = grad3 (i, j, k, seed);
+        t20 = t0 * t0;
+        t40 = t20 * t20;
+        n0 = t40 * (g0[0] * x0 + g0[1] * y0 + g0[2] * z0);
+    }
+
+    float t1 = 0.5f - x1*x1 - y1*y1 - z1*z1;
+    if (t1 >= 0.0f) {
+        g1 = grad3 (i+i1, j+j1, k+k1, seed);
+        t21 = t1 * t1;
+        t41 = t21 * t21;
+        n1 = t41 * (g1[0] * x1 + g1[1] * y1 + g1[2] * z1);
+    }
+
+    float t2 = 0.5f - x2*x2 - y2*y2 - z2*z2;
+    if (t2 >= 0.0f) {
+        g2 = grad3 (i+i2, j+j2, k+k2, seed);
+        t22 = t2 * t2;
+        t42 = t22 * t22;
+        n2 = t42 * (g2[0] * x2 + g2[1] * y2 + g2[2] * z2);
+    }
+
+    float t3 = 0.5f - x3*x3 - y3*y3 - z3*z3;
+    if (t3 >= 0.0f) {
+        g3 = grad3 (i+1, j+1, k+1, seed);
+        t23 = t3 * t3;
+        t43 = t23 * t23;
+        n3 = t43 * (g3[0] * x3 + g3[1] * y3 + g3[2] * z3);
+    }
+
+    // Sum up and scale the result.  The scale is empirical, to make it
+    // cover [-1,1], and to make it approximately match the range of our
+    // Perlin noise implementation.
+    const float scale = 68.0f;
+    float noise = scale * (n0 + n1 + n2 + n3);
+
+    // Compute derivative, if requested by supplying non-null pointers
+    // for the last three arguments
+    if (dnoise_dx) {
+        DASSERT (dnoise_dy && dnoise_dz);
+    /*  A straight, unoptimised calculation would be like:
+     *     *dnoise_dx = -8.0f * t20 * t0 * x0 * dot(g0[0], g0[1], g0[2], x0, y0, z0) + t40 * g0[0];
+     *    *dnoise_dy = -8.0f * t20 * t0 * y0 * dot(g0[0], g0[1], g0[2], x0, y0, z0) + t40 * g0[1];
+     *    *dnoise_dz = -8.0f * t20 * t0 * z0 * dot(g0[0], g0[1], g0[2], x0, y0, z0) + t40 * g0[2];
+     *    *dnoise_dx += -8.0f * t21 * t1 * x1 * dot(g1[0], g1[1], g1[2], x1, y1, z1) + t41 * g1[0];
+     *    *dnoise_dy += -8.0f * t21 * t1 * y1 * dot(g1[0], g1[1], g1[2], x1, y1, z1) + t41 * g1[1];
+     *    *dnoise_dz += -8.0f * t21 * t1 * z1 * dot(g1[0], g1[1], g1[2], x1, y1, z1) + t41 * g1[2];
+     *    *dnoise_dx += -8.0f * t22 * t2 * x2 * dot(g2[0], g2[1], g2[2], x2, y2, z2) + t42 * g2[0];
+     *    *dnoise_dy += -8.0f * t22 * t2 * y2 * dot(g2[0], g2[1], g2[2], x2, y2, z2) + t42 * g2[1];
+     *    *dnoise_dz += -8.0f * t22 * t2 * z2 * dot(g2[0], g2[1], g2[2], x2, y2, z2) + t42 * g2[2];
+     *    *dnoise_dx += -8.0f * t23 * t3 * x3 * dot(g3[0], g3[1], g3[2], x3, y3, z3) + t43 * g3[0];
+     *    *dnoise_dy += -8.0f * t23 * t3 * y3 * dot(g3[0], g3[1], g3[2], x3, y3, z3) + t43 * g3[1];
+     *    *dnoise_dz += -8.0f * t23 * t3 * z3 * dot(g3[0], g3[1], g3[2], x3, y3, z3) + t43 * g3[2];
+     */
+        float temp0 = t20 * t0 * (g0[0] * x0 + g0[1] * y0 + g0[2] * z0);
+        *dnoise_dx = temp0 * x0;
+        *dnoise_dy = temp0 * y0;
+        *dnoise_dz = temp0 * z0;
+        float temp1 = t21 * t1 * (g1[0] * x1 + g1[1] * y1 + g1[2] * z1);
+        *dnoise_dx += temp1 * x1;
+        *dnoise_dy += temp1 * y1;
+        *dnoise_dz += temp1 * z1;
+        float temp2 = t22 * t2 * (g2[0] * x2 + g2[1] * y2 + g2[2] * z2);
+        *dnoise_dx += temp2 * x2;
+        *dnoise_dy += temp2 * y2;
+        *dnoise_dz += temp2 * z2;
+        float temp3 = t23 * t3 * (g3[0] * x3 + g3[1] * y3 + g3[2] * z3);
+        *dnoise_dx += temp3 * x3;
+        *dnoise_dy += temp3 * y3;
+        *dnoise_dz += temp3 * z3;
+        *dnoise_dx *= -8.0f;
+        *dnoise_dy *= -8.0f;
+        *dnoise_dz *= -8.0f;
+        *dnoise_dx += t40 * g0[0] + t41 * g1[0] + t42 * g2[0] + t43 * g3[0];
+        *dnoise_dy += t40 * g0[1] + t41 * g1[1] + t42 * g2[1] + t43 * g3[1];
+        *dnoise_dz += t40 * g0[2] + t41 * g1[2] + t42 * g2[2] + t43 * g3[2];
+        *dnoise_dx *= scale; // Scale derivative to match the noise scaling
+        *dnoise_dy *= scale;
+        *dnoise_dz *= scale;
+    }
+
+    return noise;
+}
+
+#endif
 
 
 // 4D simplex noise with derivatives.
