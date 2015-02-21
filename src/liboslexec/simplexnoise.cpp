@@ -544,7 +544,7 @@ simplexnoise3 (float x, float y, float z, int seed,
 // If the last tthree arguments are not null, the analytic derivative
 // (the 3D gradient of the scalar noise field) is also calculated.
 float
-simplexnoise3 (float x, float y, float z, int seed,
+simplexnoise3 (float x_, float y_, float z_, int seed,
                float *dnoise_dx, float *dnoise_dy, float *dnoise_dz)
 {
     // Skewing factors for 3D simplex grid:
@@ -555,21 +555,23 @@ simplexnoise3 (float x, float y, float z, int seed,
     const float *g0 = zero, *g1 = zero, *g2 = zero, *g3 = zero;
 
     // Skew the input space to determine which simplex cell we're in
-    float s = (x+y+z)*F3; // Very nice and simple skew factor for 3D
-    float xs = x+s;
-    float ys = y+s;
-    float zs = z+s;
-    int i = quick_floor(xs);
-    int j = quick_floor(ys);
-    int k = quick_floor(zs);
+    float4 xyz_simd (x_, y_, z_);
+    ASSERT (x_+y_+z_ == reduce_add (xyz_simd));
+    float4 s_simd = vreduce_add(xyz_simd).xyz0() * F3; // Very nice and simple skew factor for 3D
+    float4 xyzs_simd = xyz_simd + s_simd;
+    // float xs = x+s;
+    // float ys = y+s;
+    // float zs = z+s;
+    float4 xyzs_floor_simd = floor (xyzs_simd);
+    int4 ijk_simd (xyzs_floor_simd);
 
-    float t = (float)(i+j+k)*G3; 
-    float X0 = i-t; // Unskew the cell origin back to (x,y,z) space
-    float Y0 = j-t;
-    float Z0 = k-t;
-    float x0 = x-X0; // The x,y,z distances from the cell origin
-    float y0 = y-Y0;
-    float z0 = z-Z0;
+    int i = ijk_simd[0], j = ijk_simd[1], k = ijk_simd[2];
+    float4 t = vreduce_add(xyzs_floor_simd).xyz0() * G3;
+    float4 XYZ0_simd = xyzs_floor_simd - t; // Unskew the cell origin back to (x,y,z) space
+    float4 xyz0_simd = xyz_simd - XYZ0_simd;  // The x,y,z distances from the cell origin
+    float x0 = xyz0_simd[0];
+    float y0 = xyz0_simd[1];
+    float z0 = xyz0_simd[2];
 
     // For the 3D case, the simplex shape is a slightly irregular tetrahedron.
     // Determine which simplex we are in.
