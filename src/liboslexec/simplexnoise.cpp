@@ -575,27 +575,27 @@ simplexnoise3 (float x_, float y_, float z_, int seed,
 
     // For the 3D case, the simplex shape is a slightly irregular tetrahedron.
     // Determine which simplex we are in.
-    int i1, j1, k1; // Offsets for second corner of simplex in (i,j,k) coords
-    int i2, j2, k2; // Offsets for third corner of simplex in (i,j,k) coords
+    int4 ijk1_simd; // Offsets for second corner of simplex in (i,j,k) coords
+    int4 ijk2_simd; // Offsets for third corner of simplex in (i,j,k) coords
 
 #if 1
     // TODO: This code would benefit from a backport from the GLSL version!
     // (no it can't... see note below)
     if (x0>=y0) {
         if (y0>=z0) {
-            i1=1; j1=0; k1=0; i2=1; j2=1; k2=0;  /* X Y Z order */
+            ijk1_simd.load (1,0,0,0); ijk2_simd.load (1,1,0,0);  /* X Y Z order */
         } else if (x0>=z0) {
-            i1=1; j1=0; k1=0; i2=1; j2=0; k2=1;  /* X Z Y order */
+            ijk1_simd.load (1,0,0,0); ijk2_simd.load (1,0,1,0);  /* X Z Y order */
         } else {
-            i1=0; j1=0; k1=1; i2=1; j2=0; k2=1;  /* Z X Y order */
+            ijk1_simd.load (0,0,1,0); ijk2_simd.load (1,0,1,0);  /* Z X Y order */
         }
     } else { // x0<y0
         if (y0<z0) {
-            i1=0; j1=0; k1=1; i2=0; j2=1; k2=1;  /* Z Y X order */
+            ijk1_simd.load (0,0,1,0); ijk2_simd.load (0,1,1,0);  /* Z Y X order */
         } else if (x0<z0) {
-            i1=0; j1=1; k1=0; i2=0; j2=1; k2=1;  /* Y Z X order */
+            ijk1_simd.load (0,1,0,0); ijk2_simd.load (0,1,1,0);  /* Y Z X order */
         } else {
-            i1=0; j1=1; k1=0; i2=1; j2=1; k2=0;  /* Y X Z order */
+            ijk1_simd.load (0,1,0,0); ijk2_simd.load (1,1,0,0);  /* Y X Z order */
         }
     }
 #else
@@ -618,20 +618,34 @@ simplexnoise3 (float x_, float y_, float z_, int seed,
         k2 = g2 | l1;
     }
 #endif
-
+    int i1 = ijk1_simd[0], j1 = ijk1_simd[1], k1 = ijk1_simd[2];
+    int i2 = ijk2_simd[0], j2 = ijk2_simd[1], k2 = ijk2_simd[2];
     // A step of (1,0,0) in (i,j,k) means a step of (1-c,-c,-c) in (x,y,z),
     // a step of (0,1,0) in (i,j,k) means a step of (-c,1-c,-c) in (x,y,z), and
     // a step of (0,0,1) in (i,j,k) means a step of (-c,-c,1-c) in (x,y,z),
     // where c = 1/6.
-    float x1 = x0 - i1 + G3; // Offsets for second corner in (x,y,z) coords
-    float y1 = y0 - j1 + G3;
-    float z1 = z0 - k1 + G3;
-    float x2 = x0 - i2 + 2.0f * G3; // Offsets for third corner in (x,y,z) coords
-    float y2 = y0 - j2 + 2.0f * G3;
-    float z2 = z0 - k2 + 2.0f * G3;
-    float x3 = x0 - 1.0f + 3.0f * G3; // Offsets for last corner in (x,y,z) coords
-    float y3 = y0 - 1.0f + 3.0f * G3;
-    float z3 = z0 - 1.0f + 3.0f * G3;
+    float4 xyz1_simd = xyz0_simd - float4(ijk1_simd) + G3; // Offsets for second corner in (x,y,z) coords
+    float4 xyz2_simd = xyz0_simd - float4(ijk2_simd) + 2.0f*G3; // Offsets for third corner in (x,y,z) coords
+    float4 xyz3_simd = xyz0_simd + (3.0f*G3-1.0f); // Offsets for last corner in (x,y,z) coords
+    // float x1 = x0 - i1 + G3; // Offsets for second corner in (x,y,z) coords
+    // float y1 = y0 - j1 + G3;
+    // float z1 = z0 - k1 + G3;
+    // float x2 = x0 - i2 + 2.0f * G3; // Offsets for third corner in (x,y,z) coords
+    // float y2 = y0 - j2 + 2.0f * G3;
+    // float z2 = z0 - k2 + 2.0f * G3;
+    // float x3 = x0 - 1.0f + 3.0f * G3; // Offsets for last corner in (x,y,z) coords
+    // float y3 = y0 - 1.0f + 3.0f * G3;
+    // float z3 = z0 - 1.0f + 3.0f * G3;
+
+    float x1 = xyz1_simd[0];
+    float y1 = xyz1_simd[1];
+    float z1 = xyz1_simd[2];
+    float x2 = xyz2_simd[0];
+    float y2 = xyz2_simd[1];
+    float z2 = xyz2_simd[2];
+    float x3 = xyz3_simd[0];
+    float y3 = xyz3_simd[1];
+    float z3 = xyz3_simd[2];
 
     float t20 = 0.0f, t40 = 0.0f;
     float t21 = 0.0f, t41 = 0.0f;
@@ -640,7 +654,10 @@ simplexnoise3 (float x_, float y_, float z_, int seed,
     float n0=0.0f, n1=0.0f, n2=0.0f, n3=0.0f; // Noise contributions from the four simplex corners
 
     // Calculate the contribution from the four corners
-    float t0 = 0.5f - x0*x0 - y0*y0 - z0*z0;
+    float t0 = 0.5f - dot3(xyz0_simd, xyz0_simd);
+    float t1 = 0.5f - dot3(xyz1_simd, xyz1_simd);
+    float t2 = 0.5f - dot3(xyz2_simd, xyz2_simd);
+    float t3 = 0.5f - dot3(xyz3_simd, xyz3_simd);
     if (t0 >= 0.0f) {
         g0 = grad3 (i, j, k, seed);
         t20 = t0 * t0;
@@ -648,7 +665,6 @@ simplexnoise3 (float x_, float y_, float z_, int seed,
         n0 = t40 * (g0[0] * x0 + g0[1] * y0 + g0[2] * z0);
     }
 
-    float t1 = 0.5f - x1*x1 - y1*y1 - z1*z1;
     if (t1 >= 0.0f) {
         g1 = grad3 (i+i1, j+j1, k+k1, seed);
         t21 = t1 * t1;
@@ -656,7 +672,6 @@ simplexnoise3 (float x_, float y_, float z_, int seed,
         n1 = t41 * (g1[0] * x1 + g1[1] * y1 + g1[2] * z1);
     }
 
-    float t2 = 0.5f - x2*x2 - y2*y2 - z2*z2;
     if (t2 >= 0.0f) {
         g2 = grad3 (i+i2, j+j2, k+k2, seed);
         t22 = t2 * t2;
@@ -664,7 +679,6 @@ simplexnoise3 (float x_, float y_, float z_, int seed,
         n2 = t42 * (g2[0] * x2 + g2[1] * y2 + g2[2] * z2);
     }
 
-    float t3 = 0.5f - x3*x3 - y3*y3 - z3*z3;
     if (t3 >= 0.0f) {
         g3 = grad3 (i+1, j+1, k+1, seed);
         t23 = t3 * t3;
