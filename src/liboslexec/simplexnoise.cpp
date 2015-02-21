@@ -181,6 +181,12 @@ inline const float * grad3 (int i, int j, int k, int seed)
     return grad3lut[h & 15];
 }
 
+inline float4 grad3_simd (int i, int j, int k, int seed)
+{
+    int h = scramble (i, j, scramble (k, seed));
+    return grad3lut[h & 15];
+}
+
 inline float4 grad3_simd (const int4& ijk, int seed)
 {
     int h = scramble (ijk[0], ijk[1], scramble (ijk[2], seed));
@@ -551,17 +557,11 @@ simplexnoise3 (float x_, float y_, float z_, int seed,
     const float F3 = 0.333333333;   // = 1/3
     const float G3 = 0.166666667;   // = 1/6
 
-    // Gradients at simplex corners
-    const float *g0 = zero, *g1 = zero, *g2 = zero, *g3 = zero;
-
     // Skew the input space to determine which simplex cell we're in
     float4 xyz_simd (x_, y_, z_);
     ASSERT (x_+y_+z_ == reduce_add (xyz_simd));
     float4 s_simd = vreduce_add(xyz_simd).xyz0() * F3; // Very nice and simple skew factor for 3D
     float4 xyzs_simd = xyz_simd + s_simd;
-    // float xs = x+s;
-    // float ys = y+s;
-    // float zs = z+s;
     float4 xyzs_floor_simd = floor (xyzs_simd);
     int4 ijk_simd (xyzs_floor_simd);
 
@@ -627,77 +627,55 @@ simplexnoise3 (float x_, float y_, float z_, int seed,
     float4 xyz1_simd = xyz0_simd - float4(ijk1_simd) + G3; // Offsets for second corner in (x,y,z) coords
     float4 xyz2_simd = xyz0_simd - float4(ijk2_simd) + 2.0f*G3; // Offsets for third corner in (x,y,z) coords
     float4 xyz3_simd = xyz0_simd + (3.0f*G3-1.0f); // Offsets for last corner in (x,y,z) coords
-    // float x1 = x0 - i1 + G3; // Offsets for second corner in (x,y,z) coords
-    // float y1 = y0 - j1 + G3;
-    // float z1 = z0 - k1 + G3;
-    // float x2 = x0 - i2 + 2.0f * G3; // Offsets for third corner in (x,y,z) coords
-    // float y2 = y0 - j2 + 2.0f * G3;
-    // float z2 = z0 - k2 + 2.0f * G3;
-    // float x3 = x0 - 1.0f + 3.0f * G3; // Offsets for last corner in (x,y,z) coords
-    // float y3 = y0 - 1.0f + 3.0f * G3;
-    // float z3 = z0 - 1.0f + 3.0f * G3;
 
-    float x1 = xyz1_simd[0];
-    float y1 = xyz1_simd[1];
-    float z1 = xyz1_simd[2];
-    float x2 = xyz2_simd[0];
-    float y2 = xyz2_simd[1];
-    float z2 = xyz2_simd[2];
-    float x3 = xyz3_simd[0];
-    float y3 = xyz3_simd[1];
-    float z3 = xyz3_simd[2];
+    // float n0=0.0f, n1=0.0f, n2=0.0f, n3=0.0f; // Noise contributions from the four simplex corners
 
-    float t20 = 0.0f, t40 = 0.0f;
-    float t21 = 0.0f, t41 = 0.0f;
-    float t22 = 0.0f, t42 = 0.0f;
-    float t23 = 0.0f, t43 = 0.0f;
-    float n0=0.0f, n1=0.0f, n2=0.0f, n3=0.0f; // Noise contributions from the four simplex corners
+    // Gradients at simplex corners
+    float4 g0(0.0f), g1(0.0f), g2(0.0f), g3(0.0f);
 
     // Calculate the contribution from the four corners
-    float t0 = 0.5f - dot3(xyz0_simd, xyz0_simd);
-    float t1 = 0.5f - dot3(xyz1_simd, xyz1_simd);
-    float t2 = 0.5f - dot3(xyz2_simd, xyz2_simd);
-    float t3 = 0.5f - dot3(xyz3_simd, xyz3_simd);
-    if (t0 >= 0.0f) {
-        g0 = grad3 (i, j, k, seed);
-        t20 = t0 * t0;
-        t40 = t20 * t20;
-        n0 = t40 * (g0[0] * x0 + g0[1] * y0 + g0[2] * z0);
+    float4 t_simd = float4(0.5f) - float4 (dot3(xyz0_simd, xyz0_simd),
+                                           dot3(xyz1_simd, xyz1_simd),
+                                           dot3(xyz2_simd, xyz2_simd),
+                                           dot3(xyz3_simd, xyz3_simd));
+    // t_ge0_simd[i] is 1.0 if t_simd[i] >= 0
+    float4 t_ge0_simd = blend (float4::Zero(), float4::One(), t_simd >= float4::Zero());
+    float4 t2_simd = t_simd * t_simd * t_ge0_simd;
+    float4 t4_simd = t2_simd * t2_simd;
+    if (t_simd[0] >= 0.0f) {
+        g0 = grad3_simd (i, j, k, seed);
     }
 
-    if (t1 >= 0.0f) {
-        g1 = grad3 (i+i1, j+j1, k+k1, seed);
-        t21 = t1 * t1;
-        t41 = t21 * t21;
-        n1 = t41 * (g1[0] * x1 + g1[1] * y1 + g1[2] * z1);
+    if (t_simd[1] >= 0.0f) {
+        g1 = grad3_simd (i+i1, j+j1, k+k1, seed);
     }
 
-    if (t2 >= 0.0f) {
-        g2 = grad3 (i+i2, j+j2, k+k2, seed);
-        t22 = t2 * t2;
-        t42 = t22 * t22;
-        n2 = t42 * (g2[0] * x2 + g2[1] * y2 + g2[2] * z2);
+    if (t_simd[2] >= 0.0f) {
+        g2 = grad3_simd (i+i2, j+j2, k+k2, seed);
     }
 
-    if (t3 >= 0.0f) {
-        g3 = grad3 (i+1, j+1, k+1, seed);
-        t23 = t3 * t3;
-        t43 = t23 * t23;
-        n3 = t43 * (g3[0] * x3 + g3[1] * y3 + g3[2] * z3);
+    if (t_simd[3] >= 0.0f) {
+        g3 = grad3_simd (i+1, j+1, k+1, seed);
     }
+
+    // Noise contributions from the four simplex corners
+    float4 n_simd = t4_simd * float4 (dot(g0, xyz0_simd),
+                                      dot(g1, xyz1_simd),
+                                      dot(g2, xyz2_simd),
+                                      dot(g3, xyz3_simd));
 
     // Sum up and scale the result.  The scale is empirical, to make it
     // cover [-1,1], and to make it approximately match the range of our
     // Perlin noise implementation.
     const float scale = 68.0f;
-    float noise = scale * (n0 + n1 + n2 + n3);
+    float noise = scale * reduce_add (n_simd);
 
     // Compute derivative, if requested by supplying non-null pointers
     // for the last three arguments
     if (dnoise_dx) {
         DASSERT (dnoise_dy && dnoise_dz);
     /*  A straight, unoptimised calculation would be like:
-     *     *dnoise_dx = -8.0f * t20 * t0 * x0 * dot(g0[0], g0[1], g0[2], x0, y0, z0) + t40 * g0[0];
+     *    *dnoise_dx = -8.0f * t20 * t0 * x0 * dot(g0[0], g0[1], g0[2], x0, y0, z0) + t40 * g0[0];
      *    *dnoise_dy = -8.0f * t20 * t0 * y0 * dot(g0[0], g0[1], g0[2], x0, y0, z0) + t40 * g0[1];
      *    *dnoise_dz = -8.0f * t20 * t0 * z0 * dot(g0[0], g0[1], g0[2], x0, y0, z0) + t40 * g0[2];
      *    *dnoise_dx += -8.0f * t21 * t1 * x1 * dot(g1[0], g1[1], g1[2], x1, y1, z1) + t41 * g1[0];
@@ -710,31 +688,23 @@ simplexnoise3 (float x_, float y_, float z_, int seed,
      *    *dnoise_dy += -8.0f * t23 * t3 * y3 * dot(g3[0], g3[1], g3[2], x3, y3, z3) + t43 * g3[1];
      *    *dnoise_dz += -8.0f * t23 * t3 * z3 * dot(g3[0], g3[1], g3[2], x3, y3, z3) + t43 * g3[2];
      */
-        float temp0 = t20 * t0 * (g0[0] * x0 + g0[1] * y0 + g0[2] * z0);
-        *dnoise_dx = temp0 * x0;
-        *dnoise_dy = temp0 * y0;
-        *dnoise_dz = temp0 * z0;
-        float temp1 = t21 * t1 * (g1[0] * x1 + g1[1] * y1 + g1[2] * z1);
-        *dnoise_dx += temp1 * x1;
-        *dnoise_dy += temp1 * y1;
-        *dnoise_dz += temp1 * z1;
-        float temp2 = t22 * t2 * (g2[0] * x2 + g2[1] * y2 + g2[2] * z2);
-        *dnoise_dx += temp2 * x2;
-        *dnoise_dy += temp2 * y2;
-        *dnoise_dz += temp2 * z2;
-        float temp3 = t23 * t3 * (g3[0] * x3 + g3[1] * y3 + g3[2] * z3);
-        *dnoise_dx += temp3 * x3;
-        *dnoise_dy += temp3 * y3;
-        *dnoise_dz += temp3 * z3;
-        *dnoise_dx *= -8.0f;
-        *dnoise_dy *= -8.0f;
-        *dnoise_dz *= -8.0f;
-        *dnoise_dx += t40 * g0[0] + t41 * g1[0] + t42 * g2[0] + t43 * g3[0];
-        *dnoise_dy += t40 * g0[1] + t41 * g1[1] + t42 * g2[1] + t43 * g3[1];
-        *dnoise_dz += t40 * g0[2] + t41 * g1[2] + t42 * g2[2] + t43 * g3[2];
-        *dnoise_dx *= scale; // Scale derivative to match the noise scaling
-        *dnoise_dy *= scale;
-        *dnoise_dz *= scale;
+        float4 dnoise_simd;
+        float temp0 = t2_simd[0] * t_simd[0] * dot(g0, xyz0_simd);
+        dnoise_simd = temp0 * xyz0_simd;
+        float temp1 = t2_simd[1] * t_simd[1] * dot(g1, xyz1_simd);
+        dnoise_simd += temp1 * xyz1_simd;
+        float temp2 = t2_simd[2] * t_simd[2] * dot(g2, xyz2_simd);
+        dnoise_simd += temp2 * xyz2_simd;
+        float temp3 = t2_simd[3] * t_simd[3] * dot(g3, xyz3_simd);
+        dnoise_simd += temp3 * xyz3_simd;
+        dnoise_simd *= -8.0f;
+        dnoise_simd[0] += t4_simd[0] * g0[0] + t4_simd[1] * g1[0] + t4_simd[2] * g2[0] + t4_simd[3] * g3[0];
+        dnoise_simd[1] += t4_simd[0] * g0[1] + t4_simd[1] * g1[1] + t4_simd[2] * g2[1] + t4_simd[3] * g3[1];
+        dnoise_simd[2] += t4_simd[0] * g0[2] + t4_simd[1] * g1[2] + t4_simd[2] * g2[2] + t4_simd[3] * g3[2];
+        dnoise_simd *= scale; // Scale derivative to match the noise scaling
+        *dnoise_dx = dnoise_simd[0];
+        *dnoise_dy = dnoise_simd[1];
+        *dnoise_dz = dnoise_simd[2];
     }
 
     return noise;
