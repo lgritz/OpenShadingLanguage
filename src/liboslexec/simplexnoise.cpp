@@ -193,6 +193,22 @@ inline float4 grad3_simd (const int4& ijk, int seed)
     return grad3lut[h & 15];
 }
 
+// Compute the gradients of 4 lattice points simultaneously
+inline void grad3x4_simd (const int4& ijk0, const int4& ijk1,
+                          const int4& ijk2, const int4& ijk3, int seed,
+                          float4 &g0, float4 &g1, float4 &g2, float4 &g3)
+{
+    // Transpose to group the i's, j', and k's
+    int4 i_simd, j_simd, k_simd, l_simd;
+    transpose (ijk0, ijk1, ijk2, ijk3, i_simd, j_simd, k_simd, l_simd);
+    int4 h = scramble (i_simd, j_simd, scramble (k_simd, int4(seed), int4::Zero()));
+    // h &= int4(15);
+    g0 = grad3lut[h[0] & 15];
+    g1 = grad3lut[h[1] & 15];
+    g2 = grad3lut[h[2] & 15];
+    g3 = grad3lut[h[3] & 15];
+}
+
 inline const float * grad4 (int i, int j, int k, int l, int seed)
 {
     int h = scramble (i, j, scramble (k, l, seed));
@@ -559,19 +575,16 @@ simplexnoise3 (float x_, float y_, float z_, int seed,
 
     // Skew the input space to determine which simplex cell we're in
     float4 xyz_simd (x_, y_, z_);
-    ASSERT (x_+y_+z_ == reduce_add (xyz_simd));
+    DASSERT (x_+y_+z_ == reduce_add (xyz_simd));
     float4 s_simd = vreduce_add(xyz_simd).xyz0() * F3; // Very nice and simple skew factor for 3D
     float4 xyzs_simd = xyz_simd + s_simd;
     float4 xyzs_floor_simd = floor (xyzs_simd);
     int4 ijk_simd (xyzs_floor_simd);
 
-    int i = ijk_simd[0], j = ijk_simd[1], k = ijk_simd[2];
+    // int i = ijk_simd[0], j = ijk_simd[1], k = ijk_simd[2];
     float4 t = vreduce_add(xyzs_floor_simd).xyz0() * G3;
     float4 XYZ0_simd = xyzs_floor_simd - t; // Unskew the cell origin back to (x,y,z) space
     float4 xyz0_simd = xyz_simd - XYZ0_simd;  // The x,y,z distances from the cell origin
-    float x0 = xyz0_simd[0];
-    float y0 = xyz0_simd[1];
-    float z0 = xyz0_simd[2];
 
     // For the 3D case, the simplex shape is a slightly irregular tetrahedron.
     // Determine which simplex we are in.
@@ -581,6 +594,20 @@ simplexnoise3 (float x_, float y_, float z_, int seed,
 #if 1
     // TODO: This code would benefit from a backport from the GLSL version!
     // (no it can't... see note below)
+#if 1
+    static const OIIO_SIMD4_ALIGN int Tint3[] = { 1, 1, 1, 0 };
+    static const OIIO_SIMD4_ALIGN int Fint3[] = { 0, 0, 0, 0 };
+    mask4 m = (xyz0_simd >= shuffle<1,2,0,3>(xyz0_simd));
+    int4 g = blend (int4(Fint3), int4(Tint3), m);
+    int4 l = shuffle<2,0,1,3> (blend (int4(Tint3), int4(Fint3), m));
+    ijk1_simd = g & l;
+    ijk2_simd = g | l;
+
+
+#else
+    float x0 = xyz0_simd[0];
+    float y0 = xyz0_simd[1];
+    float z0 = xyz0_simd[2];
     if (x0>=y0) {
         if (y0>=z0) {
             ijk1_simd.load (1,0,0,0); ijk2_simd.load (1,1,0,0);  /* X Y Z order */
@@ -598,6 +625,8 @@ simplexnoise3 (float x_, float y_, float z_, int seed,
             ijk1_simd.load (0,1,0,0); ijk2_simd.load (1,1,0,0);  /* Y X Z order */
         }
     }
+#endif
+
 #else
     // Here's the logic "from the GLSL version", near as I (LG) could
     // translate it from GLSL to non-SIMD C++.  It was slower.  I'm
@@ -618,8 +647,7 @@ simplexnoise3 (float x_, float y_, float z_, int seed,
         k2 = g2 | l1;
     }
 #endif
-    int i1 = ijk1_simd[0], j1 = ijk1_simd[1], k1 = ijk1_simd[2];
-    int i2 = ijk2_simd[0], j2 = ijk2_simd[1], k2 = ijk2_simd[2];
+
     // A step of (1,0,0) in (i,j,k) means a step of (1-c,-c,-c) in (x,y,z),
     // a step of (0,1,0) in (i,j,k) means a step of (-c,1-c,-c) in (x,y,z), and
     // a step of (0,0,1) in (i,j,k) means a step of (-c,-c,1-c) in (x,y,z),
@@ -630,39 +658,32 @@ simplexnoise3 (float x_, float y_, float z_, int seed,
 
     // float n0=0.0f, n1=0.0f, n2=0.0f, n3=0.0f; // Noise contributions from the four simplex corners
 
-    // Gradients at simplex corners
-    float4 g0(0.0f), g1(0.0f), g2(0.0f), g3(0.0f);
-
     // Calculate the contribution from the four corners
-    float4 t_simd = float4(0.5f) - float4 (dot3(xyz0_simd, xyz0_simd),
-                                           dot3(xyz1_simd, xyz1_simd),
-                                           dot3(xyz2_simd, xyz2_simd),
-                                           dot3(xyz3_simd, xyz3_simd));
+    float4 t_simd = float4(0.5f) - AxBxCxDx (vdot3(xyz0_simd, xyz0_simd),
+                                             vdot3(xyz1_simd, xyz1_simd),
+                                             vdot3(xyz2_simd, xyz2_simd),
+                                             vdot3(xyz3_simd, xyz3_simd));
+    // Gradients at simplex corners
+    float4 g0, g1, g2, g3;
+
     // t_ge0_simd[i] is 1.0 if t_simd[i] >= 0
     float4 t_ge0_simd = blend (float4::Zero(), float4::One(), t_simd >= float4::Zero());
     float4 t2_simd = t_simd * t_simd * t_ge0_simd;
     float4 t4_simd = t2_simd * t2_simd;
-    if (t_simd[0] >= 0.0f) {
-        g0 = grad3_simd (i, j, k, seed);
-    }
+    // Compute the gradients of 4 lattice points simultaneously
 
-    if (t_simd[1] >= 0.0f) {
-        g1 = grad3_simd (i+i1, j+j1, k+k1, seed);
-    }
-
-    if (t_simd[2] >= 0.0f) {
-        g2 = grad3_simd (i+i2, j+j2, k+k2, seed);
-    }
-
-    if (t_simd[3] >= 0.0f) {
-        g3 = grad3_simd (i+1, j+1, k+1, seed);
-    }
+    grad3x4_simd (ijk_simd, ijk_simd+ijk1_simd, ijk_simd+ijk2_simd, ijk_simd+int4::One(),
+                  seed, g0, g1, g2, g3);
+    g0 *= shuffle<0> (t_ge0_simd);
+    g1 *= shuffle<1> (t_ge0_simd);
+    g2 *= shuffle<2> (t_ge0_simd);
+    g3 *= shuffle<3> (t_ge0_simd);
 
     // Noise contributions from the four simplex corners
-    float4 n_simd = t4_simd * float4 (dot(g0, xyz0_simd),
-                                      dot(g1, xyz1_simd),
-                                      dot(g2, xyz2_simd),
-                                      dot(g3, xyz3_simd));
+    float4 n_simd = t4_simd * AxBxCxDx (vdot(g0, xyz0_simd),
+                                        vdot(g1, xyz1_simd),
+                                        vdot(g2, xyz2_simd),
+                                        vdot(g3, xyz3_simd));
 
     // Sum up and scale the result.  The scale is empirical, to make it
     // cover [-1,1], and to make it approximately match the range of our
