@@ -93,18 +93,21 @@ scramble (uint32_t v0, uint32_t v1=0, uint32_t v2=0)
 inline int4
 scramble (const int4& v0, const int4& v1, const int4& v2)
 {
-    return bjfinal (v0, v1, v2^int4(0xdeadbeef));
+    static const OIIO_SIMD_ALIGN int seed[4] = {
+        0xdeadbeef, 0xdeadbeef, 0xdeadbeef, 0xdeadbeef
+    };
+    return bjfinal (v0, v1, v2^int4(seed));
 }
 
 
 
 /* Static data ---------------------- */
 
-static OIIO_SIMD4_ALIGN float zero[] = { 0.0f, 0.0f, 0.0f, 0.0f };
+static const OIIO_SIMD4_ALIGN float zero[] = { 0.0f, 0.0f, 0.0f, 0.0f };
 
 // Gradient table for 2D. These could be programmed the Ken Perlin way with
 // some clever bit-twiddling, but this is more clear, and not really slower.
-static OIIO_SIMD4_ALIGN float grad2lut[8][4] = {
+static const OIIO_SIMD4_ALIGN float grad2lut[8][4] = {
     { -1.0f, -1.0f, 0.0f, 0.0f }, { 1.0f,  0.0f, 0.0f, 0.0f },
     { -1.0f,  0.0f, 0.0f, 0.0f }, { 1.0f,  1.0f, 0.0f, 0.0f },
     { -1.0f,  1.0f, 0.0f, 0.0f }, { 0.0f, -1.0f, 0.0f, 0.0f },
@@ -117,7 +120,7 @@ static OIIO_SIMD4_ALIGN float grad2lut[8][4] = {
 // but these 12 (including 4 repeats to make the array length a power
 // of two) work better. They are not random, they are carefully chosen
 // to represent a small, isotropic set of directions.
-static OIIO_SIMD4_ALIGN float grad3lut[16][4] = {
+static const OIIO_SIMD4_ALIGN float grad3lut[16][4] = {
     {  1.0f,  0.0f,  1.0f, 0.0f }, {  0.0f,  1.0f,  1.0f, 0.0f }, // 12 cube edges
     { -1.0f,  0.0f,  1.0f, 0.0f }, {  0.0f, -1.0f,  1.0f, 0.0f },
     {  1.0f,  0.0f, -1.0f, 0.0f }, {  0.0f,  1.0f, -1.0f, 0.0f },
@@ -129,7 +132,7 @@ static OIIO_SIMD4_ALIGN float grad3lut[16][4] = {
 };
 
 // Gradient directions for 4D
-static OIIO_SIMD4_ALIGN float grad4lut[32][4] = {
+static const OIIO_SIMD4_ALIGN float grad4lut[32][4] = {
   { 0.0f, 1.0f, 1.0f, 1.0f }, { 0.0f, 1.0f, 1.0f, -1.0f }, { 0.0f, 1.0f, -1.0f, 1.0f }, { 0.0f, 1.0f, -1.0f, -1.0f }, // 32 tesseract edges
   { 0.0f, -1.0f, 1.0f, 1.0f }, { 0.0f, -1.0f, 1.0f, -1.0f }, { 0.0f, -1.0f, -1.0f, 1.0f }, { 0.0f, -1.0f, -1.0f, -1.0f },
   { 1.0f, 0.0f, 1.0f, 1.0f }, { 1.0f, 0.0f, 1.0f, -1.0f }, { 1.0f, 0.0f, -1.0f, 1.0f }, { 1.0f, 0.0f, -1.0f, -1.0f },
@@ -143,7 +146,7 @@ static OIIO_SIMD4_ALIGN float grad4lut[32][4] = {
 // A lookup table to traverse the simplex around a given point in 4D.
 // Details can be found where this table is used, in the 4D noise method.
 /* TODO: This should not be required, backport it from Bill's GLSL code! */
-static OIIO_SIMD4_ALIGN unsigned char simplex[64][4] = {
+static const OIIO_SIMD4_ALIGN unsigned char simplex[64][4] = {
   {0,1,2,3},{0,1,3,2},{0,0,0,0},{0,2,3,1},{0,0,0,0},{0,0,0,0},{0,0,0,0},{1,2,3,0},
   {0,2,1,3},{0,0,0,0},{0,3,1,2},{0,3,2,1},{0,0,0,0},{0,0,0,0},{0,0,0,0},{1,3,2,0},
   {0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},
@@ -195,18 +198,18 @@ inline float4 grad3_simd (const int4& ijk, int seed)
 
 // Compute the gradients of 4 lattice points simultaneously
 inline void grad3x4_simd (const int4& ijk0, const int4& ijk1,
-                          const int4& ijk2, const int4& ijk3, int seed,
+                          const int4& ijk2, const int4& ijk3, const int4& seed,
                           float4 &g0, float4 &g1, float4 &g2, float4 &g3)
 {
     // Transpose to group the i's, j', and k's
     int4 i_simd, j_simd, k_simd, l_simd;
     transpose (ijk0, ijk1, ijk2, ijk3, i_simd, j_simd, k_simd, l_simd);
-    int4 h = scramble (i_simd, j_simd, scramble (k_simd, int4(seed), int4::Zero()));
-    // h &= int4(15);
-    g0 = grad3lut[h[0] & 15];
-    g1 = grad3lut[h[1] & 15];
-    g2 = grad3lut[h[2] & 15];
-    g3 = grad3lut[h[3] & 15];
+    int4 h = scramble (i_simd, j_simd, scramble (k_simd, seed, int4::Zero()));
+    h &= int4(15);
+    g0 = grad3lut[h[0]];
+    g1 = grad3lut[h[1]];
+    g2 = grad3lut[h[2]];
+    g3 = grad3lut[h[3]];
 }
 
 inline const float * grad4 (int i, int j, int k, int l, int seed)
@@ -570,19 +573,27 @@ simplexnoise3 (float x_, float y_, float z_, int seed,
                float *dnoise_dx, float *dnoise_dy, float *dnoise_dz)
 {
     // Skewing factors for 3D simplex grid:
-    const float F3 = 0.333333333;   // = 1/3
-    const float G3 = 0.166666667;   // = 1/6
+    // const float F3 = 0.333333333;   // = 1/3
+    // const float G3 = 0.166666667;   // = 1/6
+    static const OIIO_SIMD4_ALIGN float F3_simd_raw[4] = {
+        0.333333333f, 0.333333333f, 0.333333333f, 0.0f };
+    static const OIIO_SIMD4_ALIGN float G3_simd_raw[4] = {
+        0.166666667f, 0.166666667f, 0.166666667f, 0.0f };
+    static const OIIO_SIMD4_ALIGN float G3x3m1_simd_raw[4] = {
+        -0.5f, -0.5f, -0.5f, 0.0f };
+    float4 F3_simd (F3_simd_raw);
+    float4 G3_simd (G3_simd_raw);
 
     // Skew the input space to determine which simplex cell we're in
     float4 xyz_simd (x_, y_, z_);
     DASSERT (x_+y_+z_ == reduce_add (xyz_simd));
-    float4 s_simd = vreduce_add(xyz_simd).xyz0() * F3; // Very nice and simple skew factor for 3D
+    float4 s_simd = vreduce_add(xyz_simd) /*.xyz0()*/ * F3_simd; // Very nice and simple skew factor for 3D
     float4 xyzs_simd = xyz_simd + s_simd;
     float4 xyzs_floor_simd = floor (xyzs_simd);
     int4 ijk_simd (xyzs_floor_simd);
 
     // int i = ijk_simd[0], j = ijk_simd[1], k = ijk_simd[2];
-    float4 t = vreduce_add(xyzs_floor_simd).xyz0() * G3;
+    float4 t = vreduce_add(xyzs_floor_simd) /*.xyz0()*/ * G3_simd;
     float4 XYZ0_simd = xyzs_floor_simd - t; // Unskew the cell origin back to (x,y,z) space
     float4 xyz0_simd = xyz_simd - XYZ0_simd;  // The x,y,z distances from the cell origin
 
@@ -595,11 +606,11 @@ simplexnoise3 (float x_, float y_, float z_, int seed,
     // TODO: This code would benefit from a backport from the GLSL version!
     // (no it can't... see note below)
 #if 1
-    static const OIIO_SIMD4_ALIGN int Tint3[] = { 1, 1, 1, 0 };
-    static const OIIO_SIMD4_ALIGN int Fint3[] = { 0, 0, 0, 0 };
+    static const OIIO_SIMD4_ALIGN int Tint3[4] = { 1, 1, 1, 0 };
+    // static const OIIO_SIMD4_ALIGN int Fint3[4] = { 0, 0, 0, 0 };
     mask4 m = (xyz0_simd >= shuffle<1,2,0,3>(xyz0_simd));
-    int4 g = blend (int4(Fint3), int4(Tint3), m);
-    int4 l = shuffle<2,0,1,3> (blend (int4(Tint3), int4(Fint3), m));
+    int4 g = blend0 (*(int4*)Tint3, m);
+    int4 l = shuffle<2,0,1,3> (blend0not (*(int4*)Tint3, m));
     ijk1_simd = g & l;
     ijk2_simd = g | l;
 
@@ -652,22 +663,25 @@ simplexnoise3 (float x_, float y_, float z_, int seed,
     // a step of (0,1,0) in (i,j,k) means a step of (-c,1-c,-c) in (x,y,z), and
     // a step of (0,0,1) in (i,j,k) means a step of (-c,-c,1-c) in (x,y,z),
     // where c = 1/6.
-    float4 xyz1_simd = xyz0_simd - float4(ijk1_simd) + G3; // Offsets for second corner in (x,y,z) coords
-    float4 xyz2_simd = xyz0_simd - float4(ijk2_simd) + 2.0f*G3; // Offsets for third corner in (x,y,z) coords
-    float4 xyz3_simd = xyz0_simd + (3.0f*G3-1.0f); // Offsets for last corner in (x,y,z) coords
-
+    float4 xyz1_simd = xyz0_simd - float4(ijk1_simd) + G3_simd; // Offsets for second corner in (x,y,z) coords
+    float4 xyz2_simd = xyz0_simd - float4(ijk2_simd) + F3_simd; // Offsets for third corner in (x,y,z) coords
+    float4 xyz3_simd = xyz0_simd + (*(float4*)G3x3m1_simd_raw); // Offsets for last corner in (x,y,z) coords
+    DASSERT (xyz0_simd[3] == 0.0f && xyz1_simd[3] == 0.0f &&
+             xyz2_simd[3] == 0.0f && xyz3_simd[3] == 0.0f);
     // float n0=0.0f, n1=0.0f, n2=0.0f, n3=0.0f; // Noise contributions from the four simplex corners
 
     // Calculate the contribution from the four corners
-    float4 t_simd = float4(0.5f) - AxBxCxDx (vdot3(xyz0_simd, xyz0_simd),
-                                             vdot3(xyz1_simd, xyz1_simd),
-                                             vdot3(xyz2_simd, xyz2_simd),
-                                             vdot3(xyz3_simd, xyz3_simd));
+
+    static const OIIO_SIMD4_ALIGN float Half_raw[4] = { 0.5f, 0.5f, 0.5f, 0.5f };
+    float4 t_simd = *(float4*)(Half_raw) - AxBxCxDx (vdot(xyz0_simd, xyz0_simd),
+                                          vdot(xyz1_simd, xyz1_simd),
+                                          vdot(xyz2_simd, xyz2_simd),
+                                          vdot(xyz3_simd, xyz3_simd));
     // Gradients at simplex corners
     float4 g0, g1, g2, g3;
 
     // t_ge0_simd[i] is 1.0 if t_simd[i] >= 0
-    float4 t_ge0_simd = blend (float4::Zero(), float4::One(), t_simd >= float4::Zero());
+    float4 t_ge0_simd = blend0 (float4::One(), t_simd >= float4::Zero());
     float4 t2_simd = t_simd * t_simd * t_ge0_simd;
     float4 t4_simd = t2_simd * t2_simd;
     // Compute the gradients of 4 lattice points simultaneously
