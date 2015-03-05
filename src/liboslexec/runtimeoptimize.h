@@ -61,8 +61,10 @@ public:
     void optimize_instance ();
 
     /// One optimization pass over a range of instructions [begin, end).
-    /// Return the number of changes made.
-    int optimize_ops (int beginop, int endop);
+    /// Return the number of changes made. The lastblock is the basic block
+    /// ID for the "calling" block (-1 means "none", and should be used for
+    /// all but special cases).
+    int optimize_ops (int beginop, int endop, int lastblock = -1);
 
     /// Post-optimization cleanup of a layer: add 'useparam' instructions,
     /// track variable lifetimes, coalesce temporaries.

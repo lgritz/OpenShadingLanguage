@@ -1819,13 +1819,13 @@ RuntimeOptimizer::eliminate_middleman ()
 
 
 int
-RuntimeOptimizer::optimize_ops (int beginop, int endop)
+RuntimeOptimizer::optimize_ops (int beginop, int endop, int lastblock)
 {
-    int lastblock = -1;
     int skipops = 0;   // extra inserted ops to skip over
     int changed = 0;
     size_t num_ops = inst()->ops().size();
     size_t old_num_ops = num_ops;   // track when it changes
+    clear_stale_syms ();
     for (int opnum = beginop;  opnum < endop;  opnum += 1) {
         ASSERT (old_num_ops == num_ops); // better not happen unknowingly
         DASSERT (num_ops == inst()->ops().size());
@@ -1993,11 +1993,42 @@ RuntimeOptimizer::optimize_ops (int beginop, int endop)
                 changed += c;
                 // Re-check num_ops in case the folder inserted something
                 num_ops = inst()->ops().size();
-                // skipops = num_ops - old_num_ops;
                 endop += num_ops - old_num_ops; // adjust how far we loop
                 old_num_ops = num_ops;
             }
         }
+
+        // Special sauce: for conditionals, we know that whatever symbol
+        // aliases were true entering the 'if' will still be true at the
+        // start of the true and false body blocks. We don't have to clear
+        // the block aliases, so we use recursion and some careful
+        // housekeeping to preserve that knowledge as we descend into the
+        // 'if', and hopefully this enables more optimizations.
+
+#if 1
+        if (op.opname() == u_if) {
+            ASSERT (op.jump(1) <= endop);
+
+            // Resurse and optimize the 'then' body
+            if (opnum+1 < op.jump(0))
+                changed += optimize_ops (opnum+1, op.jump(0));
+
+            // Resurse and optimize the 'else' body
+            if (op.jump(0) < op.jump(1))
+                changed += optimize_ops (op.jump(0), op.jump(1));
+
+            // clear_block_aliases ();
+
+            // Re-check num_ops in case the recursive calls inserted ops
+            endop += num_ops - old_num_ops; // adjust how far we loop
+            old_num_ops = num_ops;
+            // Skip those ops we just did recursively, jump past the 'if'
+            opnum = op.jump(1);
+            ASSERT (opnum == op.farthest_jump());
+            --opnum;
+        }
+#endif
+
     }
     return changed;
 }
