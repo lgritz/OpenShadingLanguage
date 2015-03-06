@@ -2273,7 +2273,7 @@ ShadingSystemImpl::group_post_jit_cleanup (ShaderGroup &group)
         // swap with the ones in the instance.
         OpcodeVec emptyops;
         inst->ops().swap (emptyops);
-        std::vector<int> emptyargs;
+        SymbolIndexVec emptyargs;
         inst->args().swap (emptyargs);
         if (inst->unused()) {
             // If we'll never use the layer, we don't need the syms at all

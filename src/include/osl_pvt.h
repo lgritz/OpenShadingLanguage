@@ -675,6 +675,9 @@ typedef std::vector<Symbol> SymbolVec;
 typedef Symbol * SymbolPtr;
 typedef std::vector<Symbol *> SymbolPtrVec;
 
+/// Vector of symbol indices
+typedef std::vector<int> SymbolIndexVec;
+
 
 
 /// Intermediate Represenatation opcode

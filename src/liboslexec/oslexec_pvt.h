@@ -358,7 +358,7 @@ private:
     std::string m_shadername;           ///< Shader name
     std::string m_osofilename;          ///< Full path of oso file
     OpcodeVec m_ops;                    ///< Actual code instructions
-    std::vector<int> m_args;            ///< Arguments for all the ops
+    SymbolIndexVec m_args;              ///< Arguments for all the ops
     // Need the code offsets for each code block
     SymbolVec m_symbols;                ///< Symbols used by the shader
     std::vector<int> m_idefaults;       ///< int default param values
@@ -596,8 +596,8 @@ public:
     int Nsym () const { return m_Nsym; }
 
 
-    const std::vector<int> & args () const { return m_instargs; }
-    std::vector<int> & args () { return m_instargs; }
+    const SymbolIndexVec & args () const { return m_instargs; }
+    SymbolIndexVec & args () { return m_instargs; }
     int arg (int argnum) { return args()[argnum]; }
     Symbol *argsymbol (int argnum) { return symbol(arg(argnum)); }
     const OpcodeVec & ops () const { return m_instops; }
@@ -676,7 +676,7 @@ private:
     SymOverrideInfoVec m_instoverrides; ///< Instance parameter info
     SymbolVec m_instsymbols;            ///< Symbols used by the instance
     OpcodeVec m_instops;                ///< Actual code instructions
-    std::vector<int> m_instargs;        ///< Arguments for all the ops
+    SymbolIndexVec m_instargs;          ///< Arguments for all the ops
     ustring m_layername;                ///< Name of this layer
     std::vector<int> m_iparams;         ///< int param values
     std::vector<float> m_fparams;       ///< float param values

@@ -1139,7 +1139,7 @@ DECLFOLDER(constfold_split)
                                      &usplits[0]);
         // And insert an instruction copying our constant array to the
         // user's results array.
-        std::vector<int> args;
+        SymbolIndexVec args;
         args.push_back (resultsarg);
         args.push_back (cind);
         rop.insert_code (opnum, u_assign, args, true, 1 /* relation */);
@@ -1258,7 +1258,7 @@ DECLFOLDER(constfold_format)
         // Grab the previous arguments, drop the ones we folded, and
         // replace the format string with our new one.
         int *argstart = &rop.inst()->args()[0] + op.firstarg();
-        std::vector<int> newargs (argstart, argstart + op.nargs() - args_expanded);
+        SymbolIndexVec newargs (argstart, argstart + op.nargs() - args_expanded);
         newargs[1] = rop.add_constant (ustring(prefix + suffix));
         ustring opname = op.opname();
         rop.turn_into_nop (op, "partial constant fold format()");
@@ -1845,7 +1845,7 @@ DECLFOLDER(constfold_getmatrix)
         // Now insert a new instruction that assigns 1 to the
         // original return result of getmatrix.
         int one = 1;
-        std::vector<int> args_to_add;
+        SymbolIndexVec args_to_add;
         args_to_add.push_back (resultarg);
         args_to_add.push_back (rop.add_constant (TypeDesc::TypeInt, &one));
         rop.insert_code (opnum, u_assign, args_to_add, true, 1 /* relation */);
@@ -2012,7 +2012,7 @@ DECLFOLDER(constfold_getattribute)
         // Now insert a new instruction that assigns 1 to the
         // original return result of getattribute.
         int one = 1;
-        std::vector<int> args_to_add;
+        SymbolIndexVec args_to_add;
         args_to_add.push_back (oldresultarg);
         args_to_add.push_back (rop.add_constant (TypeDesc::TypeInt, &one));
         rop.insert_code (opnum, u_assign, args_to_add, true, 1 /* relation */);
@@ -2067,7 +2067,7 @@ DECLFOLDER(constfold_gettextureinfo)
             // Now insert a new instruction that assigns 1 to the
             // original return result of gettextureinfo.
             int one = 1;
-            std::vector<int> args_to_add;
+            SymbolIndexVec args_to_add;
             args_to_add.push_back (oldresultarg);
             args_to_add.push_back (rop.add_constant (TypeDesc::TypeInt, &one));
             rop.insert_code (opnum, u_assign, args_to_add, true, 1 /* relation */);
@@ -2241,7 +2241,7 @@ DECLFOLDER(constfold_pointcloud_search)
     // types, and destinations.  If any of the query names are not known
     // constants, we can't optimize this call so just return.
     std::vector<ustring> names;
-    std::vector<int> value_args;
+    SymbolIndexVec value_args;
     std::vector<TypeDesc> value_types;
     for (int i = 0, num_queries = 0; i < nattrs; ++i) {
         Symbol& Name  = *rop.opargsym (op, attr_arg_offset + i*2);
@@ -2340,7 +2340,7 @@ DECLFOLDER(constfold_pointcloud_search)
         int const_array_sym = rop.add_constant (const_valtype, const_data);
         // ... and add an instruction to copy the constant into the
         // original destination for the query.
-        std::vector<int> args_to_add;
+        SymbolIndexVec args_to_add;
         args_to_add.push_back (value_args[i]);
         args_to_add.push_back (const_array_sym);
         rop.insert_code (opnum, u_assign, args_to_add, true, 1 /* relation */);
@@ -2348,7 +2348,7 @@ DECLFOLDER(constfold_pointcloud_search)
 
     // Query results all copied.  The only thing left to do is to assign
     // status (query result count) to the original "result".
-    std::vector<int> args_to_add;
+    SymbolIndexVec args_to_add;
     args_to_add.push_back (result_sym);
     args_to_add.push_back (rop.add_constant (TypeDesc::TypeInt, &count));
     rop.insert_code (opnum, u_assign, args_to_add, true, 1 /* relation */);
@@ -2404,7 +2404,7 @@ DECLFOLDER(constfold_pointcloud_get)
     int const_array_sym = rop.add_constant (valtype, &data[0]);
     // ... and add an instruction to copy the constant into the
     // original destination for the query.
-    std::vector<int> args_to_add;
+    SymbolIndexVec args_to_add;
     args_to_add.push_back (rop.oparg(op,5) /* Data symbol*/);
     args_to_add.push_back (const_array_sym);
     rop.insert_code (opnum, u_assign, args_to_add, true, 1 /* relation */);

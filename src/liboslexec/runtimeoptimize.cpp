@@ -444,7 +444,7 @@ RuntimeOptimizer::insert_code (int opnum, ustring opname,
                                bool recompute_rw_ranges, int relation)
 {
     OpcodeVec &code (inst()->ops());
-    std::vector<int> &opargs (inst()->args());
+    SymbolIndexVec &opargs (inst()->args());
     ustring method = (opnum < (int)code.size()) ? code[opnum].method() : OSLCompilerImpl::main_method_name();
     int nargs = argsend - argsbegin;
     Opcode op (opname, method, opargs.size(), nargs);
@@ -543,7 +543,7 @@ RuntimeOptimizer::insert_code (int opnum, ustring opname,
 
 void
 RuntimeOptimizer::insert_code (int opnum, ustring opname,
-                               const std::vector<int> &args_to_add,
+                               const SymbolIndexVec &args_to_add,
                                bool recompute_rw_ranges, int relation)
 {
     const int *argsbegin = (args_to_add.size())? &args_to_add[0]: NULL;
@@ -574,7 +574,7 @@ RuntimeOptimizer::insert_code (int opnum, ustring opname, int relation,
 /// reference the symbols in 'params'.
 void
 RuntimeOptimizer::insert_useparam (size_t opnum,
-                                   const std::vector<int> &params_to_use)
+                                   const SymbolIndexVec &params_to_use)
 {
     ASSERT (params_to_use.size() > 0);
     OpcodeVec &code (inst()->ops());
@@ -602,7 +602,7 @@ void
 RuntimeOptimizer::add_useparam (SymbolPtrVec &allsyms)
 {
     OpcodeVec &code (inst()->ops());
-    std::vector<int> &opargs (inst()->args());
+    SymbolIndexVec &opargs (inst()->args());
 
     // Mark all symbols as un-initialized
     BOOST_FOREACH (Symbol &s, inst()->symbols())
@@ -613,7 +613,7 @@ RuntimeOptimizer::add_useparam (SymbolPtrVec &allsyms)
 
     // Take care of the output params right off the bat -- as soon as the
     // shader starts running 'main'.
-    std::vector<int> outputparams;
+    SymbolIndexVec outputparams;
     for (int i = 0;  i < (int)inst()->symbols().size();  ++i) {
         Symbol *s = inst()->symbol(i);
         if (s->symtype() == SymTypeOutputParam &&
@@ -635,7 +635,7 @@ RuntimeOptimizer::add_useparam (SymbolPtrVec &allsyms)
             continue;  // skip useparam ops themselves, if we hit one
         bool simple_assign = is_simple_assign(op);
         bool in_main_code = (opnum >= inst()->m_maincodebegin);
-        std::vector<int> params;   // list of params referenced by this op
+        SymbolIndexVec params;   // list of params referenced by this op
         // For each argument...
         for (int a = 0;  a < op.nargs();  ++a) {
             int argind = op.firstarg() + a;
@@ -1638,7 +1638,7 @@ RuntimeOptimizer::peephole2 (int opnum)
                 return 1;
             }
             // FIXME - handle weight being a float as well
-            std::vector<int> newargs;
+            SymbolIndexVec newargs;
             newargs.push_back (oparg(next,0)); // B
             if (! is_one(*weight))
                 newargs.push_back (oparg(next,weightarg)); // weight
@@ -2216,8 +2216,8 @@ RuntimeOptimizer::add_dependency (SymDependency &dmap, int A, int B)
 
 
 void
-RuntimeOptimizer::syms_used_in_op (Opcode &op, std::vector<int> &rsyms,
-                                   std::vector<int> &wsyms)
+RuntimeOptimizer::syms_used_in_op (Opcode &op, SymbolIndexVec &rsyms,
+                                   SymbolIndexVec &wsyms)
 {
     rsyms.clear ();
     wsyms.clear ();
@@ -2298,7 +2298,7 @@ RuntimeOptimizer::track_variable_dependencies ()
 
     symdeps.clear ();
 
-    std::vector<int> read, written;
+    SymbolIndexVec read, written;
     // Loop over all ops...
     BOOST_FOREACH (Opcode &op, inst()->ops()) {
         // Gather the list of syms read and written by the op.  Reuse the
@@ -2540,7 +2540,7 @@ RuntimeOptimizer::collapse_syms ()
     }
 
     SymbolVec new_symbols;          // buffer for new symbol table
-    std::vector<int> symbol_remap;  // mapping of old sym index to new
+    SymbolIndexVec symbol_remap;  // mapping of old sym index to new
     int total_syms = 0;             // number of new symbols we'll need
     SymNeverUsed never_used (*this, inst());  // handy predicate
 

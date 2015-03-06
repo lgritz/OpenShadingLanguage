@@ -229,7 +229,7 @@ public:
     /// have the same method, sourcefile, and sourceline as the subsequent
     /// instruction.
     void insert_code (int opnum, ustring opname,
-                      const std::vector<int> &args_to_add,
+                      const SymbolIndexVec &args_to_add,
                       bool recompute_rw_ranges=false, int relation=0);
     /// insert_code with begin/end arg array pointers.
     void insert_code (int opnum, ustring opname,
@@ -240,7 +240,7 @@ public:
     void insert_code (int opnum, ustring opname, int relation,
                       int arg0=-1, int arg1=-1, int arg2=-1, int arg3=-1);
 
-    void insert_useparam (size_t opnum, const std::vector<int> &params_to_use);
+    void insert_useparam (size_t opnum, const SymbolIndexVec &params_to_use);
 
     /// Add a 'useparam' before any op that reads parameters.  This is what
     /// tells the runtime that it needs to run the layer it came from, if
@@ -260,7 +260,7 @@ public:
     typedef std::map<int, SymIntSet> SymDependency;
 
     void syms_used_in_op (Opcode &op,
-                          std::vector<int> &rsyms, std::vector<int> &wsyms);
+                          SymbolIndexVec &rsyms, SymbolIndexVec &wsyms);
 
     void track_variable_dependencies ();
 
@@ -345,11 +345,11 @@ private:
 
     // All below is just for the one inst we're optimizing at the moment:
     int m_pass;                       ///< Optimization pass we're on now
-    std::vector<int> m_all_consts;    ///< All const symbol indices for inst
+    SymbolIndexVec m_all_consts;      ///< All const symbol indices for inst
     int m_next_newconst;              ///< Unique ID for next new const we add
     int m_next_newtemp;               ///< Unique ID for next new temp we add
     std::map<int,int> m_symbol_aliases; ///< Global symbol aliases
-    std::vector<int> m_block_aliases;   ///< Local block aliases
+    SymbolIndexVec m_block_aliases;     ///< Local block aliases
     std::map<int,int> m_param_aliases;  ///< Params aliasing to params/globals
     std::map<int,int> m_stale_syms;     ///< Stale symbols for this block
     int m_local_unknown_message_sent;   ///< Non-const setmessage in this inst
