@@ -1998,26 +1998,38 @@ RuntimeOptimizer::optimize_ops (int beginop, int endop, int lastblock)
             }
         }
 
+#if 1
         // Special sauce: for conditionals, we know that whatever symbol
         // aliases were true entering the 'if' will still be true at the
         // start of the true and false body blocks. We don't have to clear
         // the block aliases, so we use recursion and some careful
         // housekeeping to preserve that knowledge as we descend into the
         // 'if', and hopefully this enables more optimizations.
-
-#if 1
         if (op.opname() == u_if) {
             ASSERT (op.jump(1) <= endop);
-
-            // Resurse and optimize the 'then' body
-            if (opnum+1 < op.jump(0))
-                changed += optimize_ops (opnum+1, op.jump(0));
+            // Save the prior list of block aliases. This prior knowledge
+            // is true for both the 'then' and 'else' blocks, we don't need
+            // to start with no alias knowledge in those blocks.
+            SymbolIndexVec prior_block_aliases = m_block_aliases;
+            // Resurse and optimize the 'then' body.
+            if (opnum+1 < op.jump(0)) {
+                // Pass in the 'lastblock' doctored to look like the same
+                // block as the 'then' statements -- to keep it from
+                // clearing block aliases.
+                changed += optimize_ops (opnum+1, op.jump(0),
+                                         m_bblockids[opnum+1] /*lastblock*/);
+            }
 
             // Resurse and optimize the 'else' body
-            if (op.jump(0) < op.jump(1))
-                changed += optimize_ops (op.jump(0), op.jump(1));
-
-            // clear_block_aliases ();
+            if (op.jump(0) < op.jump(1)) {
+                // Pass in the 'lastblock' doctored to look like the same
+                // block as the 'else' statements -- to keep it from
+                // clearing block aliases. And restore to the block alias
+                // knowledge we had before entering the 'if'.
+                m_block_aliases = prior_block_aliases;
+                changed += optimize_ops (op.jump(0), op.jump(1),
+                                         m_bblockids[op.jump(0)] /*lastblock*/);
+            }
 
             // Re-check num_ops in case the recursive calls inserted ops
             endop += num_ops - old_num_ops; // adjust how far we loop
