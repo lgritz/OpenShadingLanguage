@@ -1844,8 +1844,8 @@ RuntimeOptimizer::optimize_ops (int beginop, int endop, int lastblock)
             // skipops counter.
             block_unalias_written_args (op);
             if (! (lastblock == m_bblockids[opnum]))
-                std::cout << Strutil::format ("this should not be a new basic block op %d blocks %d vs %d",
-                                              opnum, lastblock, m_bblockids[opnum]);
+                std::cout << Strutil::format ("this should not be a new basic block op %d blocks %d vs %d, skipops=%d",
+                                              opnum, lastblock, m_bblockids[opnum], skipops);
             ASSERT (lastblock == m_bblockids[opnum] &&
                     "this should not be a new basic block");
             --skipops;
@@ -2040,7 +2040,9 @@ RuntimeOptimizer::optimize_ops (int beginop, int endop, int lastblock)
             // Skip those ops we just did recursively, jump past the 'if'
             opnum = op.jump(1);
             ASSERT (opnum == op.farthest_jump());
-            --opnum;
+            --opnum; // because when we loop, we'll increment.
+            lastblock = -1; // what we do next is certainly a new basic block
+            ASSERT (skipops == 0);
         }
 #endif
 
