@@ -610,7 +610,7 @@ RuntimeOptimizer::insert_useparam (size_t opnum,
 
 
 void
-RuntimeOptimizer::add_useparam (SymbolPtrVec &allsyms)
+RuntimeOptimizer::add_useparam ()
 {
     OpcodeVec &code (inst()->ops());
     std::vector<int> &opargs (inst()->args());
@@ -684,13 +684,18 @@ RuntimeOptimizer::add_useparam (SymbolPtrVec &allsyms)
         }
     }
 
-    // Mark all symbols as un-initialized
-    BOOST_FOREACH (Symbol &s, inst()->symbols())
+    // Mark all symbols as un-initialized, and collect pointers to used syms
+    SymbolPtrVec allsymptrs;
+    allsymptrs.reserve (inst()->symbols().size());
+    BOOST_FOREACH (Symbol &s, inst()->symbols()) {
         s.initialized (false);
+        if (s.everused())
+            allsymptrs.push_back (&s);
+    }
 
     // Re-track variable lifetimes, since the inserted useparam
-    // instructions will have change the instruction numbers.
-    track_variable_lifetimes (allsyms);
+    // instructions will have changed the instruction numbers.
+    track_variable_lifetimes (allsymptrs);
 }
 
 
@@ -2527,16 +2532,11 @@ RuntimeOptimizer::post_optimize_instance ()
     if (inst()->unused())
         return;    // skip the expensive stuff if we're not used anyway
 
-    SymbolPtrVec allsymptrs;
-    allsymptrs.reserve (inst()->symbols().size());
-    BOOST_FOREACH (Symbol &s, inst()->symbols())
-        allsymptrs.push_back (&s);
-
     m_bblockids.clear ();       // Keep insert_code from getting confused
     m_in_conditional.clear ();
     m_in_loop.clear ();
 
-    add_useparam (allsymptrs);
+    add_useparam ();
 
     if (optimize() >= 1 && m_opt_coalesce_temps)
         coalesce_temporaries ();

@@ -247,10 +247,10 @@ public:
 
     void insert_useparam (size_t opnum, const std::vector<int> &params_to_use);
 
-    /// Add a 'useparam' before any op that reads parameters.  This is what
-    /// tells the runtime that it needs to run the layer it came from, if
-    /// not already done.
-    void add_useparam (SymbolPtrVec &allsyms);
+    /// Add a 'useparam' before any op that reads parameters.  This
+    /// instruction is what tells the runtime that it needs to run the
+    /// layer it came from, if not already done.
+    void add_useparam ();
 
     void coalesce_temporaries ();
 
