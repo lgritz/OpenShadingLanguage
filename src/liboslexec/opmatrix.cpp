@@ -198,42 +198,36 @@ osl_get_from_to_matrix (void *sg, void *r, const char *from, const char *to)
 
 
 // point = M * point
-inline void osl_transform_vmv(void *result, const Matrix44 &M, void* v_)
+inline void osl_transform_vmv(void *result, const Matrix44 &M, void* v)
 {
-   const Vec3 &v = VEC(v_);
-   robust_multVecMatrix (M, v, VEC(result));
+    robust_multVecMatrix (M, VEC(v), VEC(result));   // SIMD internally
 }
 
-inline void osl_transform_dvmdv(void *result, const Matrix44 &M, void* v_)
+inline void osl_transform_dvmdv(void *result, const Matrix44 &M, void* v)
 {
-   const Dual2<Vec3> &v = DVEC(v_);
-   robust_multVecMatrix (M, v, DVEC(result));
+    robust_multVecMatrix (M, DVEC(v), DVEC(result));
 }
 
 // vector = M * vector
-inline void osl_transformv_vmv(void *result, const Matrix44 &M, void* v_)
+inline void osl_transformv_vmv(void *result, const Matrix44 &M, void* v)
 {
-   const Vec3 &v = VEC(v_);
-   M.multDirMatrix (v, VEC(result));
+    multDirMatrix (M, VEC(v), VEC(result));
 }
 
-inline void osl_transformv_dvmdv(void *result, const Matrix44 &M, void* v_)
+inline void osl_transformv_dvmdv(void *result, const Matrix44 &M, void* v)
 {
-   const Dual2<Vec3> &v = DVEC(v_);
-   multDirMatrix (M, v, DVEC(result));
+    multDirMatrix (M, DVEC(v), DVEC(result));   // SIMD internally
 }
 
 // normal = M * normal
-inline void osl_transformn_vmv(void *result, const Matrix44 &M, void* v_)
+inline void osl_transformn_vmv(void *result, const Matrix44 &M, void* v)
 {
-   const Vec3 &v = VEC(v_);
-   M.inverse().transposed().multDirMatrix (v, VEC(result));
+    multDirMatrix (M.inverse().transposed(), VEC(v), VEC(result));
 }
 
-inline void osl_transformn_dvmdv(void *result, const Matrix44 &M, void* v_)
+inline void osl_transformn_dvmdv(void *result, const Matrix44 &M, void* v)
 {
-   const Dual2<Vec3> &v = DVEC(v_);
-   multDirMatrix (M.inverse().transposed(), v, DVEC(result));
+    multDirMatrix (M.inverse().transposed(), DVEC(v), DVEC(result)); // SIMD internally
 }
 
 

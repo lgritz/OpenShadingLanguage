@@ -137,12 +137,20 @@ multMatrix (const Imath::Matrix33<T> &M, const Dual2<Imath::Vec3<S> > &src,
     dst = make_Vec3 (a, b, c);
 }
 
-inline void robust_multVecMatrix(const Matrix44& x, const Imath::Vec3<float>& src, Imath::Vec3<float>& dst)
+// OSL defines divide as "safe" (divide by zero yields zero, not Inf), so
+// matrix multiply with homogeneous divide also needs to be safe.
+inline void robust_multVecMatrix(const Matrix44& M, const Vec3& V, Vec3& dst)
 {
-   float a = src[0] * x[0][0] + src[1] * x[1][0] + src[2] * x[2][0] + x[3][0];
-   float b = src[0] * x[0][1] + src[1] * x[1][1] + src[2] * x[2][1] + x[3][1];
-   float c = src[0] * x[0][2] + src[1] * x[1][2] + src[2] * x[2][2] + x[3][2];
-   float w = src[0] * x[0][3] + src[1] * x[1][3] + src[2] * x[2][3] + x[3][3];
+#if OIIO_SIMD && OIIO_VERSION >= 10705
+    using namespace OIIO::simd;
+    float4 R = V[0] * float4(M[0]) + V[1] * float4(M[1])
+             + V[2] * float4(M[2]) +        float4(M[3]);
+    hdiv(R).store (dst);
+#else
+   float a = V[0] * M[0][0] + V[1] * M[1][0] + V[2] * M[2][0] + M[3][0];
+   float b = V[0] * M[0][1] + V[1] * M[1][1] + V[2] * M[2][1] + M[3][1];
+   float c = V[0] * M[0][2] + V[1] * M[1][2] + V[2] * M[2][2] + M[3][2];
+   float w = V[0] * M[0][3] + V[1] * M[1][3] + V[2] * M[2][3] + M[3][3];
 
    if (w != 0) {
       dst.x = a / w;
@@ -153,6 +161,7 @@ inline void robust_multVecMatrix(const Matrix44& x, const Imath::Vec3<float>& sr
       dst.y = 0;
       dst.z = 0;
    }
+#endif
 }
 
 /// Multiply a matrix times a vector with derivatives to obtain
@@ -189,14 +198,65 @@ robust_multVecMatrix (const Matrix44 &M, const Dual2<Vec3> &in, Dual2<Vec3> &out
 /// Multiply a matrix times a direction with derivatives to obtain
 /// a transformed direction with derivatives.
 inline void
+multDirMatrix (const Matrix44 &M, const Vec3 &in, Vec3 &out)
+{
+#if OIIO_SIMD && OIIO_VERSION >= 10705
+    OIIO::simd::transformv(M, in).store(out);
+#else
+    M.multDirMatrix (in, out);
+#endif
+}
+
+/// Multiply a matrix times a direction with derivatives to obtain
+/// a transformed direction with derivatives.
+inline void
 multDirMatrix (const Matrix44 &M, const Dual2<Vec3> &in, Dual2<Vec3> &out)
 {
+#if OIIO_SIMD && OIIO_VERSION >= 10705
+    using namespace OIIO::simd;
+    matrix44 Msimd (M);
+    Msimd.transformv(in.val()).store (out.val());
+    Msimd.transformv(in.dx()).store (out.dx());
+    Msimd.transformv(in.dy()).store (out.dy());
+#else
     M.multDirMatrix (in.val(), out.val());
     M.multDirMatrix (in.dx(), out.dx());
     M.multDirMatrix (in.dy(), out.dy());
+#endif
 }
 
 
+/// Multiply a matrix times a normal direction with derivatives to obtain a
+/// transformed direction with derivatives. Remember that normals transform
+/// by the inverse transpose of the matrix.
+inline void
+multNormMatrix (const Matrix44 &M, const Vec3 &in, Vec3 &out)
+{
+#if OIIO_SIMD && OIIO_VERSION >= 10705
+    OIIO::simd::transformvT(M.inverse(), in).store(out);
+#else
+    M.multDirMatrix (in, out);
+#endif
+}
+
+/// Multiply a matrix times a normal direction with derivatives to obtain a
+/// transformed direction with derivatives. Remember that normals transform
+/// by the inverse transpose of the matrix.
+inline void
+multNormMatrix (const Matrix44 &M, const Dual2<Vec3> &in, Dual2<Vec3> &out)
+{
+#if OIIO_SIMD && OIIO_VERSION >= 10705
+    using namespace OIIO::simd;
+    matrix44 MinvT = matrix44(M.inverse()).transposed();
+    MinvT.transformv(in.val()).store (out.val());
+    MinvT.transformv(in.dx()).store (out.dx());
+    MinvT.transformv(in.dy()).store (out.dy());
+#else
+    M.multDirMatrix (in.val(), out.val());
+    M.multDirMatrix (in.dx(), out.dx());
+    M.multDirMatrix (in.dy(), out.dy());
+#endif
+}
 
 
 
