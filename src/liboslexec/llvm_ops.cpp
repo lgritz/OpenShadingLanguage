@@ -744,7 +744,12 @@ osl_distance_dfvdv (void *result, void *a, void *b)
 OSL_SHADEOP void
 osl_normalize_vv (void *result, void *a)
 {
+#if OIIO_SIMD && OIIO_VERSION >= 10705
+    using namespace OIIO::simd;
+    float3(VEC(a)).normalized().store (VEC(result));
+#else
     VEC(result) = VEC(a).normalized();
+#endif
 }
 
 OSL_SHADEOP void
