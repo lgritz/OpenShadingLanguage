@@ -416,6 +416,50 @@ DECLFOLDER(constfold_abs)
 
 
 
+DECLFOLDER(constfold_shl)
+{
+    Opcode &op (rop.inst()->ops()[opnum]);
+    DASSERT (op.nargs() == 3);
+    Symbol &A (*rop.inst()->argsymbol(op.firstarg()+1));
+    Symbol &B (*rop.inst()->argsymbol(op.firstarg()+2));
+    DASSERT (A.typespec().is_int() && B.typespec().is_int());
+    if (B.is_constant() && B.get_int() == 0) {
+        rop.turn_into_assign (op, rop.oparg(op,1), "A << 0 == A");
+        return 1;
+    }
+    if (A.is_constant() && B.is_constant) {
+        int result = A.get_int() << B.get_int();
+        int cind = rop.add_constant (result);
+        rop.turn_into_assign (op, cind, "const << const");
+        return 1;
+    }
+    return 0;
+}
+
+
+
+DECLFOLDER(constfold_shr)
+{
+    Opcode &op (rop.inst()->ops()[opnum]);
+    DASSERT (op.nargs() == 3);
+    Symbol &A (*rop.inst()->argsymbol(op.firstarg()+1));
+    Symbol &B (*rop.inst()->argsymbol(op.firstarg()+2));
+    DASSERT (A.typespec().is_int() && B.typespec().is_int());
+    if (B.is_constant() && B.get_int() == 0) {
+        rop.turn_into_assign (op, rop.oparg(op,1), "A >> 0 == A");
+        return 1;
+    }
+    if (A.is_constant() && B.is_constant) {
+        int result = A.get_int() >> B.get_int();
+        int cind = rop.add_constant (result);
+        rop.turn_into_assign (op, cind, "const >> const");
+        return 1;
+    }
+    return 0;
+}
+
+
+
 DECLFOLDER(constfold_eq)
 {
     Opcode &op (rop.inst()->ops()[opnum]);
@@ -1209,6 +1253,24 @@ DECLFOLDER(constfold_getchar)
 
 
 
+DECLFOLDER(constfold_startswith)
+{
+    // Try to turn R=startswith(s,e) into R=C
+    Opcode &op (rop.inst()->ops()[opnum]);
+    Symbol &S (*rop.inst()->argsymbol(op.firstarg()+1));
+    Symbol &E (*rop.inst()->argsymbol(op.firstarg()+2));
+    if (S.is_constant() && E.is_constant()) {
+        ASSERT (S.typespec().is_string() && E.typespec().is_string());
+        int result = Strutil::starts_with (S.get_string(), E.get_string());
+        int cind = rop.add_constant (result);
+        rop.turn_into_assign (op, cind, "const fold startswith");
+        return 1;
+    }
+    return 0;
+}
+
+
+
 DECLFOLDER(constfold_endswith)
 {
     // Try to turn R=endswith(s,e) into R=C
@@ -1217,12 +1279,7 @@ DECLFOLDER(constfold_endswith)
     Symbol &E (*rop.inst()->argsymbol(op.firstarg()+2));
     if (S.is_constant() && E.is_constant()) {
         ASSERT (S.typespec().is_string() && E.typespec().is_string());
-        ustring s = *(ustring *)S.data();
-        ustring e = *(ustring *)E.data();
-        size_t elen = e.length(), slen = s.length();
-        int result = 0;
-        if (elen <= slen)
-            result = (strncmp (s.c_str()+slen-elen, e.c_str(), elen) == 0);
+        int result = Strutil::starts_with (S.get_string(), E.get_string());
         int cind = rop.add_constant (result);
         rop.turn_into_assign (op, cind, "const fold endswith");
         return 1;
@@ -1810,11 +1867,16 @@ AUTO_DECLFOLDER_FLOAT_OR_TRIPLE (ceil   , ceilf)
 AUTO_DECLFOLDER_FLOAT_OR_TRIPLE (erf    , OIIO::fast_erf)
 AUTO_DECLFOLDER_FLOAT_OR_TRIPLE (erfc   , OIIO::fast_erfc)
 AUTO_DECLFOLDER_FLOAT_OR_TRIPLE (logb   , OIIO::fast_logb)
+AUTO_DECLFOLDER_FLOAT_OR_TRIPLE (sign   , OIIO::sign)
 #if OSL_FAST_MATH
 AUTO_DECLFOLDER_FLOAT_OR_TRIPLE (cos    , OIIO::fast_cos)
 AUTO_DECLFOLDER_FLOAT_OR_TRIPLE (sin    , OIIO::fast_sin)
+AUTO_DECLFOLDER_FLOAT_OR_TRIPLE (tan    , OIIO::fast_tan)
 AUTO_DECLFOLDER_FLOAT_OR_TRIPLE (acos   , OIIO::fast_acos)
 AUTO_DECLFOLDER_FLOAT_OR_TRIPLE (asin   , OIIO::fast_asin)
+AUTO_DECLFOLDER_FLOAT_OR_TRIPLE (cosh   , OIIO::fast_cosh)
+AUTO_DECLFOLDER_FLOAT_OR_TRIPLE (sinh   , OIIO::fast_sinh)
+AUTO_DECLFOLDER_FLOAT_OR_TRIPLE (tanh   , OIIO::fast_tanh)
 AUTO_DECLFOLDER_FLOAT_OR_TRIPLE (exp    , OIIO::fast_exp)
 AUTO_DECLFOLDER_FLOAT_OR_TRIPLE (exp2   , OIIO::fast_exp2)
 AUTO_DECLFOLDER_FLOAT_OR_TRIPLE (expm1  , OIIO::fast_expm1)
@@ -1824,8 +1886,12 @@ AUTO_DECLFOLDER_FLOAT_OR_TRIPLE (log2   , OIIO::fast_log2)
 #else
 AUTO_DECLFOLDER_FLOAT_OR_TRIPLE (cos    , cosf)
 AUTO_DECLFOLDER_FLOAT_OR_TRIPLE (sin    , sinf)
+AUTO_DECLFOLDER_FLOAT_OR_TRIPLE (tan    , tanf)
 AUTO_DECLFOLDER_FLOAT_OR_TRIPLE (acos   , OIIO::safe_acos)
 AUTO_DECLFOLDER_FLOAT_OR_TRIPLE (asin   , OIIO::safe_asin)
+AUTO_DECLFOLDER_FLOAT_OR_TRIPLE (cosh   , OIIO::safe_cosh)
+AUTO_DECLFOLDER_FLOAT_OR_TRIPLE (sinh   , OIIO::safe_sinh)
+AUTO_DECLFOLDER_FLOAT_OR_TRIPLE (tanh   , OIIO::safe_tanh)
 AUTO_DECLFOLDER_FLOAT_OR_TRIPLE (exp    , expf)
 AUTO_DECLFOLDER_FLOAT_OR_TRIPLE (exp2   , exp2f)
 AUTO_DECLFOLDER_FLOAT_OR_TRIPLE (expm1  , expm1f)
