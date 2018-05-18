@@ -285,6 +285,8 @@ osl_texture (void *sg_, const char *name, void *handle,
         }
     }
 
+    if (!handle)
+        sg->context->tex_no_handle();
     if (ok && errormessage)
         *errormessage = Strings::_emptystring_;
     return ok;
@@ -346,6 +348,8 @@ osl_texture3d (void *sg_, const char *name, void *handle,
         }
     }
 
+    if (!handle)
+        sg->context->tex_no_handle();
     if (ok && errormessage)
         *errormessage = Strings::_emptystring_;
     return ok;
@@ -400,6 +404,8 @@ osl_environment (void *sg_, const char *name, void *handle,
             ((float *)dalphady)[0] = 0.0f;
     }
 
+    if (!handle)
+        sg->context->tex_no_handle();
     if (ok && errormessage)
         *errormessage = Strings::_emptystring_;
     return ok;
@@ -420,6 +426,8 @@ osl_get_textureinfo (void *sg_, const char *name, void *handle,
 
     ShaderGlobals *sg   = (ShaderGlobals *)sg_;
 
+    if (!handle)
+        sg->context->tex_no_handle();
     return sg->renderer->get_texture_info (sg, USTR(name),
                                            (RendererServices::TextureHandle *)handle,
                                            0 /*FIXME-ptex*/,

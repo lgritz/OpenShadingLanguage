@@ -649,6 +649,7 @@ ShadingSystemImpl::ShadingSystemImpl (RendererServices *renderer,
       m_lazy_userdata(false), m_userdata_isconnected(false),
       m_clearmemory (false), m_debugnan (false), m_debug_uninit(false),
       m_lockgeom_default (true), m_strict_messages(true),
+      m_warn_texture_handle (false),
       m_error_repeats(false),
       m_range_checking(true),
       m_unknown_coordsys_error(true), m_connection_error(true),
@@ -710,7 +711,8 @@ ShadingSystemImpl::ShadingSystemImpl (RendererServices *renderer,
     m_stat_const_connections = 0;
     m_stat_global_connections = 0;
     m_stat_tex_calls_codegened = 0;
-    m_stat_tex_calls_as_handles = 0;
+    m_stat_tex_calls_codegened_as_handles = 0;
+    m_stat_tex_calls_no_handle = 0;
     m_stat_master_load_time = 0;
     m_stat_optimization_time = 0;
     m_stat_getattribute_time = 0;
@@ -1097,6 +1099,7 @@ ShadingSystemImpl::attribute (string_view name, TypeDesc type,
     ATTR_SET ("llvm_debug_ops", int, m_llvm_debug_ops);
     ATTR_SET ("llvm_output_bitcode", int, m_llvm_output_bitcode);
     ATTR_SET ("strict_messages", int, m_strict_messages);
+    ATTR_SET ("warn_texture_handle", int, m_warn_texture_handle);
     ATTR_SET ("range_checking", int, m_range_checking);
     ATTR_SET ("unknown_coordsys_error", int, m_unknown_coordsys_error);
     ATTR_SET ("connection_error", int, m_connection_error);
@@ -1223,6 +1226,7 @@ ShadingSystemImpl::getattribute (string_view name, TypeDesc type,
     ATTR_DECODE ("llvm_debug_ops", int, m_llvm_debug_ops);
     ATTR_DECODE ("llvm_output_bitcode", int, m_llvm_output_bitcode);
     ATTR_DECODE ("strict_messages", int, m_strict_messages);
+    ATTR_DECODE ("warn_texture_handle", int, m_warn_texture_handle);
     ATTR_DECODE ("error_repeats", int, m_error_repeats);
     ATTR_DECODE ("range_checking", int, m_range_checking);
     ATTR_DECODE ("unknown_coordsys_error", int, m_unknown_coordsys_error);
@@ -1267,7 +1271,9 @@ ShadingSystemImpl::getattribute (string_view name, TypeDesc type,
     ATTR_DECODE ("stat:const_connections", int, m_stat_const_connections);
     ATTR_DECODE ("stat:global_connections", int, m_stat_global_connections);
     ATTR_DECODE ("stat:tex_calls_codegened", int, m_stat_tex_calls_codegened);
-    ATTR_DECODE ("stat:tex_calls_as_handles", int, m_stat_tex_calls_as_handles);
+    ATTR_DECODE ("stat:tex_calls_codegened_as_handles", int, m_stat_tex_calls_codegened_as_handles);
+    ATTR_DECODE ("stat:tex_calls_as_handles", int, m_stat_tex_calls_codegened_as_handles);  // deprecated -- back compatibility
+    ATTR_DECODE ("stat:tex_calls_on_handle", int, m_stat_tex_calls_no_handle);
     ATTR_DECODE ("stat:master_load_time", float, m_stat_master_load_time);
     ATTR_DECODE ("stat:optimization_time", float, m_stat_optimization_time);
     ATTR_DECODE ("stat:opt_locking_time", float, m_stat_opt_locking_time);
@@ -1699,6 +1705,7 @@ ShadingSystemImpl::getstats (int level) const
     BOOLOPT (debug_uninit);
     BOOLOPT (lockgeom_default);
     BOOLOPT (strict_messages);
+    BOOLOPT (warn_texture_handle);
     BOOLOPT (error_repeats);
     BOOLOPT (range_checking);
     BOOLOPT (greedyjit);
@@ -1817,7 +1824,9 @@ ShadingSystemImpl::getstats (int level) const
 
     out << "  Texture calls compiled: "
         << (int)m_stat_tex_calls_codegened
-        << " (" << (int)m_stat_tex_calls_as_handles << " used handles)\n";
+        << " (" << (int)m_stat_tex_calls_codegened_as_handles << " used handles)\n";
+    out << "  Texture calls executed without a handle: "
+        << (int)m_stat_tex_calls_no_handle << "\n";
     out << "  Regex's compiled: " << m_stat_regexes << "\n";
     out << "  Largest generated function local memory size: "
         << m_stat_max_llvm_local_mem/1024 << " KB\n";

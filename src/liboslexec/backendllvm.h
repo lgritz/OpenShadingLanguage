@@ -417,10 +417,17 @@ public:
     llvm::Function *layer_func () const { return ll.current_function(); }
 
     /// Call this when JITing a texture-like call, to track how many.
-    void generated_texture_call (bool handle) {
+    void generated_texture_call (const void *handle, const Opcode &op) {
         shadingsys().m_stat_tex_calls_codegened += 1;
         if (handle)
-            shadingsys().m_stat_tex_calls_as_handles += 1;
+            shadingsys().m_stat_tex_calls_codegened_as_handles += 1;
+        else if (shadingsys().opt_texture_handle()
+                 && shadingsys().warn_texture_handle()) {
+            shadingsys().warning ("Could not resolve to a constant texture name at %s:%s (group %s, shader %s, layer %s)",
+                                  op.sourcefile(), op.sourceline(),
+                                  group().name(),
+                                  inst()->shadername(), inst()->layername());
+        }
     }
 
     /// Return the mapping from symbol names to GlobalVariables.

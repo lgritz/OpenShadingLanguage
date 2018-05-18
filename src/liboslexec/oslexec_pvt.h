@@ -596,6 +596,7 @@ public:
     bool debug_uninit () const { return m_debug_uninit; }
     bool lockgeom_default () const { return m_lockgeom_default; }
     bool strict_messages() const { return m_strict_messages; }
+    bool warn_texture_handle() const { return m_warn_texture_handle; }
     bool range_checking() const { return m_range_checking; }
     bool unknown_coordsys_error() const { return m_unknown_coordsys_error; }
     bool connection_error() const { return m_connection_error; }
@@ -771,6 +772,7 @@ private:
     bool m_debug_uninit;                  ///< Find use of uninitialized vars?
     bool m_lockgeom_default;              ///< Default value of lockgeom
     bool m_strict_messages;               ///< Strict checking of message passing usage?
+    bool m_warn_texture_handle;           ///< Warn for non-handle textures?
     bool m_error_repeats;                 ///< Allow repeats of identical err/warn?
     bool m_range_checking;                ///< Range check arrays & components?
     bool m_unknown_coordsys_error;        ///< Error to use unknown xform name?
@@ -865,7 +867,8 @@ private:
     atomic_int m_stat_const_connections;  ///< Stat: const connections elim'd
     atomic_int m_stat_global_connections; ///< Stat: global connections elim'd
     atomic_int m_stat_tex_calls_codegened;///< Stat: total texture calls
-    atomic_int m_stat_tex_calls_as_handles;///< Stat: texture calls with handles
+    atomic_int m_stat_tex_calls_codegened_as_handles;///< Stat: texture calls with handles (codegened)
+    atomic_ll m_stat_tex_calls_no_handle;///< Stat: texture calls executed without handle
     double m_stat_master_load_time;       ///< Stat: time loading masters
     double m_stat_optimization_time;      ///< Stat: time spent optimizing
     double m_stat_opt_locking_time;       ///<   locking time
@@ -1756,10 +1759,13 @@ public:
 
     void incr_get_userdata_calls () { ++m_stat_get_userdata_calls; }
 
+    void tex_no_handle () { ++m_stat_tex_calls_no_handle; }
+
     // Clear the stats we record per-execution in this context (unlocked)
     void clear_runtime_stats () {
         m_stat_get_userdata_calls = 0;
         m_stat_layers_executed = 0;
+        m_stat_tex_calls_no_handle = 0;
     }
 
     // Transfer the per-execution stats from this context to the shading
@@ -1767,6 +1773,7 @@ public:
     void record_runtime_stats () {
         shadingsys().m_stat_get_userdata_calls += m_stat_get_userdata_calls;
         shadingsys().m_stat_layers_executed += m_stat_layers_executed;
+        shadingsys().m_stat_tex_calls_no_handle += m_stat_tex_calls_no_handle;
     }
 
     bool allow_warnings() {
@@ -1821,6 +1828,7 @@ private:
     int m_max_warnings;                 ///< To avoid processing too many warnings
     int m_stat_get_userdata_calls;      ///< Number of calls to get_userdata
     int m_stat_layers_executed;         ///< Number of layers executed
+    long long m_stat_tex_calls_no_handle; ///< Texture calls without handle
     long long m_ticks;                  ///< Time executing the shader
 
     TextureOpt m_textureopt;            ///< texture call options
