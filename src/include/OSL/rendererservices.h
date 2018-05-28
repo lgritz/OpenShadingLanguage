@@ -199,8 +199,17 @@ public:
                                ShaderGlobals *sg, void *val) { return false; }
 
     /// Given the name of a texture, return an opaque handle that can be
-    /// used with texture calls to avoid the name lookups.
-    virtual TextureHandle * get_texture_handle (ustring filename);
+    /// used with texture calls to avoid the name lookups. If you have a
+    /// specific ShadingContext, passing that optional pointer can further
+    /// rely on any per-thread caching of the lookups that may be stored
+    /// in the context itself.
+    virtual TextureHandle * get_texture_handle (ustring filename,
+                                                TexturePerthread *perthread,
+                                                ShadingContext *context=nullptr);
+    // DEPRECATED (1.9):
+    virtual TextureHandle * get_texture_handle (ustring filename) {
+        return get_texture_handle (filename, nullptr);
+    }
 
     /// Return true if the texture handle (previously returned by
     /// get_texture_handle()) is a valid texture that can be subsequently

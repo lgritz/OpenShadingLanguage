@@ -122,9 +122,12 @@ RendererServices::get_inverse_matrix (ShaderGlobals *sg, Matrix44 &result,
 
 
 RendererServices::TextureHandle *
-RendererServices::get_texture_handle (ustring filename)
+RendererServices::get_texture_handle (ustring filename,
+                                      TexturePerthread *perthread,
+                                      ShadingContext *context)
 {
-    return texturesys()->get_texture_handle (filename);
+    return context ? context->get_texture_handle (filename, perthread)
+                   : texturesys()->get_texture_handle (filename, perthread);
 }
 
 
@@ -158,6 +161,8 @@ RendererServices::texture (ustring filename, TextureHandle *texture_handle,
     ShadingContext *context = sg->context;
     if (! texture_thread_info)
         texture_thread_info = context->texture_thread_info();
+    if (! texture_handle)
+        texture_handle = context->get_texture_handle (filename, texture_thread_info);
     bool status;
     if (texture_handle)
         status = texturesys()->texture (texture_handle, texture_thread_info,
@@ -228,6 +233,8 @@ RendererServices::texture3d (ustring filename, TextureHandle *texture_handle,
     ShadingContext *context = sg->context;
     if (! texture_thread_info)
         texture_thread_info = context->texture_thread_info();
+    if (! texture_handle)
+        texture_handle = context->get_texture_handle (filename, texture_thread_info);
     bool status;
     if (texture_handle)
         status = texturesys()->texture3d (texture_handle, texture_thread_info,
@@ -302,6 +309,8 @@ RendererServices::environment (ustring filename, TextureHandle *texture_handle,
     ShadingContext *context = sg->context;
     if (! texture_thread_info)
         texture_thread_info = context->texture_thread_info();
+    if (! texture_handle)
+        texture_handle = context->get_texture_handle (filename, texture_thread_info);
     bool status;
     if (texture_handle)
         status = texturesys()->environment (texture_handle, texture_thread_info,
@@ -364,9 +373,15 @@ RendererServices::get_texture_info (ShaderGlobals *sg, ustring filename,
                                     int subimage, ustring dataname,
                                     TypeDesc datatype, void *data)
 {
+    TexturePerthread *texture_thread_info = nullptr;
+    if (! texture_handle && sg) {
+        ShadingContext *context = sg->context;
+        texture_thread_info = context->texture_thread_info();
+        texture_handle = context->get_texture_handle (filename, texture_thread_info);
+    }
     bool status;
     if (texture_handle)
-        status = texturesys()->get_texture_info (texture_handle, NULL, subimage,
+        status = texturesys()->get_texture_info (texture_handle, texture_thread_info, subimage,
                                                  dataname, datatype, data);
     else
         status = texturesys()->get_texture_info (filename, subimage,

@@ -1755,6 +1755,13 @@ public:
         return m_scratch_pool.alloc (size, align);
     }
 
+    // Given the name of a texture, return an opaque handle that can be
+    // used with texture calls to avoid the name lookups.
+    TextureSystem::TextureHandle * get_texture_handle (ustring filename,
+                                  TextureSystem::Perthread *perthread=nullptr);
+
+    void clear_tex_handle_cache () { m_tex_handle_cache.clear(); }
+
     void incr_layers_executed () { ++m_stat_layers_executed; }
 
     void incr_get_userdata_calls () { ++m_stat_get_userdata_calls; }
@@ -1860,6 +1867,10 @@ private:
     ustring m_last_colorproc_tospace;
 #endif
 
+    using TexHandleCache = std::unordered_map<ustring,TextureSystem::TextureHandle *,ustringHash>;
+    TexHandleCache m_tex_handle_cache;
+    // FIXME: try other map implementations if this looks like a bottleneck.
+
     // Buffering of error messages and printfs
     typedef std::pair<ErrorHandler::ErrCode, std::string> ErrorItem;
     mutable std::vector<ErrorItem> m_buffered_errors;
@@ -1933,6 +1944,11 @@ public:
 
     /// Retrieve the dummy shading context.
     ShadingContext *shadingcontext () const { return m_context; }
+
+    /// Retrieve a valid TexturePerthread to use.
+    RendererServices::TexturePerthread *texture_perthread () const {
+        return m_context->texture_thread_info();
+    }
 
     /// Re-set what debugging level we ought to be at.
     virtual void set_debug ();

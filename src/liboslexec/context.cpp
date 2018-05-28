@@ -60,6 +60,7 @@ ShadingContext::~ShadingContext ()
     process_errors ();
     m_shadingsys.m_stat_contexts -= 1;
     free_dict_resources ();
+    OIIO::Strutil::printf ("Ctx had %d tex handles cached\n", m_tex_handle_cache.size());
 }
 
 
@@ -367,6 +368,27 @@ ShadingContext::osl_get_attribute (ShaderGlobals *sg, void *objdata,
 #endif
 //    std::cout << "getattribute! '" << obj_name << "' " << attr_name << ' ' << attr_type.c_str() << " ok=" << ok << ", objdata was " << objdata << "\n";
     return ok;
+}
+
+
+
+TextureSystem::TextureHandle *
+ShadingContext::get_texture_handle (ustring filename,
+                                    TextureSystem::Perthread *perthread)
+{
+#if 0
+    return m_renderer->get_texture_handle (filename, perthread);
+#else
+    auto found = m_tex_handle_cache.find (filename);
+    TextureSystem::TextureHandle *h;
+    if (found != m_tex_handle_cache.end())
+        h = found->second;
+    else {
+        h = m_renderer->get_texture_handle (filename, perthread);
+        m_tex_handle_cache[filename] = h;
+    }
+    return h;
+#endif
 }
 
 

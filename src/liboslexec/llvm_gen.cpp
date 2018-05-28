@@ -2371,7 +2371,7 @@ LLVMGEN (llvm_gen_texture)
     args.push_back (rop.sg_void_ptr());
     RendererServices::TextureHandle *texture_handle = NULL;
     if (Filename.is_constant() && rop.shadingsys().opt_texture_handle()) {
-        texture_handle = rop.renderer()->get_texture_handle (*(ustring *)Filename.data());
+        texture_handle = rop.shadingcontext()->get_texture_handle (*(ustring *)Filename.data(), rop.texture_perthread());
         if (! rop.renderer()->good (texture_handle))
             texture_handle = NULL;
     }
@@ -2438,7 +2438,7 @@ LLVMGEN (llvm_gen_texture3d)
     args.push_back (rop.sg_void_ptr());
     RendererServices::TextureHandle *texture_handle = NULL;
     if (Filename.is_constant() && rop.shadingsys().opt_texture_handle()) {
-        texture_handle = rop.renderer()->get_texture_handle (*(ustring *)Filename.data());
+        texture_handle = rop.shadingcontext()->get_texture_handle (*(ustring *)Filename.data(), rop.texture_perthread());
         if (! rop.renderer()->good (texture_handle))
             texture_handle = NULL;
     }
@@ -2512,7 +2512,7 @@ LLVMGEN (llvm_gen_environment)
     args.push_back (rop.sg_void_ptr());
     RendererServices::TextureHandle *texture_handle = NULL;
     if (Filename.is_constant() && rop.shadingsys().opt_texture_handle()) {
-        texture_handle = rop.renderer()->get_texture_handle (*(ustring *)Filename.data());
+        texture_handle = rop.shadingcontext()->get_texture_handle (*(ustring *)Filename.data(), rop.texture_perthread());
         if (! rop.renderer()->good (texture_handle))
             texture_handle = NULL;
     }
@@ -2962,7 +2962,7 @@ LLVMGEN (llvm_gen_gettextureinfo)
     args.push_back (rop.sg_void_ptr());
     RendererServices::TextureHandle *texture_handle = NULL;
     if (Filename.is_constant() && rop.shadingsys().opt_texture_handle()) {
-        texture_handle = rop.renderer()->get_texture_handle (*(ustring *)Filename.data());
+        texture_handle = rop.shadingcontext()->get_texture_handle (*(ustring *)Filename.data(), rop.texture_perthread());
         if (! rop.renderer()->good (texture_handle))
             texture_handle = NULL;
     }
