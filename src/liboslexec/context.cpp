@@ -60,7 +60,7 @@ ShadingContext::~ShadingContext ()
     process_errors ();
     m_shadingsys.m_stat_contexts -= 1;
     free_dict_resources ();
-    OIIO::Strutil::printf ("Ctx had %d tex handles cached\n", m_tex_handle_cache.size());
+    // OIIO::Strutil::printf ("Ctx had %d tex handles cached\n", m_tex_handle_cache.size());
 }
 
 
@@ -115,7 +115,8 @@ ShadingContext::execute_init (ShaderGroup &sgroup, ShaderGlobals &ssg, bool run)
     m_scratch_pool.clear ();
 
     // Zero out stats for this execution
-    clear_runtime_stats ();
+    // NO! Let them accumulate.
+    // clear_runtime_stats ();
 
     if (run) {
         ssg.context = this;
@@ -168,10 +169,14 @@ ShadingContext::execute_cleanup ()
     // Process any queued up error messages, warnings, printfs from shaders
     process_errors ();
 
-    if (shadingsys().m_profile) {
-        record_runtime_stats ();   // Transfer runtime stats to the shadingsys
-        shadingsys().m_stat_total_shading_time_ticks += m_ticks;
-        group()->m_stat_total_shading_time_ticks += m_ticks;
+    // It's expensive to atomically modify the global shading system's
+    // runtime stats. Only do it every 16 executions.
+    if (++m_stat_executions > 16000) {
+        record_and_clear_runtime_stats ();
+        if (shadingsys().m_profile) {
+            shadingsys().m_stat_total_shading_time_ticks += m_ticks;
+            group()->m_stat_total_shading_time_ticks += m_ticks;
+        }
     }
 
     return true;

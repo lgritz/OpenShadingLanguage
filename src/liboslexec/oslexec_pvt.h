@@ -890,6 +890,7 @@ private:
     int m_stat_pointcloud_failures;
     long long m_stat_pointcloud_gets;
     long long m_stat_pointcloud_writes;
+    atomic_ll m_stat_groups_executed;     ///< Total shader groups executed
     atomic_ll m_stat_layers_executed;     ///< Total layers executed
     atomic_ll m_stat_total_shading_time_ticks; ///< Total shading time (ticks)
 
@@ -1770,6 +1771,7 @@ public:
 
     // Clear the stats we record per-execution in this context (unlocked)
     void clear_runtime_stats () {
+        m_stat_executions = 0;
         m_stat_get_userdata_calls = 0;
         m_stat_layers_executed = 0;
         m_stat_tex_calls_no_handle = 0;
@@ -1777,10 +1779,12 @@ public:
 
     // Transfer the per-execution stats from this context to the shading
     // system.
-    void record_runtime_stats () {
+    void record_and_clear_runtime_stats () {
         shadingsys().m_stat_get_userdata_calls += m_stat_get_userdata_calls;
+        shadingsys().m_stat_groups_executed += m_stat_executions;
         shadingsys().m_stat_layers_executed += m_stat_layers_executed;
         shadingsys().m_stat_tex_calls_no_handle += m_stat_tex_calls_no_handle;
+        clear_runtime_stats ();
     }
 
     bool allow_warnings() {
@@ -1833,6 +1837,7 @@ private:
     RegexMap m_regex_map;               ///< Compiled regex's
     MessageList m_messages;             ///< Message blackboard
     int m_max_warnings;                 ///< To avoid processing too many warnings
+    int m_stat_executions;              ///< Number of executions
     int m_stat_get_userdata_calls;      ///< Number of calls to get_userdata
     int m_stat_layers_executed;         ///< Number of layers executed
     long long m_stat_tex_calls_no_handle; ///< Texture calls without handle

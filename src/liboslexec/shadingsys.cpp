@@ -726,6 +726,7 @@ ShadingSystemImpl::ShadingSystemImpl (RendererServices *renderer,
     m_stat_pointcloud_failures = 0;
     m_stat_pointcloud_gets = 0;
     m_stat_pointcloud_writes = 0;
+    m_stat_groups_executed = 0;
     m_stat_layers_executed = 0;
     m_stat_total_shading_time_ticks = 0;
 
@@ -1753,6 +1754,7 @@ ShadingSystemImpl::getstats (int level) const
     out << "    Avg instances per group: "
         << Strutil::format ("%.1f", iperg) << "\n";
     out << "  Shading contexts: " << m_stat_contexts << "\n";
+    out << "  Total shader groups executed: " << m_stat_groups_executed << "\n";
     if (m_countlayerexecs)
         out << "  Total layers executed: " << m_stat_layers_executed << "\n";
 
@@ -2510,6 +2512,7 @@ ShadingSystemImpl::get_context (PerThreadInfo *threadinfo,
                           ? new ShadingContext (*this, threadinfo)
                           : threadinfo->pop_context ();
     ctx->texture_thread_info (texture_threadinfo);
+    ctx->clear_runtime_stats ();
     return ctx;
 }
 
@@ -2520,6 +2523,7 @@ ShadingSystemImpl::release_context (ShadingContext *ctx)
 {
     if (! ctx)
         return;
+    ctx->record_and_clear_runtime_stats ();
     ctx->process_errors ();
     ctx->thread_info()->context_pool.push (ctx);
 }
