@@ -171,7 +171,7 @@ ShadingContext::execute_cleanup ()
 
     // It's expensive to atomically modify the global shading system's
     // runtime stats. Only do it every 16 executions.
-    if (++m_stat_executions > 16000) {
+    if (++m_stat_executions > 0) {
         record_and_clear_runtime_stats ();
         if (shadingsys().m_profile) {
             shadingsys().m_stat_total_shading_time_ticks += m_ticks;
