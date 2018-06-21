@@ -868,7 +868,7 @@ private:
     atomic_int m_stat_global_connections; ///< Stat: global connections elim'd
     atomic_int m_stat_tex_calls_codegened;///< Stat: total texture calls
     atomic_int m_stat_tex_calls_codegened_as_handles;///< Stat: texture calls with handles (codegened)
-    atomic_ll m_stat_tex_calls_no_handle;///< Stat: texture calls executed without handle
+//    long long m_stat_tex_calls_no_handle;///< Stat: texture calls executed without handle
     double m_stat_master_load_time;       ///< Stat: time loading masters
     double m_stat_optimization_time;      ///< Stat: time spent optimizing
     double m_stat_opt_locking_time;       ///<   locking time
@@ -882,7 +882,6 @@ private:
     double m_stat_getattribute_time;      ///< Stat: time spent in getattribute
     double m_stat_getattribute_fail_time; ///< Stat: time spent in getattribute
     atomic_ll m_stat_getattribute_calls;  ///< Stat: Number of getattribute
-    atomic_ll m_stat_get_userdata_calls;  ///< Stat: # of get_userdata calls
     atomic_ll m_stat_noise_calls;         ///< Stat: # of noise calls
     long long m_stat_pointcloud_searches;
     long long m_stat_pointcloud_searches_total_results;
@@ -892,7 +891,9 @@ private:
     long long m_stat_pointcloud_writes;
     atomic_ll m_stat_groups_executed;     ///< Total shader groups executed
     atomic_ll m_stat_layers_executed;     ///< Total layers executed
-    atomic_ll m_stat_total_shading_time_ticks; ///< Total shading time (ticks)
+    atomic_ll m_stat_get_userdata_calls;  ///< Stat: # of get_userdata calls
+    atomic_ll m_stat_tex_calls_no_handle; ///< Stat: texture calls executed without handle
+    long long m_stat_total_shading_time_ticks; ///< Total shading time (ticks)
 
     int m_stat_max_llvm_local_mem;        ///< Stat: max LLVM local mem
     PeakCounter<off_t> m_stat_memory;     ///< Stat: all shading system memory
@@ -1780,10 +1781,12 @@ public:
     // Transfer the per-execution stats from this context to the shading
     // system.
     void record_and_clear_runtime_stats () {
-        shadingsys().m_stat_get_userdata_calls += m_stat_get_userdata_calls;
+//        shadingsys().m_stat_mutex.lock();
         shadingsys().m_stat_groups_executed += m_stat_executions;
         shadingsys().m_stat_layers_executed += m_stat_layers_executed;
+        shadingsys().m_stat_get_userdata_calls += m_stat_get_userdata_calls;
         shadingsys().m_stat_tex_calls_no_handle += m_stat_tex_calls_no_handle;
+//        shadingsys().m_stat_mutex.unlock();
         clear_runtime_stats ();
     }
 

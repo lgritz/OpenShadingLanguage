@@ -169,9 +169,15 @@ ShadingContext::execute_cleanup ()
     // Process any queued up error messages, warnings, printfs from shaders
     process_errors ();
 
-    // It's expensive to atomically modify the global shading system's
-    // runtime stats. Only do it every 16 executions.
-    if (++m_stat_executions > 0) {
+    // We've been gathering stats locally in the context and now we want
+    // to transfer them to the global shading system's accumulated
+    // stats.  It's expensive to do so (thread contention), so we update
+    // the global stats only every 64 shader executions.  For a run of
+    // just a few executions, this will give inaccurate stats, but for a
+    // real render with millions of shades, being potentially inaccurate
+    // by a mere 64 shades is fine, and the performance is
+    // indistinguishable from not gathering these stats at all.
+    if (++m_stat_executions > 64) {
         record_and_clear_runtime_stats ();
         if (shadingsys().m_profile) {
             shadingsys().m_stat_total_shading_time_ticks += m_ticks;
