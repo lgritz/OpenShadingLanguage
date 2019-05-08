@@ -706,7 +706,7 @@ BackendLLVM::llvm_load_device_string (const Symbol& sym)
     }
     else {
         // Handle potentially varying variables
-        val = ll.ptr_cast (groupdata_field_ptr (2 + userdata_index),
+        val = ll.ptr_cast (groupdata_userdata_field_ptr(userdata_index),
                            ll.type_longlong_ptr());
     }
 
@@ -928,9 +928,20 @@ BackendLLVM::groupdata_field_ptr (int fieldnum, TypeDesc type)
 
 
 llvm::Value *
+BackendLLVM::groupdata_userdata_field_ptr (int fieldnum)
+{
+    // N.B. Field order is (1) output buf ptr, (2) layer 'run' status,
+    // (3) userdata set status, then the userdata variables.
+    return groupdata_field_ptr (fieldnum + 3);
+}
+
+
+
+llvm::Value *
 BackendLLVM::layer_run_ref (int layer)
 {
-    int fieldnum = 0; // field 0 is the layer_run array
+    // field 0 is output buf ptr
+    int fieldnum = 1;
     llvm::Value *layer_run = groupdata_field_ref (fieldnum);
     return ll.GEP (layer_run, 0, layer);
 }
@@ -940,7 +951,8 @@ BackendLLVM::layer_run_ref (int layer)
 llvm::Value *
 BackendLLVM::userdata_initialized_ref (int userdata_index)
 {
-    int fieldnum = 1; // field 1 is the userdata_initialized array
+    // field 0 is output buf ptr, field 1 is the layer_run array
+    int fieldnum = 2;
     llvm::Value *userdata_initiazlied = groupdata_field_ref (fieldnum);
     return ll.GEP (userdata_initiazlied, 0, userdata_index);
 }

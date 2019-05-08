@@ -56,8 +56,14 @@ interpreter.
 
 Schematically, we want to create code that resembles the following:
 
-    // Assume 2 layers. 
-    struct GroupData_1 {
+    // Assume 2 layers in this example
+
+    // This struct is the group-specific data block that we call the "heap".
+    // It is separate for each shader execution, and customized to the
+    // shaders in the group.
+    struct GroupHeapData_1 {
+        // Pointer to the optional output buffer.
+        void *output_buffer;
         // Array telling if we have already run each layer
         char layer_run[nlayers];
         // Array telling if we have already initialized each
@@ -75,7 +81,7 @@ Schematically, we want to create code that resembles the following:
     };
 
     // Name of layer entry is $layer_ID
-    void $layer_0 (ShaderGlobals *sg, GroupData_1 *group)
+    void $layer_0 (ShaderGlobals *sg, GroupHeapData_1 *heap)
     {
         // Declare locals, temps, constants, params with known values.
         // Make them all look like stack memory locations:
@@ -83,29 +89,29 @@ Schematically, we want to create code that resembles the following:
         // ...and so on for all the other locals & temps...
 
         // then run the shader body:
-        *x = sg->u * group->param_0_bar;
-        group->param_1_foo = *x;
+        *x = sg->u * heap->param_0_bar;
+        heap->param_1_foo = *x;
     }
 
-    void $layer_1 (ShaderGlobals *sg, GroupData_1 *group)
+    void $layer_1 (ShaderGlobals *sg, GroupHeapData_1 *heap)
     {
         // Because we need the outputs of layer 0 now, we call it if it
         // hasn't already run:
-        if (! group->layer_run[0]) {
-            group->layer_run[0] = 1;
-            $layer_0 (sg, group);    // because we need its outputs
+        if (! heap->layer_run[0]) {
+            heap->layer_run[0] = 1;
+            $layer_0 (sg, heap);    // because we need its outputs
         }
-        *y = sg->u * group->$param_1_bar;
+        *y = sg->u * heap->$param_1_bar;
     }
 
-    void $group_1 (ShaderGlobals *sg, GroupData_1 *group)
+    void $group_1 (ShaderGlobals *sg, GroupHeapData_1 *heap)
     {
-        group->layer_run[...] = 0;
+        heap->layer_run[...] = 0;
         // Run just the unconditional layers
 
-        if (! group->layer_run[1]) {
-            group->layer_run[1] = 1;
-            $layer_1 (sg, group);
+        if (! heap->layer_run[1]) {
+            heap->layer_run[1] = 1;
+            $layer_1 (sg, heap);
         }
     }
 
@@ -247,7 +253,12 @@ BackendLLVM::llvm_type_groupdata ()
     if (llvm_debug() >= 2)
         std::cout << "Group param struct:\n";
 
-    // First, add the array that tells if each layer has run.  But only make
+    // First field is the pointer to the output buffer.
+    fields.push_back (ll.type_char_ptr());
+    offset += sizeof(char*);
+    ++order;
+
+    // Next, add the array that tells if each layer has run.  But only make
     // slots for the layers that may be called/used.
     if (llvm_debug() >= 2)
         std::cout << "  layers run flags: " << m_num_used_layers
@@ -467,7 +478,7 @@ BackendLLVM::llvm_assign_initial_value (const Symbol& sym, bool force)
         args.push_back (name_arg);
         args.push_back (ll.constant (type));
         args.push_back (ll.constant ((int) group().m_userdata_derivs[userdata_index]));
-        args.push_back (groupdata_field_ptr (2 + userdata_index)); // userdata data ptr
+        args.push_back (groupdata_userdata_field_ptr (userdata_index)); // userdata data ptr
         args.push_back (ll.constant ((int) sym.has_derivs()));
         args.push_back (llvm_void_ptr (sym));
         args.push_back (ll.constant (sym.derivsize()));
@@ -516,7 +527,7 @@ BackendLLVM::llvm_assign_initial_value (const Symbol& sym, bool force)
         int userdata_index = find_userdata_index (sym);
         llvm::Value* init_val = getOrAllocateCUDAVariable (sym);
         init_val = ll.ptr_cast (ll.GEP (init_val, 0), ll.type_void_ptr());
-        ll.op_memcpy (groupdata_field_ptr (2 + userdata_index), init_val, 8, 4);
+        ll.op_memcpy (groupdata_userdata_field_ptr(userdata_index), init_val, 8, 4);
     } else if (sym.has_init_ops() && sym.valuesource() == Symbol::DefaultVal) {
         // Handle init ops.
         build_llvm_code (sym.initbegin(), sym.initend());

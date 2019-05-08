@@ -326,6 +326,10 @@ public:
     llvm::Value *groupdata_field_ptr (int fieldnum,
                                       TypeDesc type = TypeDesc::UNKNOWN);
 
+    /// Return a pointer to the specified userdata field within the group
+    /// data.
+    llvm::Value *groupdata_userdata_field_ptr (int userdata_index);
+
     /// Return a ref to the bool where the "layer_run" flag is stored for
     /// the specified layer.
     llvm::Value *layer_run_ref (int layer);
