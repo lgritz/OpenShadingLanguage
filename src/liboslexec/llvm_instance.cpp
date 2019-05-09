@@ -78,6 +78,7 @@ Schematically, we want to create code that resembles the following:
         // interpolated from the geom, or are connected to other layers.
         float param_0_foo;   // number is layer ID
         float param_1_bar;
+        Color3 outparam_3_baz; // output parameter
     };
 
     // Name of layer entry is $layer_ID
@@ -109,9 +110,15 @@ Schematically, we want to create code that resembles the following:
         heap->layer_run[...] = 0;
         // Run just the unconditional layers
 
-        if (! heap->layer_run[1]) {
+        if (! heap->layer_run[1]) { // layer 1 is the "root" for this group
             heap->layer_run[1] = 1;
             $layer_1 (sg, heap);
+        }
+
+        // If an output buffer was supplied, transfer the outputs
+        if (heap->output_buffer) {
+            // E.g, if there is one color output
+            *(Color3*)(heap->output_buffer + output_baz_offset) = heap->outparam3_baz;
         }
     }
 

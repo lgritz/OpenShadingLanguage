@@ -445,6 +445,22 @@ ShadingSystem::query_closure (const char **name, int *id,
 
 
 
+void
+ShadingSystem::clear_registered_outputs()
+{
+    m_impl->clear_registered_outputs();
+}
+
+
+
+void
+ShadingSystem::register_output(string_view name, TypeDesc type, size_t offset)
+{
+    m_impl->register_output(name, type, offset);
+}
+
+
+
 static cspan< std::pair<ustring,SGBits> >
 sgbit_table ()
 {
@@ -2841,7 +2857,7 @@ ShadingSystemImpl::is_renderer_output (ustring layername, ustring paramname,
                 return true;
         }
     }
-    const std::vector<ustring> &aovs (m_renderer_outputs);
+    const auto &aovs (m_renderer_outputs);
     if (aovs.size() > 0) {
         if (std::find(aovs.begin(), aovs.end(), paramname) != aovs.end())
             return true;

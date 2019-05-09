@@ -608,6 +608,13 @@ public:
     bool query_closure (const char **name, int *id,
                         const ClosureParam **params);
 
+    /// Register a renderer output by name, data type, and optionally an
+    /// offset within an output buffer (size_t(-1) means no offset provided).
+    void register_output (string_view name, TypeDesc type,
+                          size_t offset = size_t(-1));
+    /// Forget about any registered outputs.
+    void clear_registered_outputs();
+
     /// For the proposed shader "global" name, return the corresponding
     /// SGBits enum.
     static SGBits globals_bit (ustring name);

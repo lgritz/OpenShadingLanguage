@@ -458,6 +458,21 @@ private:
 
 
 
+struct RendererOutputDesc {
+public:
+    RendererOutputDesc(string_view name, TypeDesc type=TypeDesc::UNKNOWN,
+                       size_t offset = size_t(-1))
+        : name(name), type(type), offset(offset) {}
+
+    bool operator==(ustring n) const { return name == n; }
+
+    ustring name;
+    TypeDesc type;
+    size_t offset;
+};
+
+
+
 class ShadingSystemImpl
 {
 public:
@@ -632,6 +647,14 @@ public:
         return m_closure_registry.get_entry(id);
     }
 
+    void clear_registered_outputs() {
+        m_renderer_outputs.clear();
+    }
+
+    void register_output(string_view name, TypeDesc type, size_t offset) {
+        m_renderer_outputs.emplace_back (name, type, offset);
+    }
+
     /// Set the current color space.
     bool set_colorspace (ustring colorspace);
 
@@ -780,7 +803,7 @@ private:
     std::vector<std::string> m_searchpath_dirs; ///< All searchpath dirs
     ustring m_commonspace_synonym;        ///< Synonym for "common" space
     std::vector<ustring> m_raytypes;      ///< Names of ray types
-    std::vector<ustring> m_renderer_outputs; ///< Names of renderer outputs
+    std::vector<RendererOutputDesc> m_renderer_outputs; ///< Names of renderer outputs
     int m_max_local_mem_KB;               ///< Local storage can a shader use
     bool m_compile_report;                ///< Print compilation report?
     bool m_buffer_printf;                 ///< Buffer/batch printf output?
@@ -879,6 +902,7 @@ private:
     // N.B. group_profile_times is protected by m_stat_mutex.
 
     friend class OSL::ShadingContext;
+    friend class ShadingSystem;
     friend class ShaderMaster;
     friend class ShaderInstance;
     friend class RuntimeOptimizer;
