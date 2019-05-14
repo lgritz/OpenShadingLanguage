@@ -468,7 +468,7 @@ public:
 
     ustring name;
     TypeDesc type;
-    size_t offset;
+    size_t offset;  // special value size_t(-1) means no offset given
 };
 
 
@@ -647,13 +647,23 @@ public:
         return m_closure_registry.get_entry(id);
     }
 
-    void clear_registered_outputs() {
+    void clear_registered_outputs(ShaderGroup *group = nullptr) {
         m_renderer_outputs.clear();
     }
 
     void register_output(string_view name, TypeDesc type, size_t offset) {
         m_renderer_outputs.emplace_back (name, type, offset);
     }
+
+    /// If the given parameter name of the given layer is a "renderer
+    /// output", return a pointer to its RendererOutputDesc, otherwise
+    /// return nullptr.
+    const RendererOutputDesc* renderer_output_desc (ustring layername,
+                              ustring paramname, ShaderGroup *group) const;
+
+    /// Is the named symbol among the renderer outputs?
+    bool is_renderer_output (ustring layername, ustring paramname,
+                             ShaderGroup *group) const;
 
     /// Set the current color space.
     bool set_colorspace (ustring colorspace);
@@ -675,10 +685,6 @@ public:
     }
 
     void pointcloud_stats (int search, int get, int results, int writes=0);
-
-    /// Is the named symbol among the renderer outputs?
-    bool is_renderer_output (ustring layername, ustring paramname,
-                             ShaderGroup *group) const;
 
     /// Serialize the entire group, including oso files, into a compressed
     /// archive.
@@ -1548,6 +1554,14 @@ public:
     int raytypes_on ()  const { return m_raytypes_on; }
     int raytypes_off () const { return m_raytypes_off; }
 
+    void clear_registered_outputs(ShaderGroup *group = nullptr) {
+        m_renderer_outputsx.clear();
+    }
+
+    void register_output(string_view name, TypeDesc type, size_t offset) {
+        m_renderer_outputsx.emplace_back (name, type, offset);
+    }
+
 private:
     // Put all the things that are read-only (after optimization) and
     // needed on every shade execution at the front of the struct, as much
@@ -1580,7 +1594,7 @@ private:
     std::vector<void*> m_userdata_init_vals;
     std::vector<ustring> m_attributes_needed;
     std::vector<ustring> m_attribute_scopes;
-    std::vector<ustring> m_renderer_outputs; ///< Names of renderer outputs
+    std::vector<RendererOutputDesc> m_renderer_outputsx; ///< Names of renderer outputs
     bool m_unknown_textures_needed;
     bool m_unknown_closures_needed;
     bool m_unknown_attributes_needed;

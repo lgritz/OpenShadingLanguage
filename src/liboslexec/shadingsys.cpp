@@ -1435,9 +1435,9 @@ ShadingSystemImpl::attribute (ShaderGroup *group, string_view name,
         return attribute (name, type, val);
     lock_guard lock (group->m_mutex);
     if (name == "renderer_outputs" && type.basetype == TypeDesc::STRING) {
-        group->m_renderer_outputs.clear ();
+        group->m_renderer_outputsx.clear ();
         for (size_t i = 0;  i < type.numelements();  ++i)
-            group->m_renderer_outputs.emplace_back(((const char **)val)[i]);
+            group->m_renderer_outputsx.emplace_back(((const char **)val)[i]);
         return true;
     }
     if (name == "entry_layers" && type.basetype == TypeDesc::STRING) {
@@ -1481,13 +1481,13 @@ ShadingSystemImpl::getattribute (ShaderGroup *group, string_view name,
         return true;
     }
     if (name == "num_renderer_outputs" && type.basetype == TypeDesc::INT) {
-        *(int *)val = (int) group->m_renderer_outputs.size();
+        *(int *)val = (int) group->m_renderer_outputsx.size();
         return true;
     }
     if (name == "renderer_outputs" && type.basetype == TypeDesc::STRING) {
-        size_t n = std::min (type.numelements(), group->m_renderer_outputs.size());
+        size_t n = std::min (type.numelements(), group->m_renderer_outputsx.size());
         for (size_t i = 0;  i < n;  ++i)
-            ((ustring *)val)[i] = group->m_renderer_outputs[i];
+            ((ustring *)val)[i] = group->m_renderer_outputsx[i].name;
         for (size_t i = n;  i < type.numelements();  ++i)
             ((ustring *)val)[i] = ustring();
         return true;
@@ -2842,30 +2842,43 @@ ShadingSystemImpl::raytype_bit (ustring name)
 
 
 
+const RendererOutputDesc*
+ShadingSystemImpl::renderer_output_desc (ustring layername, ustring paramname,
+                                         ShaderGroup *group) const
+{
+    if (group) {
+        const auto& aovs (group->m_renderer_outputsx);
+        if (aovs.size() > 0) {
+            auto f = std::find(aovs.begin(), aovs.end(), paramname);
+            if (f != aovs.end())
+                return &(*f);
+            // Try "layer.name"
+            ustring name2 = ustring::format("%s.%s", layername, paramname);
+            f = std::find(aovs.begin(), aovs.end(), name2);
+            if (f != aovs.end())
+                return &(*f);
+        }
+    }
+    const auto& aovs (m_renderer_outputs);
+    if (aovs.size() > 0) {
+        auto f = std::find(aovs.begin(), aovs.end(), paramname);
+        if (f != aovs.end())
+            return &(*f);
+        ustring name2 = ustring::format("%s.%s", layername, paramname);
+        f = std::find(aovs.begin(), aovs.end(), name2);
+        if (f != aovs.end())
+            return &(*f);
+    }
+    return nullptr;
+}
+
+
+
 bool
 ShadingSystemImpl::is_renderer_output (ustring layername, ustring paramname,
                                        ShaderGroup *group) const
 {
-    if (group) {
-        const std::vector<ustring> &aovs (group->m_renderer_outputs);
-        if (aovs.size() > 0) {
-            if (std::find(aovs.begin(), aovs.end(), paramname) != aovs.end())
-                return true;
-            // Try "layer.name"
-            ustring name2 = ustring::format("%s.%s", layername, paramname);
-            if (std::find(aovs.begin(), aovs.end(), name2) != aovs.end())
-                return true;
-        }
-    }
-    const auto &aovs (m_renderer_outputs);
-    if (aovs.size() > 0) {
-        if (std::find(aovs.begin(), aovs.end(), paramname) != aovs.end())
-            return true;
-        ustring name2 = ustring::format("%s.%s", layername, paramname);
-        if (std::find(aovs.begin(), aovs.end(), name2) != aovs.end())
-            return true;
-    }
-    return false;
+    return renderer_output_desc(layername, paramname, group) != nullptr;
 }
 
 

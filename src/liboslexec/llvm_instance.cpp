@@ -836,7 +836,7 @@ BackendLLVM::build_llvm_instance (bool groupentry)
     m_llvm_groupdata_ptr = ll.current_function_arg(1); //arg_it++;
 
     llvm::BasicBlock *entry_bb = ll.new_basic_block (unique_layer_name);
-    m_exit_instance_block = NULL;
+    m_exit_instance_block = groupentry ? ll.new_basic_block() : nullptr;
 
     // Set up a new IR builder
     ll.new_builder (entry_bb);
@@ -954,8 +954,28 @@ BackendLLVM::build_llvm_instance (bool groupentry)
 
     build_llvm_code (inst()->maincodebegin(), inst()->maincodeend());
 
-    if (llvm_has_exit_instance_block())
+    if (llvm_has_exit_instance_block()) {
         ll.op_branch (m_exit_instance_block); // also sets insert point
+        // Output buffer pointer is field 0 of the group data block
+        llvm::Value* output_buf_ptr = ll.op_load (groupdata_field_ref(0));
+        llvm::Value *has_output_ptr = ll.op_ne (output_buf_ptr, ll.void_ptr_null());
+        llvm::BasicBlock *copy_outputs_block = ll.new_basic_block();
+        llvm::BasicBlock *after_block = ll.new_basic_block();
+        ll.op_branch (has_output_ptr, copy_outputs_block, after_block);
+
+        FOREACH_PARAM (Symbol &s, inst()) {
+            auto outputdesc =
+                shadingsys().renderer_output_desc(inst()->layername(),
+                                                  s.name(), &group());
+            if (outputdesc && outputdesc->offset != size_t(-1)
+                && equivalent(outputdesc->type, s.typespec())) {
+            //        output_buffer[offset] = output_value
+            }
+        }
+        ll.op_branch (after_block);
+
+        ll.set_insert_point (after_block);
+    }
 
     // Track all symbols who needed 'partial' initialization
     std::unordered_set<Symbol*> initedsyms;
