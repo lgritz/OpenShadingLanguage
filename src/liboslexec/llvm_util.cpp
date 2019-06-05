@@ -1043,14 +1043,22 @@ LLVM_Util::llvm_type (const TypeDesc &typedesc)
 
 
 llvm::Value *
-LLVM_Util::offset_ptr (llvm::Value *ptr, int offset, llvm::Type *ptrtype)
+LLVM_Util::offset_ptr (llvm::Value *ptr, size_t offset, llvm::Type *ptrtype)
 {
     llvm::Value *i = builder().CreatePtrToInt (ptr, type_addrint());
-    i = builder().CreateAdd (i, constant ((size_t)offset));
+    i = builder().CreateAdd (i, constant (offset));
     ptr = builder().CreateIntToPtr (i, type_void_ptr());
     if (ptrtype)
         ptr = ptr_cast (ptr, ptrtype);
     return ptr;
+}
+
+
+
+llvm::Value *
+LLVM_Util::offset_ptr (llvm::Value *ptr, int offset, llvm::Type *ptrtype)
+{
+    return offset_ptr (ptr, size_t(offset), ptrtype);
 }
 
 

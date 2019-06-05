@@ -336,6 +336,8 @@ public:
     /// If ptrtype is NULL, just return a void*.
     llvm::Value *offset_ptr (llvm::Value *ptr, int offset,
                              llvm::Type *ptrtype=NULL);
+    llvm::Value *offset_ptr (llvm::Value *ptr, size_t offset,
+                             llvm::Type *ptrtype=NULL);
 
     /// Generate an alloca instruction to allocate space for n copies of the
     /// given llvm type, and return its pointer.

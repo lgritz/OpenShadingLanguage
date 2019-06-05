@@ -957,19 +957,25 @@ BackendLLVM::build_llvm_instance (bool groupentry)
     if (llvm_has_exit_instance_block()) {
         ll.op_branch (m_exit_instance_block); // also sets insert point
         // Output buffer pointer is field 0 of the group data block
-        llvm::Value* output_buf_ptr = ll.op_load (groupdata_field_ref(0));
-        llvm::Value *has_output_ptr = ll.op_ne (output_buf_ptr, ll.void_ptr_null());
+        llvm::Value* outbuf_ptr = ll.op_load (groupdata_field_ref(0));
+        llvm::Value *has_output_ptr = ll.op_ne (outbuf_ptr, ll.void_ptr_null());
         llvm::BasicBlock *copy_outputs_block = ll.new_basic_block();
         llvm::BasicBlock *after_block = ll.new_basic_block();
         ll.op_branch (has_output_ptr, copy_outputs_block, after_block);
 
         FOREACH_PARAM (Symbol &s, inst()) {
-            auto outputdesc =
-                shadingsys().renderer_output_desc(inst()->layername(),
-                                                  s.name(), &group());
-            if (outputdesc && outputdesc->offset != size_t(-1)
-                && equivalent(outputdesc->type, s.typespec())) {
-            //        output_buffer[offset] = output_value
+            auto outdesc = shadingsys().renderer_output_desc(inst()->layername(),
+                                                             s.name(), &group());
+            if (outdesc && outdesc->offset != size_t(-1)
+                && equivalent(outdesc->type, s.typespec())) {
+                // The param is a renderer output, of the right type and
+                // we were given a data buffer offset. Copy the value.
+                // FIXME: Right now, the type must be an "equivalent" match.
+                // But maybe we want to extend it to allow "assignable"
+                // matches, and generate the extra code for converisons.
+                llvm::Value* addr = ll.offset_ptr (outbuf_ptr, outdesc->offset);
+                llvm::Value* src = llvm_get_pointer (s);
+                ll.op_memcpy (addr, src, int(outdesc->type.size()));
             }
         }
         ll.op_branch (after_block);
