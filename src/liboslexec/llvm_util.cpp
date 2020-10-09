@@ -1130,13 +1130,13 @@ get_required_cpu_features_for(TargetISA target)
 {
     switch(target) {
     case TargetISA::NONE:         return {};
-    case TargetISA::x64:          return required_cpu_features_by_x64;
-    case TargetISA::SSE4_2:       return required_cpu_features_by_SSE4_2;
-    case TargetISA::AVX:          return required_cpu_features_by_AVX;
-    case TargetISA::AVX2:         return required_cpu_features_by_AVX2;
-    case TargetISA::AVX2_noFMA:   return required_cpu_features_by_AVX2_noFMA;
-    case TargetISA::AVX512:       return required_cpu_features_by_AVX512;
-    case TargetISA::AVX512_noFMA: return required_cpu_features_by_AVX512_noFMA;
+    case TargetISA::x64:          return { required_cpu_features_by_x64 };
+    case TargetISA::SSE4_2:       return { required_cpu_features_by_SSE4_2 };
+    case TargetISA::AVX:          return { required_cpu_features_by_AVX };
+    case TargetISA::AVX2:         return { required_cpu_features_by_AVX2 };
+    case TargetISA::AVX2_noFMA:   return { required_cpu_features_by_AVX2_noFMA };
+    case TargetISA::AVX512:       return { required_cpu_features_by_AVX512 };
+    case TargetISA::AVX512_noFMA: return { required_cpu_features_by_AVX512_noFMA };
     default:
         OSL_ASSERT(0 && "incomplete required cpu features for target are not specified");
         return {};
