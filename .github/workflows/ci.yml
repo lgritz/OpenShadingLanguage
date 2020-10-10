@@ -26,11 +26,15 @@ on:
 
 jobs:
   vfxplatform-2017:
-    name: "Linux VFXP-2017(ish): gcc4.8/C++11 llvm7 py2.7 boost-1.66 exr-2.2 OIIO-2.1 sse2"
     # Deviations from true VFXP2017: should be boost-1.61 (not 1.66),
     #   Qt-5.6 (not 5.12), OpenVDB 4 (not 6), OCIO 1.0.9 (not 1.1.0).
     # These are all super minor deviations and the closest we can get
     # without a true 2017 container.
+    #
+    # This is currently the oldest set of things we test against, though
+    # we still claim to support slightly older versions of OpenEXR (2.0)
+    # and Boost (1.55).
+    name: "Linux VFXP-2017(ish): gcc4.8/C++11 llvm7 py2.7 boost-1.66 exr-2.2 OIIO-2.1 sse2"
     runs-on: ubuntu-latest
     container:
       image: aswf/ci-osl:2019
@@ -44,7 +48,7 @@ jobs:
           PYTHON_VERSION: 2.7
           OPENIMAGEIO_VERSION: RB-2.1
           OPENEXR_VERSION: v2.2.1
-          USE_PYTHON: 0
+          #USE_PYTHON: 0
         run: |
             # Remove pesky wrong installed OIIO and OpenEXR versions
             rm -rf /usr/local/include/OpenImageIO
@@ -326,14 +330,14 @@ jobs:
     # things disabled.
     name: "Linux oldest everything: gcc6 C++11 llvm7 py2.7 boost-1.66 oiio-2.1 no-simd exr2.3"
     runs-on: ubuntu-latest
-    container:
-      image: aswf/ci-osl:2019-clang7
+    # container:
+    #   image: aswf/ci-osl:2019
     steps:
       - uses: actions/checkout@v2
       - name: all
         env:
-          CXX: g++
-          CC: gcc
+          CXX: g++-4.8
+          CC: gcc-4.8
           CMAKE_CXX_STANDARD: 11
           PYTHON_VERSION: 2.7
           USE_SIMD: 0
@@ -342,9 +346,9 @@ jobs:
           PUGIXML_VERSION: v1.8
         run: |
             # Remove pesky wrong installed OIIO version
-            rm -rf /usr/local/include/OpenImageIO
+            # rm -rf /usr/local/include/OpenImageIO
             source src/build-scripts/ci-startup.bash
-            source src/build-scripts/gh-installdeps-centos.bash
+            source src/build-scripts/gh-installdeps.bash
             source src/build-scripts/ci-build-and-test.bash
       - uses: actions/upload-artifact@v2
         if: failure()
