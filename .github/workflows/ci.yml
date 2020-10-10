@@ -25,6 +25,39 @@ on:
 
 
 jobs:
+  vfxplatform-2017:
+    name: "Linux VFXP-2017(ish): gcc4.8/C++11 llvm7 py2.7 boost-1.66 exr-2.2 OIIO-2.1 sse2"
+    # Deviations from true VFXP2017: should be boost-1.61 (not 1.66),
+    #   Qt-5.6 (not 5.12), OpenVDB 4 (not 6), OCIO 1.0.9 (not 1.1.0).
+    # These are all super minor deviations and the closest we can get
+    # without a true 2017 container.
+    runs-on: ubuntu-latest
+    container:
+      image: aswf/ci-osl:2019
+    steps:
+      - uses: actions/checkout@v2
+      - name: all
+        env:
+          CXX: /usr/bin/g++
+          CC: /usr/bin/gcc
+          CMAKE_CXX_STANDARD: 11
+          PYTHON_VERSION: 2.7
+          OPENIMAGEIO_VERSION: RB-2.1
+          OPENEXR_VERSION: v2.2.1
+          USE_PYTHON: 0
+        run: |
+            # Remove pesky wrong installed OIIO and OpenEXR versions
+            rm -rf /usr/local/include/OpenImageIO
+            rm -rf /usr/local/include/OpenEXR
+            source src/build-scripts/ci-startup.bash
+            source src/build-scripts/gh-installdeps-centos.bash
+            source src/build-scripts/ci-build-and-test.bash
+      - uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: ${{ github.job }}
+          path: build/*/testsuite/*/*.*
+
   vfxplatform-2019:
     name: "Linux VFXP-2019: gcc6 C++11 llvm7 py2.7 boost-1.66 exr-2.3 OIIO-2.1 sse2"
     runs-on: ubuntu-latest
