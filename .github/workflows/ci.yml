@@ -50,6 +50,8 @@ jobs:
           OPENIMAGEIO_VERSION: RB-2.1
           OPENEXR_VERSION: v2.2.1
           #USE_PYTHON: 0
+          OSL_CMAKE_FLAGS: -DCMAKE_BUILD_TYPE=Debug
+          OPENIMAGEIO_BUILD_TYPE: Debug
         run: |
             # Remove pesky wrong installed OIIO and OpenEXR versions
             rm -rf /usr/local/include/OpenImageIO /usr/local/lib/*OpenImageIO*
@@ -345,6 +347,8 @@ jobs:
           USE_PYTHON: 0
           OPENIMAGEIO_VERSION: RB-2.1
           PUGIXML_VERSION: v1.8
+          OSL_CMAKE_FLAGS: -DCMAKE_BUILD_TYPE=Debug
+          OPENIMAGEIO_BUILD_TYPE: Debug
         run: |
             # Remove pesky wrong installed OIIO version
             # rm -rf /usr/local/include/OpenImageIO
