@@ -38,6 +38,7 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: aswf/ci-osl:2019
+      # N.B. Don't use 2018 because its cmake is too old
     steps:
       - uses: actions/checkout@v2
       - name: all
@@ -51,7 +52,7 @@ jobs:
           #USE_PYTHON: 0
         run: |
             # Remove pesky wrong installed OIIO and OpenEXR versions
-            rm -rf /usr/local/include/OpenImageIO
+            rm -rf /usr/local/include/OpenImageIO /usr/local/lib/*OpenImageIO*
             rm -rf /usr/local/include/OpenEXR
             source src/build-scripts/ci-startup.bash
             source src/build-scripts/gh-installdeps-centos.bash
