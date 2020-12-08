@@ -583,8 +583,8 @@ ColorSystem::set_colorspace (StringParam colorspace)
             "ERROR: Unknown color space transformation \"%s\" -> \"%s\"\n",
             args);
 #else
-        uint64_t fmt_hash = UStringHash::Hash("ERROR: Unknown color space transformation \"%d\" -> \"%d\"\n");
-        uint64_t args[2]  = { 2 * sizeof(int), (uint64_t(dst & 0xffffffff) << 32) + uint64_t(src & 0xffffffff) };
+        uint64_t fmt_hash = UStringHash::Hash("ERROR: Unknown color space transformation \"%s\" -> \"%s\"\n");
+        uint64_t args[3]  = { 2 * sizeof(uint64_t), dst, src };
         osl_printf (sg,
         (char *)
          fmt_hash,

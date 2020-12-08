@@ -110,11 +110,7 @@ struct DeviceString {
 #ifndef __CUDA_ARCH__
 typedef ustring StringParam;
 #else
-#if OPTIX_VERSION >= 70000
   typedef DeviceString StringParam;
-# else
-  typedef DeviceString StringParam;
-#endif
 #endif
 
 

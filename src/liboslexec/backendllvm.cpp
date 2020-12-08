@@ -363,12 +363,9 @@ BackendLLVM::addCUDAVariable(const std::string& name, int size, int alignment,
 
 #if (OPTIX_VERSION < 70000)
     g_var->setLinkage    (llvm::GlobalValue::ExternalLinkage);
-    g_var->setVisibility (llvm::GlobalValue::DefaultVisibility);
-    g_var->setInitializer(constant);
-#else
-    g_var->setVisibility (llvm::GlobalValue::DefaultVisibility);
-    g_var->setInitializer(constant);
 #endif
+    g_var->setVisibility (llvm::GlobalValue::DefaultVisibility);
+    g_var->setInitializer(constant);
     m_const_map[name] = g_var;
 
     return g_var;
@@ -691,11 +688,7 @@ BackendLLVM::llvm_load_device_string (const Symbol& sym, bool follow)
     else if (userdata_index < 0) {
         // Handle non-varying variables
         OSL_DASSERT (sym.data() && "NULL data in non-varying string");
-#if OPTIX_VERSION < 70000
         val = getOrAllocateCUDAVariable (sym);
-#else
-        val = getOrAllocateCUDAVariable (sym);
-#endif
     }
     else {
         // Handle potentially varying variables
