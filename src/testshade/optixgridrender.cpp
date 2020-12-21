@@ -112,12 +112,6 @@ OptixGridRenderer::OptixGridRenderer ()
     CUDA_CHECK (cudaSetDevice (0));
     CUDA_CHECK (cudaStreamCreate (&m_cuda_stream));
 
-    // Set up the string table. This allocates a block of CUDA device memory to
-    // hold all of the static strings used by the OSL shaders. The strings can
-    // be accessed via OptiX variables that hold pointers to the table entries.
-
-    m_str_table.init(m_optix_ctx);
-
 #define STRDECL(str,var_name)                                           \
     register_string (str, OSL_NAMESPACE_STRING "::DeviceStrings::" #var_name);
 #include <OSL/strdecls.h>
@@ -178,8 +172,8 @@ OptixGridRenderer::load_ptx_file (string_view filename)
 OptixGridRenderer::~OptixGridRenderer ()
 {
 #ifdef OSL_USE_OPTIX
-    m_str_table.freetable();
 #if (OPTIX_VERSION < 70000)
+    m_str_table.freetable();
     if (m_optix_ctx)
         m_optix_ctx->destroy();
 #else
@@ -306,8 +300,8 @@ OptixGridRenderer::synch_attributes ()
     ustring userdata_str2("userdata string");
 
     // Store the user-data
-    d_test_str_1 = userdata_str1.hash();
-    d_test_str_2 = userdata_str2.hash();
+    test_str_1 = userdata_str1.hash();
+    test_str_2 = userdata_str2.hash();
 
     {
         char* colorSys = nullptr;
@@ -557,26 +551,6 @@ OptixGridRenderer::make_optix_materials ()
     //if (sizeof_msg_log > 1)
     //    printf ("Creating 'hitgroup' program group:\n%s\n", msg_log);
 
-    // Set Globals Hitgroup
-    OptixProgramGroupDesc setglobals_hitgroup_desc = {};
-    setglobals_hitgroup_desc.kind = OPTIX_PROGRAM_GROUP_KIND_HITGROUP;
-    setglobals_hitgroup_desc.hitgroup.moduleCH = program_module;
-    setglobals_hitgroup_desc.hitgroup.entryFunctionNameCH = "__closesthit__setglobals";
-    setglobals_hitgroup_desc.hitgroup.moduleAH = program_module;
-    setglobals_hitgroup_desc.hitgroup.entryFunctionNameAH = "__anyhit__setglobals";
-
-    OptixProgramGroup  setglobals_hitgroup_group;
-
-    sizeof_msg_log = sizeof(msg_log);
-    OPTIX_CHECK (optixProgramGroupCreate (m_optix_ctx,
-                                          &setglobals_hitgroup_desc,
-                                          1, // number of program groups
-                                          &program_options, // program options
-                                          msg_log, &sizeof_msg_log,
-                                          &setglobals_hitgroup_group));
-    //if (sizeof_msg_log > 1)
-    //    printf ("Creating 'setglobals_hitgroup' program group:\n%s\n", msg_log);
-
     // Create materials
     for (const auto& groupref : shaders()) {
         shadingsys->attribute (groupref.get(), "renderer_outputs",
@@ -680,7 +654,6 @@ OptixGridRenderer::make_optix_materials ()
         program_groups[1], // entry
         setglobals_raygen_group,
         setglobals_miss_group,
-        setglobals_hitgroup_group
     };
 
     sizeof_msg_log = sizeof(msg_log);
@@ -727,10 +700,9 @@ OptixGridRenderer::make_optix_materials ()
     CUdeviceptr d_callablesRecord;
     CUdeviceptr d_setglobals_raygenRecord;
     CUdeviceptr d_setglobals_missRecord;
-    CUdeviceptr d_setglobals_hitgroupRecord;
 
     EmptyRecord raygenRecord, missRecord, hitgroupRecord, callablesRecord[2];
-    EmptyRecord setglobals_raygenRecord, setglobals_missRecord, setglobals_hitgroupRecord;
+    EmptyRecord setglobals_raygenRecord, setglobals_missRecord;
 
     OPTIX_CHECK (optixSbtRecordPackHeader (raygen_group     , &raygenRecord  ));
     OPTIX_CHECK (optixSbtRecordPackHeader (miss_group       , &missRecord    ));
@@ -739,7 +711,6 @@ OptixGridRenderer::make_optix_materials ()
     OPTIX_CHECK (optixSbtRecordPackHeader (program_groups[1], &callablesRecord[1]));
     OPTIX_CHECK (optixSbtRecordPackHeader (setglobals_raygen_group     , &setglobals_raygenRecord  ));
     OPTIX_CHECK (optixSbtRecordPackHeader (setglobals_miss_group       , &setglobals_missRecord    ));
-    OPTIX_CHECK (optixSbtRecordPackHeader (setglobals_hitgroup_group   , &setglobals_hitgroupRecord));
 
     raygenRecord.data       = reinterpret_cast<void *>(5);
     missRecord.data         = nullptr;
@@ -748,7 +719,6 @@ OptixGridRenderer::make_optix_materials ()
     callablesRecord[1].data = reinterpret_cast<void *>(2);
     setglobals_raygenRecord.data   = nullptr;
     setglobals_missRecord.data     = nullptr;
-    setglobals_hitgroupRecord.data = nullptr;
 
     CUDA_CHECK (cudaMalloc (reinterpret_cast<void **> (&d_raygenRecord)              ,     sizeof(EmptyRecord)));
     CUDA_CHECK (cudaMalloc (reinterpret_cast<void **> (&d_missRecord)                ,     sizeof(EmptyRecord)));
@@ -756,7 +726,6 @@ OptixGridRenderer::make_optix_materials ()
     CUDA_CHECK (cudaMalloc (reinterpret_cast<void **> (&d_callablesRecord)           , 2 * sizeof(EmptyRecord)));
     CUDA_CHECK (cudaMalloc (reinterpret_cast<void **> (&d_setglobals_raygenRecord)   ,     sizeof(EmptyRecord)));
     CUDA_CHECK (cudaMalloc (reinterpret_cast<void **> (&d_setglobals_missRecord)     ,     sizeof(EmptyRecord)));
-    CUDA_CHECK (cudaMalloc (reinterpret_cast<void **> (&d_setglobals_hitgroupRecord) ,     sizeof(EmptyRecord)));
 
     CUDA_CHECK (cudaMemcpy (reinterpret_cast<void *>( d_raygenRecord)   , &raygenRecord      , sizeof(EmptyRecord), cudaMemcpyHostToDevice));
     CUDA_CHECK (cudaMemcpy (reinterpret_cast<void *>( d_missRecord)     , &missRecord        , sizeof(EmptyRecord), cudaMemcpyHostToDevice));
@@ -764,7 +733,6 @@ OptixGridRenderer::make_optix_materials ()
     CUDA_CHECK (cudaMemcpy (reinterpret_cast<void *>( d_callablesRecord), &callablesRecord[0], 2 * sizeof(EmptyRecord), cudaMemcpyHostToDevice));
     CUDA_CHECK (cudaMemcpy (reinterpret_cast<void *>( d_setglobals_raygenRecord)   , &setglobals_raygenRecord      , sizeof(EmptyRecord), cudaMemcpyHostToDevice));
     CUDA_CHECK (cudaMemcpy (reinterpret_cast<void *>( d_setglobals_missRecord)     , &setglobals_missRecord        , sizeof(EmptyRecord), cudaMemcpyHostToDevice));
-    CUDA_CHECK (cudaMemcpy (reinterpret_cast<void *>( d_setglobals_hitgroupRecord) , &setglobals_hitgroupRecord    , sizeof(EmptyRecord), cudaMemcpyHostToDevice));
 
     // Looks like OptixShadingTable needs to be filled out completely
     m_optix_sbt.raygenRecord                 = d_raygenRecord;
@@ -779,14 +747,11 @@ OptixGridRenderer::make_optix_materials ()
     m_optix_sbt.callablesRecordCount         = 2;
 
     // Shader binding table for SetGlobals stage
+    m_setglobals_optix_sbt = {};
     m_setglobals_optix_sbt.raygenRecord                 = d_setglobals_raygenRecord;
     m_setglobals_optix_sbt.missRecordBase               = d_setglobals_missRecord;
     m_setglobals_optix_sbt.missRecordStrideInBytes      = sizeof(EmptyRecord);
     m_setglobals_optix_sbt.missRecordCount              = 1;
-    m_setglobals_optix_sbt.hitgroupRecordBase           = d_setglobals_hitgroupRecord;
-    m_setglobals_optix_sbt.hitgroupRecordStrideInBytes  = sizeof(EmptyRecord);
-    m_setglobals_optix_sbt.hitgroupRecordCount          = 1;
-    m_setglobals_optix_sbt.callablesRecordCount         = 0;
 
 #endif //#if (OPTIX_VERSION < 70000)
 
@@ -1029,8 +994,8 @@ OptixGridRenderer::render(int xres OSL_MAYBE_UNUSED, int yres OSL_MAYBE_UNUSED)
     // maybe send buffer size to CUDA instead of the buffer 'end'
     params.osl_printf_buffer_end = d_osl_printf_buffer + OSL_PRINTF_BUFFER_SIZE;
     params.color_system          = d_color_system;
-    params.test_str_1            = d_test_str_1;
-    params.test_str_2            = d_test_str_2;
+    params.test_str_1            = test_str_1;
+    params.test_str_2            = test_str_2;
 
     CUDA_CHECK (cudaMemcpy (reinterpret_cast<void *>(d_launch_params), &params, sizeof(RenderParams), cudaMemcpyHostToDevice));
 

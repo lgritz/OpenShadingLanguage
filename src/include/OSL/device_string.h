@@ -19,6 +19,14 @@
 OSL_NAMESPACE_ENTER
 
 
+// Strings are handled differently in OptiX 6 vs OptiX 7.
+//
+// In OptiX 7+:
+// Strings are not stored on the GPU at all.  Strings are represented by
+// their hash values which are computed at compile-time.  Because of this,
+// we have no access to either the strings' contents or their lengths.
+//
+// In OptiX 6:
 // Strings are stored in a block of CUDA device memory. String variables hold a
 // pointer to the start of the char array for each string. Each canonical string
 // has a unique entry in the table, so two strings can be tested for equality by
@@ -48,23 +56,23 @@ struct DeviceString {
 #endif
     }
 
+    // In OptiX 7 we don't store the string's length. Make this a compile
+    // time error.
+#if ! (defined(__CUDA_ARCH__) && OPTIX_VERSION >= 70000)
     OSL_HOSTDEVICE uint64_t length() const
     {
-#if defined(__CUDA_ARCH__) && OPTIX_VERSION >= 70000
-        return 0;
-#else
         return *(uint64_t*)(m_chars - sizeof(uint64_t));
-#endif
     }
+#endif
 
+    // In OptiX 7 we can't return the string's contents. Make this a compile
+    // time error.
+#if ! (defined(__CUDA_ARCH__) && OPTIX_VERSION >= 70000)
     OSL_HOSTDEVICE const char* c_str() const
     {
-#if defined(__CUDA_ARCH__) && OPTIX_VERSION >= 70000
-        return nullptr;
-#else
         return m_chars;
-#endif
     }
+#endif
 
     OSL_HOSTDEVICE bool operator== (const DeviceString& other) const
     {
@@ -110,7 +118,7 @@ struct DeviceString {
 #ifndef __CUDA_ARCH__
 typedef ustring StringParam;
 #else
-  typedef DeviceString StringParam;
+typedef DeviceString StringParam;
 #endif
 
 

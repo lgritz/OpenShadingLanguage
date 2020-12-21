@@ -123,8 +123,6 @@ extern "C" __global__ void __raygen__setglobals()
     OSL::pvt::test_str_2                 = render_params.test_str_2;
 }
 extern "C" __global__ void __miss__setglobals() { }
-extern "C" __global__ void __closesthit__setglobals() { }
-extern "C" __global__ void __anyhit__setglobals() { }
 
 extern "C" __global__ void __raygen__()
 {

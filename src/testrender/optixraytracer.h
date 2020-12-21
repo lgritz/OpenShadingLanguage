@@ -9,7 +9,9 @@
 #include <OSL/device_string.h>
 #include "optix_compat.h"
 #include "simpleraytracer.h"
+#if OPTIX_VERSION < 70000
 #include "optix_stringtable.h"
+#endif
 #include "render_params.h"
 
 OSL_NAMESPACE_ENTER
@@ -27,15 +29,15 @@ public:
     uint64_t register_string (const std::string& str, const std::string& var_name)
     {
         ustring ustr = ustring(str);
+#if OPTIX_VERSION < 70000
         uint64_t addr = m_str_table.addString (ustr, ustring(var_name));
         if (!var_name.empty())
             register_global (var_name, addr);
-
-#if OPTIX_VERSION >= 70000
-        m_hash_map[ustr.hash()] = ustr.c_str();
-#endif
-
         return addr;
+#else
+        m_hash_map[ustr.hash()] = ustr.c_str();
+        return 0;
+#endif
     }
 
     uint64_t register_global (const std::string& str, uint64_t value);
@@ -80,9 +82,9 @@ public:
 
 private:
     optix::Context m_optix_ctx = nullptr;
-    OptiXStringTable m_str_table;
 
 #if (OPTIX_VERSION < 70000)
+    OptiXStringTable m_str_table;
     optix::Program m_program = nullptr;
     optix::Program sphere_intersect = nullptr;
     optix::Program sphere_bounds = nullptr;
@@ -101,8 +103,8 @@ private:
     int                     m_xres, m_yres;
     CUdeviceptr             d_osl_printf_buffer;
     CUdeviceptr             d_color_system;
-    uint64_t                d_test_str_1;
-    uint64_t                d_test_str_2;
+    uint64_t                test_str_1;
+    uint64_t                test_str_2;
     const unsigned long     OSL_PRINTF_BUFFER_SIZE = 8 * 1024 * 1024;
     std::unordered_map<uint64_t, const char *> m_hash_map;
 

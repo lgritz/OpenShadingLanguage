@@ -94,11 +94,6 @@ OptixRaytracer::OptixRaytracer ()
     CUDA_CHECK (cudaSetDevice (0));
     CUDA_CHECK (cudaStreamCreate (&m_cuda_stream));
 
-    // Set up the string table. This allocates a block of CUDA device memory to
-    // hold all of the static strings used by the OSL shaders. The strings can
-    // be accessed via OptiX variables that hold pointers to the table entries.
-    m_str_table.init(m_optix_ctx);
-
 #define STRDECL(str,var_name)                                           \
     register_string (str, OSL_NAMESPACE_STRING "::DeviceStrings::" #var_name);
 #include <OSL/strdecls.h>
@@ -110,8 +105,8 @@ OptixRaytracer::OptixRaytracer ()
 OptixRaytracer::~OptixRaytracer ()
 {
 #ifdef OSL_USE_OPTIX
-    m_str_table.freetable();
 #if (OPTIX_VERSION < 70000)
+    m_str_table.freetable();
     if (m_optix_ctx)
         m_optix_ctx->destroy();
 #else
@@ -323,8 +318,8 @@ OptixRaytracer::synch_attributes ()
     register_string(userdata_str2.string(), "");
 
     // Store the user-data
-    d_test_str_1 = userdata_str1.hash();
-    d_test_str_2 = userdata_str2.hash();
+    test_str_1 = userdata_str1.hash();
+    test_str_2 = userdata_str2.hash();
 
     {
         char* colorSys = nullptr;
@@ -647,16 +642,6 @@ OptixRaytracer::make_optix_materials ()
     OptixProgramGroup sphere_fillSG_dc;
     create_optix_pg(&sphere_fillSG_desc, 1, &program_options, &sphere_fillSG_dc);
 
-    // Set Globals Hitgroup
-    OptixProgramGroupDesc setglobals_hitgroup_desc = {};
-    setglobals_hitgroup_desc.kind = OPTIX_PROGRAM_GROUP_KIND_HITGROUP;
-    setglobals_hitgroup_desc.hitgroup.moduleCH = program_module;
-    setglobals_hitgroup_desc.hitgroup.entryFunctionNameCH = "__closesthit__setglobals";
-    setglobals_hitgroup_desc.hitgroup.moduleAH = program_module;
-    setglobals_hitgroup_desc.hitgroup.entryFunctionNameAH = "__anyhit__setglobals";
-    OptixProgramGroup  setglobals_hitgroup_group;
-    create_optix_pg(&setglobals_hitgroup_desc, 1, &program_options, &setglobals_hitgroup_group);
-
     // Create materials
     int mtl_id = 0;
     for (const auto& groupref : shaders()) {
@@ -768,7 +753,6 @@ OptixRaytracer::make_optix_materials ()
     // append set-globals groups
     final_groups.push_back(setglobals_raygen_group);
     final_groups.push_back(setglobals_miss_group);
-    final_groups.push_back(setglobals_hitgroup_group);
 
     sizeof_msg_log = sizeof(msg_log);
     OPTIX_CHECK (optixPipelineCreate (m_optix_ctx,
@@ -817,7 +801,6 @@ OptixRaytracer::make_optix_materials ()
     CUdeviceptr d_callable_records;
     CUdeviceptr d_setglobals_raygen_record;
     CUdeviceptr d_setglobals_miss_record;
-    CUdeviceptr d_setglobals_hitgroup_record;
 
     std::vector<CUdeviceptr> d_sbt_records(final_groups.size());
 
@@ -827,7 +810,7 @@ OptixRaytracer::make_optix_materials ()
 
     int       sbtIndex       = 2;
     const int hitRecordStart = sbtIndex;
-    size_t   setglobals_start = final_groups.size() - 3;
+    size_t   setglobals_start = final_groups.size() - 2;
 
     // Copy geometry data to appropriate SBT records
     if (scene.quads.size() > 0 ) {
@@ -857,7 +840,6 @@ OptixRaytracer::make_optix_materials ()
     CUDA_CHECK (cudaMalloc (reinterpret_cast<void **>(&d_callable_records)          , (2 + nshaders) * sizeof(GenericRecord)));
     CUDA_CHECK (cudaMalloc (reinterpret_cast<void **>(&d_setglobals_raygen_record)  ,     sizeof(GenericRecord)));
     CUDA_CHECK (cudaMalloc (reinterpret_cast<void **>(&d_setglobals_miss_record)    ,     sizeof(GenericRecord)));
-    CUDA_CHECK (cudaMalloc (reinterpret_cast<void **>(&d_setglobals_hitgroup_record),     sizeof(GenericRecord)));
 
     CUDA_CHECK (cudaMemcpy (reinterpret_cast<void *>(d_raygen_record)   , &sbt_records[0],     sizeof(GenericRecord), cudaMemcpyHostToDevice));
     CUDA_CHECK (cudaMemcpy (reinterpret_cast<void *>(d_miss_record)     , &sbt_records[1],     sizeof(GenericRecord), cudaMemcpyHostToDevice));
@@ -865,7 +847,6 @@ OptixRaytracer::make_optix_materials ()
     CUDA_CHECK (cudaMemcpy (reinterpret_cast<void *>(d_callable_records), &sbt_records[callableRecordStart], (2 + nshaders) * sizeof(GenericRecord), cudaMemcpyHostToDevice));
     CUDA_CHECK (cudaMemcpy (reinterpret_cast<void *>(d_setglobals_raygen_record)   , &sbt_records[setglobals_start + 0],     sizeof(GenericRecord), cudaMemcpyHostToDevice));
     CUDA_CHECK (cudaMemcpy (reinterpret_cast<void *>(d_setglobals_miss_record)     , &sbt_records[setglobals_start + 1],     sizeof(GenericRecord), cudaMemcpyHostToDevice));
-    CUDA_CHECK (cudaMemcpy (reinterpret_cast<void *>(d_setglobals_hitgroup_record) , &sbt_records[setglobals_start + 2],     sizeof(GenericRecord), cudaMemcpyHostToDevice));
 
     // Looks like OptixShadingTable needs to be filled out completely
     m_optix_sbt.raygenRecord                 = d_raygen_record;
@@ -880,14 +861,11 @@ OptixRaytracer::make_optix_materials ()
     m_optix_sbt.callablesRecordCount         = 2 + nshaders;
 
     // Shader binding table for SetGlobals stage
+    m_setglobals_optix_sbt = {};
     m_setglobals_optix_sbt.raygenRecord                 = d_setglobals_raygen_record;
     m_setglobals_optix_sbt.missRecordBase               = d_setglobals_miss_record;
     m_setglobals_optix_sbt.missRecordStrideInBytes      = sizeof(GenericRecord);
     m_setglobals_optix_sbt.missRecordCount              = 1;
-    m_setglobals_optix_sbt.hitgroupRecordBase           = d_setglobals_hitgroup_record;
-    m_setglobals_optix_sbt.hitgroupRecordStrideInBytes  = sizeof(GenericRecord);
-    m_setglobals_optix_sbt.hitgroupRecordCount          = 1;
-    m_setglobals_optix_sbt.callablesRecordCount         = 0;
 
     // Pipeline has been created so we can clean some things up
     for (auto &&i : final_groups) {
@@ -1330,8 +1308,8 @@ OptixRaytracer::render(int xres OSL_MAYBE_UNUSED, int yres OSL_MAYBE_UNUSED)
     // maybe send buffer size to CUDA instead of the buffer 'end'
     params.osl_printf_buffer_end = d_osl_printf_buffer + OSL_PRINTF_BUFFER_SIZE;
     params.color_system          = d_color_system;
-    params.test_str_1            = d_test_str_1;
-    params.test_str_2            = d_test_str_2;
+    params.test_str_1            = test_str_1;
+    params.test_str_2            = test_str_2;
 
     CUDA_CHECK (cudaMemcpy (reinterpret_cast<void *>(d_launch_params), &params, sizeof(RenderParams), cudaMemcpyHostToDevice));
 
