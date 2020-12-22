@@ -2,7 +2,9 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // https://github.com/AcademySoftwareFoundation/OpenShadingLanguage
 
+#ifdef OSL_USE_OPTIX
 #include <optix.h>
+#endif
 
 #if OPTIX_VERSION < 70000
 
