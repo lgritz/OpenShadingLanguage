@@ -134,6 +134,11 @@ OPENIMAGEIO_CMAKE_FLAGS+=" -DENABLE_PNM=0 -DENABLE_ZFILE=0 -DENABLE_SOFTIMAGE=0"
 export OPENIMAGEIO_CMAKE_FLAGS
 source src/build-scripts/build_openimageio.bash
 
+# Download pre-built LLVM
+curl --location https://github.com/llvm/llvm-project/releases/download/llvmorg-11.0.0/LLVM-11.0.0-win64.exe -o LLVM-11.0.0-win64.exe
+ls
+./LLVM-11.0.0-win64.exe
+
 
 cp $DEP_DIR/lib/*.lib $DEP_DIR/bin
 cp $DEP_DIR/bin/*.dll $DEP_DIR/lib
