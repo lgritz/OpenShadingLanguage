@@ -588,9 +588,25 @@ jobs:
       - uses: actions/checkout@v2
       - name: Setup Nuget.exe
         uses: nuget/setup-nuget@v1
+      - name: Cache LLVM and Clang
+        id: cache-llvm
+        uses: actions/cache@v2
+        with:
+          path: ${{ runner.temp }}/llvm
+          key: llvm-11.0
+      - name: Install LLVM and Clang
+        uses: KyleMayes/install-llvm-action@v1
+        with:
+          version: "11.0"
+          directory: ${{ runner.temp }}/llvm
+          cached: ${{ steps.cache-llvm.outputs.cache-hit }}
       - name: Build setup
         shell: bash
         run: |
+            export PATH="$PATH:${{ runner.temp }}/llvm/bin"
+            which llvm-config || true
+            ls D:/a/_temp/llvm || true
+            ls /d/a/_temp/llvm || true
             src/build-scripts/ci-startup.bash
       - name: Dependencies
         shell: bash

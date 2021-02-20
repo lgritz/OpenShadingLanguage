@@ -4,6 +4,15 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # https://github.com/AcademySoftwareFoundation/OpenShadingLanguage
 
+echo "Confirming llvm-config "
+which llvm-config || true
+ls D:/a/_temp/llvm || true
+echo " -- ls /d/a/_temp/llvm"
+ls /d/a/_temp/llvm || true
+echo " -- ls /d/a/_temp/llvm/*"
+ls /d/a/_temp/llvm/* || true
+echo " --"
+
 # DEP_DIR="$PWD/ext/dist"
 DEP_DIR="$PWD/dist/$PLATFORM"
 mkdir -p "$DEP_DIR"
@@ -135,9 +144,12 @@ export OPENIMAGEIO_CMAKE_FLAGS
 source src/build-scripts/build_openimageio.bash
 
 # Download pre-built LLVM
-curl --location https://github.com/llvm/llvm-project/releases/download/llvmorg-11.0.0/LLVM-11.0.0-win64.exe -o LLVM-11.0.0-win64.exe
-ls
-./LLVM-11.0.0-win64.exe
+# curl --location https://github.com/llvm/llvm-project/releases/download/llvmorg-11.0.0/LLVM-11.0.0-win64.exe -o LLVM-11.0.0-win64.exe
+# ls
+# ./LLVM-11.0.0-win64.exe
+export LLVM_ROOT=D:/a/_temp/llvm
+export PATH=$PATH:/D/a/_temp/llvm
+export PATH=$PATH:/D/a/_temp/llvm/bin
 
 
 cp $DEP_DIR/lib/*.lib $DEP_DIR/bin
