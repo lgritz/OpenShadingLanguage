@@ -573,6 +573,43 @@ jobs:
             build/*/testsuite/*/*.*
             build/*/CMake*.{txt,log}
 
+  windows-vs2019:
+    name: "Windows VS2019"
+    runs-on: windows-2019
+    env:
+      PYTHON_VERSION: 3.7
+      CMAKE_GENERATOR: "Visual Studio 16 2019"
+      OPENEXR_VERSION: v2.5.5
+      CTEST_TEST_TIMEOUT: 120
+      CTEST_ARGS: "--repeat after-timeout:5"
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup Nuget.exe
+        uses: nuget/setup-nuget@v1
+      - name: Build setup
+        shell: bash
+        run: |
+            src/build-scripts/ci-startup.bash
+      - name: Dependencies
+        shell: bash
+        run: |
+            src/build-scripts/gh-win-installdeps.bash
+      - name: Build
+        shell: bash
+        run: |
+            src/build-scripts/ci-build.bash
+      - name: Testsuite
+        shell: bash
+        run: |
+            src/build-scripts/ci-test.bash
+      - uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: ${{ github.job }}
+          path: |
+            build/*/testsuite/*/*.*
+            build/*/CMake*.{txt,log}
+
   clang-format:
     # Test formatting. This test entry doesn't do a full build, it just runs
     # clang-format on everything, and passes if nothing is misformatted.
