@@ -582,6 +582,8 @@ jobs:
       OPENEXR_VERSION: v2.5.5
       CTEST_TEST_TIMEOUT: 120
       CTEST_ARGS: "--repeat after-timeout:5"
+      OPENIMAGEIO_REPO: lgritz/oiio
+      OPENIMAGEIO_VERSION: lg-ci
     steps:
       - uses: actions/checkout@v2
       - name: Setup Nuget.exe
