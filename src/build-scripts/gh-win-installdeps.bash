@@ -102,6 +102,8 @@ export PNG_ROOT=$PWD/ext/dist
 source src/build-scripts/build_pybind11.bash
 #export pybind11_ROOT=$PWD/ext/dist
 
+source src/build-scripts/build_pugixml.bash
+
 
 # curl --location https://ffmpeg.zeranoe.com/builds/win64/dev/ffmpeg-4.2.1-win64-dev.zip -o ffmpeg-dev.zip
 # unzip ffmpeg-dev.zip
@@ -128,7 +130,7 @@ OPENIMAGEIO_CMAKE_FLAGS+=" -DUSE_OPENGL=0 -DUSE_GENERATED_EXPORT_HEADER=1"
 OPENIMAGEIO_CMAKE_FLAGS+=" -DENABLE_DPX=0 -DENABLE_CINEON=0 -DENABLE_DDS=0"
 OPENIMAGEIO_CMAKE_FLAGS+=" -DENABLE_IFF=0 -DENABLE_ICO=0 -DENABLE_PSD=0"
 OPENIMAGEIO_CMAKE_FLAGS+=" -DENABLE_PNM=0 -DENABLE_ZFILE=0 -DENABLE_SOFTIMAGE=0"
-OPENIMAGEIO_CMAKE_FLAGS+=" -DLINKSTATIC=1 -DBUILD_SHARED_LIBS=0"
+#OPENIMAGEIO_CMAKE_FLAGS+=" -DLINKSTATIC=1 -DBUILD_SHARED_LIBS=0"
 export OPENIMAGEIO_CMAKE_FLAGS
 source src/build-scripts/build_openimageio.bash
 
