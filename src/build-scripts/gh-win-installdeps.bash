@@ -145,9 +145,9 @@ export OPENIMAGEIO_CMAKE_FLAGS
 source src/build-scripts/build_openimageio.bash
 
 # Download pre-built LLVM
-# curl --location https://github.com/llvm/llvm-project/releases/download/llvmorg-11.0.0/LLVM-11.0.0-win64.exe -o LLVM-11.0.0-win64.exe
-# ls
-# ./LLVM-11.0.0-win64.exe
+curl -Ls -o "LLVM-11.0.0-win64.exe" "https://github.com/llvm/llvm-project/releases/download/llvmorg-11.0.0/LLVM-10.0.0-win64.exe"
+ls
+./LLVM-11.0.0-win64.exe /S
 export LLVM_ROOT=D:/a/_temp/llvm
 export PATH=$PATH:/D/a/_temp/llvm
 export PATH=$PATH:/D/a/_temp/llvm/bin
