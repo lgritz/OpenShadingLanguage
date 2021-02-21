@@ -6,11 +6,12 @@
 
 echo "Confirming llvm-config "
 which llvm-config || true
-ls D:/a/_temp/llvm || true
+echo " -- ls D:/a/_temp/llvm"
+ls -al D:/a/_temp/llvm || true
 echo " -- ls /d/a/_temp/llvm"
-ls /d/a/_temp/llvm || true
+ls -al /d/a/_temp/llvm || true
 echo " -- ls /d/a/_temp/llvm/*"
-ls /d/a/_temp/llvm/* || true
+ls -al /d/a/_temp/llvm/* || true
 echo " --"
 
 # DEP_DIR="$PWD/ext/dist"
