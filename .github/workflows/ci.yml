@@ -627,6 +627,7 @@ jobs:
           path: |
             build/*/testsuite/*/*.*
             build/*/CMake*.{txt,log}
+            C:\ProgramData\chocolatey\logs\chocolatey.log
 
   clang-format:
     # Test formatting. This test entry doesn't do a full build, it just runs
