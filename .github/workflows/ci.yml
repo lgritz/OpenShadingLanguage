@@ -369,7 +369,7 @@ jobs:
 
   linux-2021ish-gcc8-llvm10:
     name: "Linux gcc8, C++17, llvm10, oiio master, avx2, exr2.5, avx2"
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     env:
       CXX: g++-8
       CMAKE_CXX_STANDARD: 17
@@ -380,6 +380,9 @@ jobs:
       OPENIMAGEIO_CMAKE_FLAGS: -DBUILD_FMT_VERSION=7.0.1
       PUGIXML_VERSION: v1.10
       PYBIND11_VERSION: v2.5.0
+      PYTHON_VERSION: 3.8
+      USE_OPENVDB: 0
+      # The old installed OpenVDB has a TLS conflict with Python 3.8
     steps:
       - uses: actions/checkout@v2
       - name: Prepare ccache timestamp
@@ -418,12 +421,11 @@ jobs:
   linux-bleeding-edge:
     # Test against development master for relevant dependencies, latest
     # supported releases of everything else.
-    name: "Linux bleeding edge: gcc10, C++17, llvm11, oiio/ocio/exr/pybind-master, avx2"
+    name: "Linux bleeding edge: gcc10, C++20, llvm11, py38, oiio/ocio/exr/pybind-master, avx2"
     runs-on: ubuntu-20.04
     env:
       CXX: g++-10
-      USE_CPP: 17
-      CMAKE_CXX_STANDARD: 17
+      CMAKE_CXX_STANDARD: 20
       LLVM_VERSION: 11.0.0
       LLVM_DISTRO_NAME: ubuntu-20.04
       USE_SIMD: avx2,f16c
@@ -431,9 +433,12 @@ jobs:
       OPENIMAGEIO_VERSION: master
       OPENIMAGEIO_CMAKE_FLAGS: -DBUILD_FMT_VERSION=master
       OPENCOLORIO_VERSION: master
-      PYBIND11_VERSION: master
       PUGIXML_VERSION: master
+      PYBIND11_VERSION: master
+      PYTHON_VERSION: 3.8
       OSL_BUILD_MATERIALX: 1
+      USE_OPENVDB: 0
+      # The old installed OpenVDB has a TLS conflict with Python 3.8
     steps:
       - uses: actions/checkout@v2
       - name: Prepare ccache timestamp
