@@ -1223,6 +1223,7 @@ RuntimeOptimizer::simple_sym_assign (int sym, int opnum)
 bool
 RuntimeOptimizer::unread_after (const Symbol *A, int opnum)
 {
+    return false;
     // Try to figure out if this symbol is completely unused after this
     // op (and thus, any values written to it now will never be needed).
 
@@ -1233,7 +1234,7 @@ RuntimeOptimizer::unread_after (const Symbol *A, int opnum)
     // Params may be read afterwards if connected to a downstream
     // layer or if "elide_unconnected_outputs" is turned off.
     if (A->symtype() == SymTypeOutputParam || A->symtype() == SymTypeParam) {
-        if (! m_opt_elide_unconnected_outputs)
+        // if (! m_opt_elide_unconnected_outputs)
             return false;   // Asked not do do this optimization
         if (A->connected_down())
             return false;   // Connected to something downstream
@@ -1402,13 +1403,16 @@ RuntimeOptimizer::outparam_assign_elision (int opnum, Opcode &op)
         // If it's also never read before this assignment and isn't a
         // designated renderer output (which we obviously must write!), just
         // replace its default value entirely and get rid of the assignment.
+#if 0
         if (R->firstread() > opnum && ! R->renderer_output() &&
                 m_opt_elide_unconnected_outputs) {
             make_param_use_instanceval (R, Strutil::sprintf("- written once, with a constant (%s), before any reads", const_value_as_string(*A)));
             replace_param_value (R, A->data(), A->typespec());
             turn_into_nop (op, debug() > 1 ? Strutil::sprintf("oparam %s never subsequently read or connected", R->name()).c_str() : "");
+            Strutil::printf("oparam %s never subsequently read or connected\n", R->name());
             return true;
         }
+#endif
     }
 
     // If the output param will neither be read later in the shader nor
@@ -1810,9 +1814,14 @@ RuntimeOptimizer::remove_unused_params ()
     }
 
     // Get rid of the Connections themselves
-    if (debug() > 1) {
+    if (1 || debug() > 1) {
         for (auto&& c : inst()->connections()) {
             if (param_never_used(c)) {
+                // const auto& s(*symbol(c.dst.param));
+                // if (Strutil::icontains(s.name(), "pref"))
+                    Strutil::print ("remove connection to unused param\n");
+                    // Strutil::print ("remove connection to unused param {} {} (layer {})\n",
+                    //                  s.typespec(), s.name(), inst()->layername());
                 debug_optf("  Connection no longer needed: %s %s\n",
                            group()[c.srclayer]->layername(),
                            c.str(group(), inst()));
@@ -2005,9 +2014,11 @@ RuntimeOptimizer::optimize_assignment (Opcode &op, int opnum)
         turn_into_nop (op, "local/tmp never read");
         return ++changed;
     }
+#if 0
     if (outparam_assign_elision (opnum, op)) {
         return ++changed;
     }
+#endif
     if (R == A) {
         // Just an assignment to itself -- turn into NOP!
         turn_into_nop (op, "self-assignment");
@@ -3126,8 +3137,8 @@ RuntimeOptimizer::run ()
         if (inst()->unused())
             continue;  // no need to print or gather stats for unused layers
         if (optimize() >= 1) {
-            collapse_syms ();
-            collapse_ops ();
+            // collapse_syms ();
+            // collapse_ops ();
         }
         if (debug() && !inst()->unused()) {
             track_variable_lifetimes ();
