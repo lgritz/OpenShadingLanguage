@@ -1814,12 +1814,12 @@ RuntimeOptimizer::remove_unused_params ()
     }
 
     // Get rid of the Connections themselves
-    if (1 || debug() > 1) {
+    if (debug() > 1) {
         for (auto&& c : inst()->connections()) {
             if (param_never_used(c)) {
                 // const auto& s(*symbol(c.dst.param));
                 // if (Strutil::icontains(s.name(), "pref"))
-                    Strutil::print ("remove connection to unused param\n");
+                    // Strutil::print ("remove connection to unused param\n");
                     // Strutil::print ("remove connection to unused param {} {} (layer {})\n",
                     //                  s.typespec(), s.name(), inst()->layername());
                 debug_optf("  Connection no longer needed: %s %s\n",
