@@ -3930,8 +3930,8 @@ OSL::ShadingSystem::oslquery (const ShaderGroup& group, int layernum)
 {
     OSLQuery Q; // This will use named return value optimization
     if (layernum < 0 || layernum >= group.nlayers()) {
-        Q.errorf("Invalid layer number %d (valid indices: 0-%d).",
-                 layernum, group.nlayers()-1);
+        Q.errorfmt("Invalid layer number {} (valid indices: 0-{}).",
+                   layernum, group.nlayers()-1);
         return Q;
     }
 
@@ -3996,12 +3996,12 @@ OSL::OSLQuery::init (const ShaderGroup *group, int layernum)
 {
     geterror();   // clear the error, we're newly initializing
     if (! group) {
-        errorf("No group pointer supplied.");
+        errorfmt("No group pointer supplied.");
         return false;
     }
     if (layernum < 0 || layernum >= group->nlayers()) {
-        errorf("Invalid layer number %d (valid indices: 0-%d).",
-               layernum, group->nlayers()-1);
+        errorfmt("Invalid layer number {} (valid indices: 0-{}).",
+                 layernum, group->nlayers()-1);
         return false;
     }
 
