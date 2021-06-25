@@ -246,9 +246,9 @@ init_wide_function_map(const ConcreteT&, ShadingSystemImpl& shadingsys)
 
     // TODO: consider trying to open it even if searchpath_find failed, so that LD_LIBRARY_PATH has a chance
     if (filename.empty()) {
-        shadingsys.errorf(
-            "%s could not be found along the attribute \"searchpath:library\" of \"%s\"",
-            shared_lib_name.c_str(), shadingsys.library_searchpath().c_str());
+        shadingsys.errorfmt(
+            "{} could not be found along the attribute \"searchpath:library\" of \"{}\"",
+            shared_lib_name, shadingsys.library_searchpath());
         // Something later will ASSERT/Fail now, we can't really continue successfully
         return;
     }
@@ -256,8 +256,8 @@ init_wide_function_map(const ConcreteT&, ShadingSystemImpl& shadingsys)
 
     auto shared_lib = OIIO::Plugin::open(filename, /*global=*/false);
     if (shared_lib == 0) {
-        shadingsys.errorf("%s could not be loaded with error \"%s\"",
-                          filename.c_str(), OIIO::Plugin::geterror().c_str());
+        shadingsys.errorfmt("{} could not be loaded with error \"{}\"",
+                            filename, OIIO::Plugin::geterror());
         // Something later will ASSERT/Fail, now we can't really continue successfully
         return;
     }
@@ -273,7 +273,7 @@ init_wide_function_map(const ConcreteT&, ShadingSystemImpl& shadingsys)
             std::cout << ">>>Failed attempting to getsym " << name_and_sig.name
                       << std::endl
                       << "OIIO::Plugin::geterror()="
-                      << OIIO::Plugin::geterror().c_str();
+                      << OIIO::Plugin::geterror();
             ASSERT(
                 0
                 && "Unable to find precompiled OSL library function in shared library.  This indicates a build/configuration problem.  We can't continue");

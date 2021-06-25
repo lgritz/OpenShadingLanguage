@@ -494,28 +494,28 @@ public:
                       TypeDesc type, const void *val);
 
     // Internal error, warning, info, and message reporting routines that
-    // take printf-like arguments.
-    template<typename T1, typename... Args>
-    inline void errorf (const char* fmt, const T1& v1, const Args&... args) const {
-        error (Strutil::sprintf (fmt, v1, args...));
+    // take std::format-like arguments.
+    template<typename Str, typename... Args>
+    inline void errorfmt(const Str& fmt, Args&&... args) const {
+        error(Strutil::sprintf(fmt, std::forward<Args>(args)...));
     }
     void error (const std::string &message) const;
 
-    template<typename T1, typename... Args>
-    inline void warningf (const char* fmt, const T1& v1, const Args&... args) const {
-        warning (Strutil::sprintf (fmt, v1, args...));
+    template<typename Str, typename... Args>
+    inline void warningfmt(const Str& fmt, Args&&... args) const {
+        warning(Strutil::sprintf(fmt, std::forward<Args>(args)...));
     }
     void warning (const std::string &message) const;
 
-    template<typename T1, typename... Args>
-    inline void infof (const char* fmt, const T1& v1, const Args&... args) const {
-        info (Strutil::sprintf (fmt, v1, args...));
+    template<typename Str, typename... Args>
+    inline void infofmt(const Str& fmt, Args&&... args) const {
+        info(Strutil::sprintf(fmt, std::forward<Args>(args)...));
     }
     void info (const std::string &message) const;
 
-    template<typename T1, typename... Args>
-    inline void messagef (const char* fmt, const T1& v1, const Args&... args) const {
-        message (Strutil::sprintf (fmt, v1, args...));
+    template<typename Str, typename... Args>
+    inline void messagefmt(const Str& fmt, Args&&... args) const {
+        message(Strutil::sprintf(fmt, std::forward<Args>(args)...));
     }
     void message (const std::string &message) const;
 
