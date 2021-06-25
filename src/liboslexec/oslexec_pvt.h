@@ -1796,6 +1796,42 @@ public:
             m_sc.record_error(ErrorHandler::EH_MESSAGE, Strutil::sprintf (fmt, args...), static_cast<Mask<MaxSupportedSimdLaneCount>>(mask));
         }
 
+        template<typename Str, typename... Args>
+        inline
+        void errorfmt(Mask<WidthT> mask, const Str& fmt, Args&&... args) const
+        {
+            m_sc.record_error(ErrorHandler::EH_ERROR,
+                              Strutil::fmt::format(fmt, std::forward<Args>(args)...),
+                              static_cast<Mask<MaxSupportedSimdLaneCount>>(mask));
+        }
+
+        template<typename Str, typename... Args>
+        inline
+        void warningfmt(Mask<WidthT> mask, const Str& fmt, Args&&... args) const
+        {
+            m_sc.record_error(ErrorHandler::EH_WARNING,
+                              Strutil::fmt::format(fmt, std::forward<Args>(args)...),
+                              static_cast<Mask<MaxSupportedSimdLaneCount>>(mask));
+        }
+
+        template<typename Str, typename... Args>
+        inline
+        void infofmt(Mask<WidthT> mask, const Str& fmt, Args&&... args) const
+        {
+            m_sc.record_error(ErrorHandler::EH_INFO,
+                              Strutil::fmt::format(fmt, std::forward<Args>(args)...),
+                              static_cast<Mask<MaxSupportedSimdLaneCount>>(mask));
+        }
+
+        template<typename Str, typename... Args>
+        inline
+        void messagefmt(Mask<WidthT> mask, const Str& fmt, Args&&... args) const
+        {
+            m_sc.record_error(ErrorHandler::EH_MESSAGE,
+                              Strutil::fmt::format(fmt, std::forward<Args>(args)...),
+                              static_cast<Mask<MaxSupportedSimdLaneCount>>(mask));
+        }
+
         // TODO: implement messages in subsequent PR
         //BatchedMessageList<WidthT> & messages () { return m_sc.batched_messages(WidthOf<WidthT>()); }
     };
