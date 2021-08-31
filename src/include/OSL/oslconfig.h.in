@@ -109,6 +109,7 @@ using OIIO::TypeMatrix;
 using OIIO::TypeFloat4;
 using OIIO::TypeString;
 using OIIO::TypeInt;
+using OIIO::TypePointer;
 #if OIIO_VERSION >= 20203
 using OIIO::TypeFloat2;
 using OIIO::TypeVector2;
@@ -126,7 +127,7 @@ enum class SymArena {
     Heap,               // Belongs to context heap
     Outputs,            // Belongs to output arena
     UserData,           // UserData arena
-    // ShaderGlobals,   // RESERVED
+    ShaderGlobals,      // In the ShaderGlobals struct
 };
 
 

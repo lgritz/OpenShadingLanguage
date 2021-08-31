@@ -843,9 +843,13 @@ public:
     void add_symlocs(cspan<SymLocationDesc> symlocs);
     void add_symlocs(ShaderGroup* group, cspan<SymLocationDesc> symlocs);
 
+    /// Return SymLocationDesc information for the default ShaderGlobals struct.
+    cspan<SymLocationDesc> default_shaderglobals_symloc();
+
     /// Ensure that the group has been optimized and optionally JITed. The ctx pointer
     /// supplies a ShadingContext to use.
-    void optimize_group (ShaderGroup *group, ShadingContext *ctx, bool do_jit = true);
+    void optimize_group(ShaderGroup* group, ShadingContext* ctx,
+                        bool do_jit = true);
 
     /// Ensure that the group has been optimized and optionally JITed. This is a
     /// convenience function that simply calls set_raytypes followed by

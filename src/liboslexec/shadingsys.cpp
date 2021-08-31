@@ -650,6 +650,46 @@ ShadingSystem::raytype_bit (ustring name)
 
 
 
+cspan<SymLocationDesc>
+ShadingSystem::default_shaderglobals_symloc()
+{
+#define SGLOC(name, field, type, derivs) \
+    SymLocationDesc(name, type, derivs, SymArena::ShaderGlobals, \
+                    offsetof(ShaderGlobals, field), sizeof(ShaderGlobals))
+
+    static SymLocationDesc symlocs[] = {
+        SGLOC("P", P, TypePoint, true),
+        SGLOC("I", I, TypeVector, true),
+        SGLOC("N", N, TypeNormal, false),
+        SGLOC("Ng", Ng, TypeNormal, false),
+        SGLOC("u", u, TypeFloat, true),
+        SGLOC("v", v, TypeFloat, true),
+        SGLOC("dPdu", dPdu, TypeVector, false),
+        SGLOC("dPdv", dPdv, TypeVector, false),
+        SGLOC("time", time, TypeFloat, false),
+        SGLOC("dtime", dtime, TypeFloat, false),
+        SGLOC("dPdtime", dPdtime, TypeVector, false),
+        SGLOC("Ps", Ps, TypePoint, true),
+        SGLOC("$renderstate", renderstate, OIIO::TypePointer, false),
+        SGLOC("$tracedata", tracedata, OIIO::TypePointer, false),
+        SGLOC("$objdata", objdata, OIIO::TypePointer, false),
+        SGLOC("$context", context, OIIO::TypePointer, false),
+        SGLOC("$renderer", renderer, OIIO::TypePointer, false),
+        SGLOC("$object2common", object2common, OIIO::TypePointer, false),
+        SGLOC("$shader2common", shader2common, OIIO::TypePointer, false),
+        SGLOC("Ci", Ci, OIIO::TypePointer, false),
+        SGLOC("$surfacearea", surfacearea, TypeFloat, false),
+        SGLOC("$raytype", raytype, TypeInt, false),
+        SGLOC("$flipHandedness", flipHandedness, TypeInt, false),
+        SGLOC("$backfacing", backfacing, TypeInt, false),
+    };
+#undef SGLOC
+
+    return symlocs;
+}
+
+
+
 void
 ShadingSystem::optimize_all_groups (int nthreads, bool do_jit)
 {
