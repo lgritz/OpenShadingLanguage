@@ -46,6 +46,69 @@ To run:
 #include <OSL/rendererservices.h>
 
 
+struct AlternateShaderGlobals {
+    void* renderstate;
+    void* tracedata;
+    void* objdata;
+    ShadingContext* context;
+    RendererServices* renderer;
+    Vec3 P, dPdx, dPdy;
+    Vec3 dPdz;
+    Vec3 I, dIdx, dIdy;
+    Vec3 N;
+    Vec3 Ng;
+    float u, dudx, dudy;
+    float v, dvdx, dvdy;
+    Vec3 dPdu, dPdv;
+    float time;
+    float dtime;
+    Vec3 dPdtime;
+    Vec3 Ps, dPsdx, dPsdy;
+    TransformationPtr object2common;
+    TransformationPtr shader2common;
+    ClosureColor* Ci;
+    float surfacearea;
+    int raytype;
+    int flipHandedness;
+    int backfacing;
+};
+
+
+#define SGLOC(name, field, type, derivs)                         \
+    SymLocationDesc(name, type, derivs, SymArena::ShaderGlobals, \
+                    offsetof(AlterateShaderGlobals, field),      \
+                    sizeof(AlternateShaderGlobals))
+
+static SymLocationDesc alt_globals_symlocs[] = {
+    SGLOC("P", P, TypePoint, true),
+    SGLOC("I", I, TypeVector, true),
+    SGLOC("N", N, TypeNormal, false),
+    SGLOC("Ng", Ng, TypeNormal, false),
+    SGLOC("u", u, TypeFloat, true),
+    SGLOC("v", v, TypeFloat, true),
+    SGLOC("dPdu", dPdu, TypeVector, false),
+    SGLOC("dPdv", dPdv, TypeVector, false),
+    SGLOC("time", time, TypeFloat, false),
+    SGLOC("dtime", dtime, TypeFloat, false),
+    SGLOC("dPdtime", dPdtime, TypeVector, false),
+    SGLOC("Ps", Ps, TypePoint, true),
+    SGLOC("$renderstate", renderstate, OIIO::TypePointer, false),
+    SGLOC("$tracedata", tracedata, OIIO::TypePointer, false),
+    SGLOC("$objdata", objdata, OIIO::TypePointer, false),
+    SGLOC("$context", context, OIIO::TypePointer, false),
+    SGLOC("$renderer", renderer, OIIO::TypePointer, false),
+    SGLOC("$object2common", object2common, OIIO::TypePointer, false),
+    SGLOC("$shader2common", shader2common, OIIO::TypePointer, false),
+    SGLOC("Ci", Ci, OIIO::TypePointer, false),
+    SGLOC("$surfacearea", surfacearea, TypeFloat, false),
+    SGLOC("$raytype", raytype, TypeInt, false),
+    SGLOC("$flipHandedness", flipHandedness, TypeInt, false),
+    SGLOC("$backfacing", backfacing, TypeInt, false),
+};
+#undef SGLOC
+
+
+
 // Define a userdata structure that holds any varying per-point values that
 // might be retrieved by shader (interpolated data, etc.). This example is
 // hard-coded, but you could also imagine that if it wasn't a fixed set
@@ -95,7 +158,7 @@ struct MyUserData {
 class MyRendererServices final : public OSL::RendererServices {
 public:
     virtual bool get_userdata(bool derivatives, OSL::ustring name,
-                              OSL::TypeDesc type, OSL::ShaderGlobals* sg,
+                              OSL::TypeDesc type, AlternateShaderGlobals* sg,
                               void* val)
     {
         // In this case, our implementation of get_userdata just requests
@@ -215,6 +278,10 @@ main(int argc, char* argv[])
                                   sizeof(MyUserData) /* stride */);
     shadsys->add_symlocs(mygroup.get(), udinputs);
 
+    // And the layout of globals; for this example, we make a totally new
+    // globals structure layout!
+    shadsys->add_symlocs(alt_globals_symlocs);
+
     // Now we want to create a context in which we can execute the shader.
     // We need one context per thread. A context can be used over and over
     // to shade multiple points, but it should never be used by more than
@@ -253,7 +320,7 @@ main(int argc, char* argv[])
     // Shade the points:
     for (int i = 0; i < npoints; ++i) {
         // First, we need a ShaderGlobals struct:
-        OSL::ShaderGlobals shaderglobals;
+        AlternateShaderGlobals shaderglobals;
 
         // Set up inputs.
 
