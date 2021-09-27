@@ -3600,6 +3600,14 @@ LLVM_Util::op_load (llvm::Value *ptr)
 }
 
 
+llvm::Value*
+LLVM_Util::op_load_int(llvm::Value* ptr)
+{
+    return op_load(ptr_cast(ptr, type_int_ptr()));
+}
+
+
+
 
 llvm::Value *
 LLVM_Util::op_linearize_16x_indices(llvm::Value *wide_index)
