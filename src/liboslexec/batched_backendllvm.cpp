@@ -120,15 +120,9 @@ is_shader_global_uniform_by_name(ustring name)
 BatchedBackendLLVM::BatchedBackendLLVM(ShadingSystemImpl& shadingsys,
                                        ShaderGroup& group, ShadingContext* ctx,
                                        int width)
-    : OSOProcessorBase(shadingsys, group, ctx)
-    , ll(ctx->llvm_thread_info(), llvm_debug(), width)
+    : BackendLLVMCommon(shadingsys, group, ctx, width)
     , m_width(width)
     , m_library_selector(nullptr)
-    , m_stat_total_llvm_time(0)
-    , m_stat_llvm_setup_time(0)
-    , m_stat_llvm_irgen_time(0)
-    , m_stat_llvm_opt_time(0)
-    , m_stat_llvm_jit_time(0)
 {
     m_wide_arg_prefix = "W";
     switch (vector_width()) {
@@ -136,39 +130,11 @@ BatchedBackendLLVM::BatchedBackendLLVM(ShadingSystemImpl& shadingsys,
     case 8: m_true_mask_value = Mask<8>(true).value(); break;
     default: OSL_ASSERT(0 && "unsupported vector width");
     }
-    ll.dumpasm(shadingsys.m_llvm_dumpasm);
-    ll.jit_fma(shadingsys.m_llvm_jit_fma);
-    ll.jit_aggressive(shadingsys.m_llvm_jit_aggressive);
 }
 
 
 
 BatchedBackendLLVM::~BatchedBackendLLVM() {}
-
-
-
-int
-BatchedBackendLLVM::llvm_debug() const
-{
-    if (shadingsys().llvm_debug() == 0)
-        return 0;
-    if (!shadingsys().debug_groupname().empty()
-        && shadingsys().debug_groupname() != group().name()) {
-        return 0;
-    }
-    if (inst() && !shadingsys().debug_layername().empty()
-        && shadingsys().debug_layername() != inst()->layername())
-        return 0;
-    return shadingsys().llvm_debug();
-}
-
-
-void
-BatchedBackendLLVM::set_inst(int layer)
-{
-    OSOProcessorBase::set_inst(layer);  // parent does the heavy lifting
-    ll.debug(llvm_debug());
-}
 
 
 

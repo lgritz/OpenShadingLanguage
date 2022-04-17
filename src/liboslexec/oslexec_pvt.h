@@ -88,6 +88,7 @@ class ShaderInstance;
 typedef std::shared_ptr<ShaderInstance> ShaderInstanceRef;
 class Dictionary;
 class RuntimeOptimizer;
+class BackendLLVMCommon;
 class BackendLLVM;
 #if OSL_USE_BATCHED
 class BatchedBackendLLVM;
@@ -924,9 +925,8 @@ private:
     friend class ShaderInstance;
     friend class RuntimeOptimizer;
     friend class BackendLLVM;
-#if OSL_USE_BATCHED
+    friend class BackendLLVMCommon;
     friend class BatchedBackendLLVM;
-#endif
 };
 
 

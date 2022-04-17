@@ -17,6 +17,7 @@ using namespace OSL::pvt;
 
 #include "OSL/llvm_util.h"
 #include "runtimeoptimize.h"
+#include "backendllvm.h"
 
 #include <llvm/ADT/SmallString.h>
 #include <llvm/ADT/SmallVector.h>
@@ -34,8 +35,8 @@ namespace pvt {  // OSL::pvt
 
 
 /// OSOProcessor that generates LLVM IR and JITs it to give machine
-/// code to implement a shader group.
-class BatchedBackendLLVM : public OSOProcessorBase {
+/// code to implement a shader group that shades batches of points.
+class BatchedBackendLLVM : public BackendLLVMCommon {
 public:
     BatchedBackendLLVM(ShadingSystemImpl& shadingsys, ShaderGroup& group,
                        ShadingContext* context, int width);
@@ -44,21 +45,13 @@ public:
     // to allow smart pointers of incomplete types
     virtual ~BatchedBackendLLVM();
 
-    virtual void set_inst(int layer);
-
     /// Create an llvm function for the whole shader group, JIT it,
     /// and store the llvm::Function* handle to it with the ShaderGroup.
-    virtual void run();
-
-
-    /// What LLVM debug level are we at?
-    int llvm_debug() const;
+    virtual void run() override;
 
     /// Set up a bunch of static things we'll need for the whole group.
     ///
     void initialize_llvm_group();
-
-    int layer_remap(int origlayer) const { return m_layer_remap[origlayer]; }
 
     /// Create an llvm function for the current shader instance.
     /// This will end up being the group entry if 'groupentry' is true.
@@ -71,8 +64,6 @@ public:
     /// opcodes, putting them (initially) into basic block bb (or the
     /// current basic block if bb==NULL).
     bool build_llvm_code(int beginop, int endop, llvm::BasicBlock* bb = NULL);
-
-    typedef std::map<std::string, llvm::Value*> AllocationMap;
 
     void llvm_assign_initial_value(const Symbol& sym,
                                    llvm::Value* llvm_initial_shader_mask_value,
@@ -709,9 +700,6 @@ public:
     /// entry in the groupdata struct.
     int find_userdata_index(const Symbol& sym);
 
-    LLVM_Util ll;
-
-
     int vector_width() const { return m_width; }
     int true_mask_value() const { return m_true_mask_value; }
 
@@ -763,41 +751,16 @@ private:
     const char* m_wide_arg_prefix;
     llvm::SmallString<512> m_built_op_name;
 
-
-    std::vector<int> m_layer_remap;      ///< Remapping of layer ordering
-    std::set<int> m_layers_already_run;  ///< List of layers run
-    int m_num_used_layers;               ///< Number of layers actually used
-
-    double m_stat_total_llvm_time;  ///<   total time spent on LLVM
-    double m_stat_llvm_setup_time;  ///<     llvm setup time
-    double m_stat_llvm_irgen_time;  ///<     llvm IR generation time
-    double m_stat_llvm_opt_time;    ///<     llvm IR optimization time
-    double m_stat_llvm_jit_time;    ///<     llvm JIT time
-
     // LLVM stuff
-    AllocationMap m_named_values;
-    std::map<const Symbol*, int> m_param_order_map;
-    llvm::Value* m_llvm_shaderglobals_ptr;
-    llvm::Value* m_llvm_groupdata_ptr;
-
     llvm::Value *m_llvm_wide_shadeindex_ptr;
-    llvm::Value *m_llvm_userdata_base_ptr;
-    llvm::Value *m_llvm_output_base_ptr;
 
     // Reused allocas for temps used to pass options or intermediates
     llvm::Value* m_llvm_temp_wide_matrix_ptr;  // for gen_tranform
     llvm::Value* m_llvm_temp_batched_texture_options_ptr;
     llvm::Value* m_llvm_temp_batched_trace_options_ptr;
 
-    llvm::BasicBlock* m_exit_instance_block;  // exit point for the instance
-    llvm::Type* m_llvm_type_sg;         // LLVM type of ShaderGlobals struct
-    llvm::Type* m_llvm_type_groupdata;  // LLVM type of group data
-    llvm::Type* m_llvm_type_closure_component;
     llvm::Type* m_llvm_type_batched_texture_options;
     llvm::Type* m_llvm_type_batched_trace_options;
-    llvm::PointerType* m_llvm_type_prepare_closure_func;
-    llvm::PointerType* m_llvm_type_setup_closure_func;
-    int m_llvm_local_mem;  // Amount of memory we use for locals
 
     friend class ShadingSystemImpl;
 };

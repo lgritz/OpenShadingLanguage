@@ -64,10 +64,11 @@ check_cwd (ShadingSystemImpl &shadingsys)
 
 
 
-BackendLLVM::BackendLLVM (ShadingSystemImpl &shadingsys,
-                          ShaderGroup &group, ShadingContext *ctx)
-    : OSOProcessorBase (shadingsys, group, ctx),
-      ll(ctx->llvm_thread_info(), llvm_debug(), shadingsys.m_vector_width),
+BackendLLVMCommon::BackendLLVMCommon(ShadingSystemImpl& shadingsys,
+                                     ShaderGroup& group, ShadingContext* ctx,
+                                     int width)
+    : OSOProcessorBase(shadingsys, group, ctx),
+      ll(ctx->llvm_thread_info(), llvm_debug(), width),
       m_stat_total_llvm_time(0), m_stat_llvm_setup_time(0),
       m_stat_llvm_irgen_time(0), m_stat_llvm_opt_time(0),
       m_stat_llvm_jit_time(0)
@@ -77,10 +78,25 @@ BackendLLVM::BackendLLVM (ShadingSystemImpl &shadingsys,
     // getcwd inside LLVM. Oy.
     check_cwd (shadingsys);
 #endif
-    m_use_optix = shadingsys.renderer()->supports ("OptiX");
+//     m_use_optix = shadingsys.renderer()->supports ("OptiX");
     ll.dumpasm(shadingsys.m_llvm_dumpasm);
     ll.jit_fma(shadingsys.m_llvm_jit_fma);
     ll.jit_aggressive(shadingsys.m_llvm_jit_aggressive);
+}
+
+
+
+BackendLLVMCommon::~BackendLLVMCommon ()
+{
+}
+
+
+
+BackendLLVM::BackendLLVM (ShadingSystemImpl &shadingsys,
+                          ShaderGroup &group, ShadingContext *ctx)
+    : BackendLLVMCommon(shadingsys, group, ctx, shadingsys.m_vector_width)
+{
+    m_use_optix = shadingsys.renderer()->supports ("OptiX");
 }
 
 
@@ -92,7 +108,7 @@ BackendLLVM::~BackendLLVM ()
 
 
 int
-BackendLLVM::llvm_debug() const
+BackendLLVMCommon::llvm_debug() const
 {
     if (shadingsys().llvm_debug() == 0)
         return 0;
@@ -108,7 +124,7 @@ BackendLLVM::llvm_debug() const
 
 
 void
-BackendLLVM::set_inst (int layer)
+BackendLLVMCommon::set_inst (int layer)
 {
     OSOProcessorBase::set_inst (layer);  // parent does the heavy lifting
     ll.debug (llvm_debug());
