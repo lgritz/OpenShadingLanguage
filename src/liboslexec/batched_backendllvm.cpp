@@ -139,39 +139,6 @@ BatchedBackendLLVM::~BatchedBackendLLVM() {}
 
 
 llvm::Type*
-BatchedBackendLLVM::llvm_pass_type(const TypeSpec& typespec)
-{
-    if (typespec.is_closure_based())
-        return (llvm::Type*)ll.type_void_ptr();
-    TypeDesc t     = typespec.simpletype().elementtype();
-    llvm::Type* lt = NULL;
-    if (t == TypeDesc::FLOAT)
-        lt = ll.type_float();
-    else if (t == TypeDesc::INT)
-        lt = ll.type_int();
-    else if (t == TypeDesc::STRING)
-        lt = (llvm::Type*)ll.type_string();
-    else if (t.aggregate == TypeDesc::VEC3)
-        lt = (llvm::Type*)ll.type_void_ptr();  //llvm_type_triple_ptr();
-    else if (t.aggregate == TypeDesc::MATRIX44)
-        lt = (llvm::Type*)ll.type_void_ptr();  //llvm_type_matrix_ptr();
-    else if (t == TypeDesc::NONE)
-        lt = ll.type_void();
-    else if (t == TypeDesc::PTR)
-        lt = (llvm::Type*)ll.type_void_ptr();
-    else if (t == TypeDesc::LONGLONG)
-        lt = ll.type_longlong();
-    else {
-        std::cerr << "Bad llvm_pass_type(" << typespec.c_str() << ")\n";
-        OSL_ASSERT(0 && "not handling this type yet");
-    }
-    if (t.arraylen) {
-        OSL_ASSERT(0 && "should never pass an array directly as a parameter");
-    }
-    return lt;
-}
-
-llvm::Type*
 BatchedBackendLLVM::llvm_pass_wide_type(const TypeSpec& typespec)
 {
     if (typespec.is_closure_based())
@@ -1375,27 +1342,7 @@ BatchedBackendLLVM::llvm_conversion_store_uniform_status(llvm::Value* val,
     llvm_store_value(val, Status);
 }
 
-llvm::Value*
-BatchedBackendLLVM::groupdata_field_ref(int fieldnum)
-{
-    return ll.GEP(groupdata_ptr(), 0, fieldnum);
-}
 
-
-llvm::Value*
-BatchedBackendLLVM::groupdata_field_ptr(int fieldnum, TypeDesc type,
-                                        bool is_uniform)
-{
-    llvm::Value* result = ll.void_ptr(groupdata_field_ref(fieldnum));
-    if (type != TypeDesc::UNKNOWN) {
-        if (is_uniform) {
-            result = ll.ptr_to_cast(result, llvm_type(type));
-        } else {
-            result = ll.ptr_to_cast(result, llvm_wide_type(type));
-        }
-    }
-    return result;
-}
 
 llvm::Value*
 BatchedBackendLLVM::temp_wide_matrix_ptr()
@@ -1871,20 +1818,6 @@ BatchedBackendLLVM::llvm_assign_impl(const Symbol& Result, const Symbol& Src,
     return true;
 }
 
-int
-BatchedBackendLLVM::find_userdata_index(const Symbol& sym)
-{
-    int userdata_index = -1;
-    for (int i = 0, e = (int)group().m_userdata_names.size(); i < e; ++i) {
-        if (sym.name() == group().m_userdata_names[i]
-            && equivalent(sym.typespec().simpletype(),
-                          group().m_userdata_types[i])) {
-            userdata_index = i;
-            break;
-        }
-    }
-    return userdata_index;
-}
 
 
 void

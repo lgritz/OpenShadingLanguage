@@ -774,14 +774,6 @@ BatchedBackendLLVM::llvm_type_batched_trace_options()
 
 
 llvm::Type*
-BatchedBackendLLVM::llvm_type_sg_ptr()
-{
-    return ll.type_ptr(llvm_type_sg());
-}
-
-
-
-llvm::Type*
 BatchedBackendLLVM::llvm_type_groupdata()
 {
     // If already computed, return it

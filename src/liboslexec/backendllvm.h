@@ -36,7 +36,7 @@ public:
 
     virtual ~BackendLLVMCommon();
 
-    virtual void set_inst (int layer) override;
+    virtual void set_inst(int layer) override;
 
     // Create an llvm function for the whole shader group, JIT it,
     // and store the llvm::Function* handle to it with the ShaderGroup.
@@ -46,9 +46,110 @@ public:
     /// What LLVM debug level are we at?
     int llvm_debug() const;
 
-    int layer_remap (int origlayer) const { return m_layer_remap[origlayer]; }
+    int layer_remap(int origlayer) const { return m_layer_remap[origlayer]; }
 
     typedef std::map<std::string, llvm::Value*> AllocationMap;
+
+    llvm::LLVMContext& llvm_context() const { return ll.context(); }
+    AllocationMap& named_values() { return m_named_values; }
+
+    /// Return the LLVM type handle for the shader globals struct.
+    /// Overloaded separately for BackendLLVM and BatchedBackendLLVM.
+    virtual llvm::Type* llvm_type_sg() = 0;
+
+    /// Return the LLVM type handle for a pointer to a shader globals struct.
+    llvm::Type* llvm_type_sg_ptr() { return ll.type_ptr(llvm_type_sg()); }
+
+    /// Return the shader globals pointer.
+    llvm::Value* sg_ptr() const { return m_llvm_shaderglobals_ptr; }
+
+    /// Return the ShaderGlobals pointer cast as a void*.
+    llvm::Value* sg_void_ptr() { return ll.void_ptr(m_llvm_shaderglobals_ptr); }
+
+    /// Return the group data pointer.
+    llvm::Value* groupdata_ptr() const { return m_llvm_groupdata_ptr; }
+
+    /// Return the group data pointer cast as a void*.
+    llvm::Value *groupdata_void_ptr () {
+        return ll.void_ptr(m_llvm_groupdata_ptr);
+    }
+
+    /// Return a reference to the specified field within the group data.
+    llvm::Value* groupdata_field_ref(int fieldnum)
+    {
+        return ll.GEP(groupdata_ptr(), 0, fieldnum);
+    }
+
+    /// Return a pointer to the specified field within the group data,
+    /// optionally cast to pointer to a particular data type.
+    llvm::Value *groupdata_field_ptr (int fieldnum,
+                                      TypeDesc type = TypeUnknown,
+                                      bool is_uniform = true);
+
+    TypeDesc llvm_typedesc (const TypeSpec &typespec) {
+        return typespec.is_closure_based()
+                   ? TypeDesc(TypeDesc::PTR, typespec.arraylength())
+                   : typespec.simpletype();
+    }
+
+    /// Generate the appropriate llvm type definition for a TypeSpec
+    /// (this is the actual type, for example when we allocate it).
+    /// Allocates ptrs for closures.
+    llvm::Type *llvm_type (const TypeSpec &typespec) {
+        return ll.llvm_type (llvm_typedesc(typespec));
+    }
+
+    /// Generate the appropriate llvm type definition for a wide version
+    /// of the type described by this TypeSpec.
+    llvm::Type* llvm_wide_type(const TypeSpec& typespec)
+    {
+        // We are the "wide" backend, so all types will be vector types
+        return ll.llvm_vector_type(llvm_typedesc(typespec));
+    }
+
+    /// Generate the parameter-passing llvm type definition for an OSL
+    /// TypeSpec.
+    llvm::Type *llvm_pass_type (const TypeSpec &typespec);
+
+    llvm::PointerType* llvm_type_prepare_closure_func()
+    {
+        return m_llvm_type_prepare_closure_func;
+    }
+    llvm::PointerType* llvm_type_setup_closure_func()
+    {
+        return m_llvm_type_setup_closure_func;
+    }
+
+    /// Return the basic block of the exit for the whole instance.
+    bool llvm_has_exit_instance_block() const { return m_exit_instance_block; }
+
+    /// Return the basic block of the exit for the whole instance.
+    llvm::BasicBlock *llvm_exit_instance_block () {
+        if (! m_exit_instance_block) {
+            std::string name      = Strutil::sprintf("%s_%d_exit_",
+                                                     inst()->layername(),
+                                                     inst()->id());
+            m_exit_instance_block = ll.new_basic_block (name);
+        }
+        return m_exit_instance_block;
+    }
+
+    llvm::Function *layer_func () const { return ll.current_function(); }
+
+    /// Call this when JITing a texture-like call, to track how many.
+    void generated_texture_call (bool handle) {
+        shadingsys().m_stat_tex_calls_codegened += 1;
+        if (handle)
+            shadingsys().m_stat_tex_calls_as_handles += 1;
+    }
+
+    /// Return the userdata index for the given Symbol.  Return -1 if the Symbol
+    /// is not an input parameter or is constant and therefore doesn't have an
+    /// entry in the groupdata struct.
+    int find_userdata_index (const Symbol& sym);
+
+    /// Return whether or not we are compiling for an OptiX-based renderer.
+    bool use_optix() { return m_use_optix; }
 
     LLVM_Util ll;
 
@@ -79,6 +180,7 @@ protected:
     llvm::PointerType *m_llvm_type_setup_closure_func;
     int m_llvm_local_mem;             // Amount of memory we use for locals
 
+    bool m_use_optix = false;                   ///< Compile for OptiX?
 };
 
 
@@ -119,8 +221,8 @@ public:
     bool build_llvm_code (int beginop, int endop, llvm::BasicBlock *bb=NULL);
 
     void llvm_assign_initial_value (const Symbol& sym, bool force = false);
-    llvm::LLVMContext &llvm_context () const { return ll.context(); }
-    AllocationMap &named_values () { return m_named_values; }
+    // llvm::LLVMContext &llvm_context () const { return ll.context(); }
+    // AllocationMap &named_values () { return m_named_values; }
 
     /// Return an llvm::Value* corresponding to the address of the given
     /// symbol element, with derivative (0=value, 1=dx, 2=dy) and array
@@ -297,25 +399,18 @@ public:
     int ShaderGlobalNameToIndex (ustring name);
 
     /// Return the LLVM type handle for the ShaderGlobals struct.
-    ///
-    llvm::Type *llvm_type_sg ();
+    virtual llvm::Type *llvm_type_sg () override;
 
-    /// Return the LLVM type handle for a pointer to a
-    /// ShaderGlobals struct.
-    llvm::Type *llvm_type_sg_ptr ();
+    // llvm::Type *llvm_type_sg_ptr ();
+    // llvm::Value *sg_ptr () const { return m_llvm_shaderglobals_ptr; }
 
-    /// Return the ShaderGlobals pointer.
-    ///
-    llvm::Value *sg_ptr () const { return m_llvm_shaderglobals_ptr; }
+    // Return the ShaderGlobals pointer cast as a void*.
+    // llvm::Value *sg_void_ptr () {
+    //     return ll.void_ptr (m_llvm_shaderglobals_ptr);
+    // }
 
     llvm::Type *llvm_type_closure_component ();
     llvm::Type *llvm_type_closure_component_ptr ();
-
-    /// Return the ShaderGlobals pointer cast as a void*.
-    ///
-    llvm::Value *sg_void_ptr () {
-        return ll.void_ptr (m_llvm_shaderglobals_ptr);
-    }
 
     llvm::Value *llvm_ptr_cast (llvm::Value* val, const TypeSpec &type) {
         return ll.ptr_cast (val, type.simpletype());
@@ -333,23 +428,22 @@ public:
     /// data that holds all the shader params.
     llvm::Type *llvm_type_groupdata_ptr ();
 
-    /// Return the group data pointer.
-    ///
-    llvm::Value *groupdata_ptr () const { return m_llvm_groupdata_ptr; }
+    // Return the group data pointer.
+    // llvm::Value *groupdata_ptr () const { return m_llvm_groupdata_ptr; }
 
     /// Return the group data pointer cast as a void*.
-    ///
-    llvm::Value *groupdata_void_ptr () {
-        return ll.void_ptr (m_llvm_groupdata_ptr);
-    }
+    // llvm::Value *groupdata_void_ptr () {
+    //     return ll.void_ptr (m_llvm_groupdata_ptr);
+    // }
 
-    /// Return a reference to the specified field within the group data.
-    llvm::Value *groupdata_field_ref (int fieldnum);
+    // Return a reference to the specified field within the group data.
+    // llvm::Value* groupdata_field_ref(int fieldnum);
 
-    /// Return a pointer to the specified field within the group data,
-    /// optionally cast to pointer to a particular data type.
-    llvm::Value *groupdata_field_ptr (int fieldnum,
-                                      TypeDesc type = TypeDesc::UNKNOWN);
+    // Return a pointer to the specified field within the group data,
+    // optionally cast to pointer to a particular data type.
+    // llvm::Value *groupdata_field_ptr (int fieldnum,
+    //                                   TypeDesc type = TypeUnknown,
+    //                                   bool is_uniform = true);
 
     /// Return the userdata base pointer.
     llvm::Value *userdata_base_ptr () const { return m_llvm_userdata_base_ptr; }
@@ -441,41 +535,41 @@ public:
         return llvm_call_function (name, { &A, &B, &C }, deriv_ptrs);
     }
 
-    TypeDesc llvm_typedesc (const TypeSpec &typespec) {
-        return typespec.is_closure_based()
-           ? TypeDesc(TypeDesc::PTR, typespec.arraylength())
-           : typespec.simpletype();
-    }
+    // TypeDesc llvm_typedesc (const TypeSpec &typespec) {
+    //     return typespec.is_closure_based()
+    //                ? TypeDesc(TypeDesc::PTR, typespec.arraylength())
+    //                : typespec.simpletype();
+    // }
 
-    /// Generate the appropriate llvm type definition for a TypeSpec
-    /// (this is the actual type, for example when we allocate it).
-    /// Allocates ptrs for closures.
-    llvm::Type *llvm_type (const TypeSpec &typespec) {
-        return ll.llvm_type (llvm_typedesc(typespec));
-    }
+    // Generate the appropriate llvm type definition for a TypeSpec
+    // (this is the actual type, for example when we allocate it).
+    // Allocates ptrs for closures.
+    // llvm::Type *llvm_type (const TypeSpec &typespec) {
+    //     return ll.llvm_type (llvm_typedesc(typespec));
+    // }
 
-    /// Generate the parameter-passing llvm type definition for an OSL
-    /// TypeSpec.
-    llvm::Type *llvm_pass_type (const TypeSpec &typespec);
+    // Generate the parameter-passing llvm type definition for an OSL
+    // TypeSpec.
+    // llvm::Type *llvm_pass_type (const TypeSpec &typespec);
 
-    llvm::PointerType *llvm_type_prepare_closure_func() { return m_llvm_type_prepare_closure_func; }
-    llvm::PointerType *llvm_type_setup_closure_func() { return m_llvm_type_setup_closure_func; }
+    // llvm::PointerType *llvm_type_prepare_closure_func() { return m_llvm_type_prepare_closure_func; }
+    // llvm::PointerType *llvm_type_setup_closure_func() { return m_llvm_type_setup_closure_func; }
 
-    /// Return the basic block of the exit for the whole instance.
-    ///
-    bool llvm_has_exit_instance_block () const {
-        return m_exit_instance_block;
-    }
+    // Return the basic block of the exit for the whole instance.
+    //
+    // bool llvm_has_exit_instance_block () const {
+    //     return m_exit_instance_block;
+    // }
 
-    /// Return the basic block of the exit for the whole instance.
-    ///
-    llvm::BasicBlock *llvm_exit_instance_block () {
-        if (! m_exit_instance_block) {
-            std::string name = Strutil::sprintf ("%s_%d_exit_", inst()->layername(), inst()->id());
-            m_exit_instance_block = ll.new_basic_block (name);
-        }
-        return m_exit_instance_block;
-    }
+    // Return the basic block of the exit for the whole instance.
+    //
+    // llvm::BasicBlock *llvm_exit_instance_block () {
+    //     if (! m_exit_instance_block) {
+    //         std::string name = Strutil::sprintf ("%s_%d_exit_", inst()->layername(), inst()->id());
+    //         m_exit_instance_block = ll.new_basic_block (name);
+    //     }
+    //     return m_exit_instance_block;
+    // }
 
     /// Check for inf/nan in all written-to arguments of the op
     void llvm_generate_debugnan (const Opcode &op);
@@ -484,25 +578,17 @@ public:
     /// Print debugging line for the op
     void llvm_generate_debug_op_printf (const Opcode &op);
 
-    llvm::Function *layer_func () const { return ll.current_function(); }
+    // llvm::Function *layer_func () const { return ll.current_function(); }
 
-    /// Call this when JITing a texture-like call, to track how many.
-    void generated_texture_call (bool handle) {
-        shadingsys().m_stat_tex_calls_codegened += 1;
-        if (handle)
-            shadingsys().m_stat_tex_calls_as_handles += 1;
-    }
+    // Call this when JITing a texture-like call, to track how many.
+    // void generated_texture_call (bool handle) {
+    //     shadingsys().m_stat_tex_calls_codegened += 1;
+    //     if (handle)
+    //         shadingsys().m_stat_tex_calls_as_handles += 1;
+    // }
 
     /// Return the mapping from symbol names to GlobalVariables.
     std::map<std::string,llvm::GlobalVariable*>& get_const_map() { return m_const_map; }
-
-    /// Return whether or not we are compiling for an OptiX-based renderer.
-    bool use_optix() { return m_use_optix; }
-
-    /// Return the userdata index for the given Symbol.  Return -1 if the Symbol
-    /// is not an input parameter or is constant and therefore doesn't have an
-    /// entry in the groupdata struct.
-    int find_userdata_index (const Symbol& sym);
 
 private:
     // LLVM stuff
@@ -515,8 +601,6 @@ private:
     // detect collisions that might occur due to using the string hash to
     // create variable names.
     std::map<std::string,std::string>           m_varname_map;
-
-    bool m_use_optix;                   ///< Compile for OptiX?
 
     friend class ShadingSystemImpl;
 };

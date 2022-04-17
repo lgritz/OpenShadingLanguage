@@ -78,7 +78,6 @@ BackendLLVMCommon::BackendLLVMCommon(ShadingSystemImpl& shadingsys,
     // getcwd inside LLVM. Oy.
     check_cwd (shadingsys);
 #endif
-//     m_use_optix = shadingsys.renderer()->supports ("OptiX");
     ll.dumpasm(shadingsys.m_llvm_dumpasm);
     ll.jit_fma(shadingsys.m_llvm_jit_fma);
     ll.jit_aggressive(shadingsys.m_llvm_jit_aggressive);
@@ -96,7 +95,7 @@ BackendLLVM::BackendLLVM (ShadingSystemImpl &shadingsys,
                           ShaderGroup &group, ShadingContext *ctx)
     : BackendLLVMCommon(shadingsys, group, ctx, shadingsys.m_vector_width)
 {
-    m_use_optix = shadingsys.renderer()->supports ("OptiX");
+    m_use_optix = shadingsys.renderer()->supports("OptiX");
 }
 
 
@@ -133,7 +132,7 @@ BackendLLVMCommon::set_inst (int layer)
 
 
 llvm::Type *
-BackendLLVM::llvm_pass_type (const TypeSpec &typespec)
+BackendLLVMCommon::llvm_pass_type (const TypeSpec &typespec)
 {
     if (typespec.is_closure_based())
         return (llvm::Type *) ll.type_void_ptr();
@@ -156,6 +155,7 @@ BackendLLVM::llvm_pass_type (const TypeSpec &typespec)
     else if (t == TypeDesc::LONGLONG)
         lt = ll.type_longlong();
     else {
+        std::cerr << "Bad llvm_pass_type(" << typespec.c_str() << ")\n";
         OSL_ASSERT_MSG (0, "not handling %s type yet", typespec.c_str());
     }
     if (t.arraylen) {
@@ -910,21 +910,21 @@ BackendLLVM::llvm_store_component_value (llvm::Value* new_val,
 
 
 
-llvm::Value *
-BackendLLVM::groupdata_field_ref (int fieldnum)
+llvm::Value*
+BackendLLVMCommon::groupdata_field_ptr(int fieldnum, TypeDesc type,
+                                       bool is_uniform)
 {
-    return ll.GEP (groupdata_ptr(), 0, fieldnum);
-}
-
-
-llvm::Value *
-BackendLLVM::groupdata_field_ptr (int fieldnum, TypeDesc type)
-{
-    llvm::Value *result = ll.void_ptr (groupdata_field_ref (fieldnum));
-    if (type != TypeDesc::UNKNOWN)
-        result = ll.ptr_to_cast (result, llvm_type(type));
+    llvm::Value* result = ll.void_ptr(groupdata_field_ref(fieldnum));
+    if (type != TypeUnknown) {
+        if (is_uniform) {
+            result = ll.ptr_to_cast(result, llvm_type(type));
+        } else {
+            result = ll.ptr_to_cast(result, llvm_wide_type(type));
+        }
+    }
     return result;
 }
+
 
 
 llvm::Value *
@@ -1141,7 +1141,7 @@ BackendLLVM::llvm_assign_impl (Symbol &Result, Symbol &Src,
 
 
 
-int BackendLLVM::find_userdata_index (const Symbol& sym)
+int BackendLLVMCommon::find_userdata_index (const Symbol& sym)
 {
     int userdata_index = -1;
     for (int i = 0, e = (int)group().m_userdata_names.size(); i < e; ++i) {

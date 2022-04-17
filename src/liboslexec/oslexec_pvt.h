@@ -1726,6 +1726,7 @@ private:
     bool m_complete = false;              ///< Successfully ShaderGroupEnd?
 
     friend class OSL::pvt::ShadingSystemImpl;
+    friend class OSL::pvt::BackendLLVMCommon;
     friend class OSL::pvt::BackendLLVM;
 #if OSL_USE_BATCHED
     friend class OSL::pvt::BatchedBackendLLVM;

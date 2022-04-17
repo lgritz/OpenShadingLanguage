@@ -68,8 +68,6 @@ public:
     void llvm_assign_initial_value(const Symbol& sym,
                                    llvm::Value* llvm_initial_shader_mask_value,
                                    bool force = false);
-    llvm::LLVMContext& llvm_context() const { return ll.context(); }
-    AllocationMap& named_values() { return m_named_values; }
 
     /// Return an llvm::Value* corresponding to the address of the given
     /// symbol element, with derivative (0=value, 1=dx, 2=dy) and array
@@ -289,7 +287,7 @@ public:
 
     inline llvm::Value* getTempMask(const std::string& name = "")
     {
-        ASSERT(
+        OSL_ASSERT(
             !m_temp_scopes.empty()
             && "An instance of BatchedBackendLLVM::TempScope must exist higher up in the call stack");
         return getOrAllocateTemp(TypeSpec(TypeDesc::INT), false /*derivs*/,
@@ -334,12 +332,7 @@ public:
     int ShaderGlobalNameToIndex(ustring name, bool& is_uniform);
 
     /// Return the LLVM type handle for the BatchedShaderGlobals struct.
-    ///
-    llvm::Type* llvm_type_sg();
-
-    /// Return the LLVM type handle for a pointer to a
-    /// BatchedShaderGlobals struct.
-    llvm::Type* llvm_type_sg_ptr();
+    virtual llvm::Type* llvm_type_sg() override;
 
     /// Return the LLVM type handle for the BatchedTextureOptions struct.
     ///
@@ -349,16 +342,8 @@ public:
     ///
     llvm::Type* llvm_type_batched_trace_options();
 
-    /// Return the ShaderGlobals pointer.
-    ///
-    llvm::Value* sg_ptr() const { return m_llvm_shaderglobals_ptr; }
-
     llvm::Type* llvm_type_closure_component();
     llvm::Type* llvm_type_closure_component_ptr();
-
-    /// Return the ShaderGlobals pointer cast as a void*.
-    ///
-    llvm::Value* sg_void_ptr() { return ll.void_ptr(m_llvm_shaderglobals_ptr); }
 
     llvm::Value* llvm_ptr_cast(llvm::Value* val, const TypeSpec& type)
     {
@@ -383,26 +368,6 @@ public:
     /// Return the LLVM type handle for a pointer to the common group
     /// data that holds all the shader params.
     llvm::Type* llvm_type_groupdata_ptr();
-
-    /// Return the group data pointer.
-    ///
-    llvm::Value* groupdata_ptr() const { return m_llvm_groupdata_ptr; }
-
-    /// Return the group data pointer cast as a void*.
-    ///
-    llvm::Value* groupdata_void_ptr()
-    {
-        return ll.void_ptr(m_llvm_groupdata_ptr);
-    }
-
-    /// Return a reference to the specified field within the group data.
-    llvm::Value* groupdata_field_ref(int fieldnum);
-
-    /// Return a pointer to the specified field within the group data,
-    /// optionally cast to pointer to a particular data type.
-    llvm::Value* groupdata_field_ptr(int fieldnum,
-                                     TypeDesc type   = TypeDesc::UNKNOWN,
-                                     bool is_uniform = true);
 
 
     /// Return the pointer to the block of shadeindices.
@@ -624,57 +589,22 @@ public:
                                     bool functionIsLlvmInlined     = false,
                                     bool ptrToReturnStructIs1stArg = false);
 
-    TypeDesc llvm_typedesc(const TypeSpec& typespec)
-    {
-        return typespec.is_closure_based()
-                   ? TypeDesc(TypeDesc::PTR, typespec.arraylength())
-                   : typespec.simpletype();
-    }
+    // TypeDesc llvm_typedesc(const TypeSpec& typespec)
+    // {
+    //     return typespec.is_closure_based()
+    //                ? TypeDesc(TypeDesc::PTR, typespec.arraylength())
+    //                : typespec.simpletype();
+    // }
 
-    /// Generate the appropriate llvm type definition for a TypeSpec
-    /// (this is the actual type, for example when we allocate it).
-    /// Allocates ptrs for closures.
-    llvm::Type* llvm_type(const TypeSpec& typespec)
-    {
-        return ll.llvm_type(llvm_typedesc(typespec));
-    }
-
-    llvm::Type* llvm_wide_type(const TypeSpec& typespec)
-    {
-        // We are the "wide" backend, so all types will be vector types
-        return ll.llvm_vector_type(llvm_typedesc(typespec));
-    }
+    // llvm::Type* llvm_wide_type(const TypeSpec& typespec)
+    // {
+    //     // We are the "wide" backend, so all types will be vector types
+    //     return ll.llvm_vector_type(llvm_typedesc(typespec));
+    // }
 
     /// Generate the parameter-passing llvm type definition for an OSL
     /// TypeSpec.
-    llvm::Type* llvm_pass_type(const TypeSpec& typespec);
     llvm::Type* llvm_pass_wide_type(const TypeSpec& typespec);
-
-    llvm::PointerType* llvm_type_prepare_closure_func()
-    {
-        return m_llvm_type_prepare_closure_func;
-    }
-    llvm::PointerType* llvm_type_setup_closure_func()
-    {
-        return m_llvm_type_setup_closure_func;
-    }
-
-    /// Return the basic block of the exit for the whole instance.
-    ///
-    bool llvm_has_exit_instance_block() const { return m_exit_instance_block; }
-
-    /// Return the basic block of the exit for the whole instance.
-    ///
-    llvm::BasicBlock* llvm_exit_instance_block()
-    {
-        if (!m_exit_instance_block) {
-            std::string name      = Strutil::sprintf("%s_%d_exit_",
-                                                inst()->layername(),
-                                                inst()->id());
-            m_exit_instance_block = ll.new_basic_block(name);
-        }
-        return m_exit_instance_block;
-    }
 
     /// Check for inf/nan in all written-to arguments of the op
     void llvm_generate_debugnan(const Opcode& op);
@@ -683,22 +613,12 @@ public:
     /// Print debugging line for the op
     void llvm_generate_debug_op_printf(const Opcode& op);
 
-    llvm::Function* layer_func() const { return ll.current_function(); }
-
-    /// Call this when JITing a texture-like call, to track how many.
-    void generated_texture_call(bool handle)
-    {
-        shadingsys().m_stat_tex_calls_codegened += 1;
-        if (handle)
-            shadingsys().m_stat_tex_calls_as_handles += 1;
-    }
-
     void llvm_print_mask(const char* title, llvm::Value* mask = nullptr);
 
-    /// Return the userdata index for the given Symbol.  Return -1 if the Symbol
-    /// is not an input parameter or is constant and therefore doesn't have an
-    /// entry in the groupdata struct.
-    int find_userdata_index(const Symbol& sym);
+    // Return the userdata index for the given Symbol.  Return -1 if the Symbol
+    // is not an input parameter or is constant and therefore doesn't have an
+    // entry in the groupdata struct.
+    // int find_userdata_index(const Symbol& sym);
 
     int vector_width() const { return m_width; }
     int true_mask_value() const { return m_true_mask_value; }

@@ -224,14 +224,6 @@ BackendLLVM::llvm_type_sg ()
 
 
 llvm::Type *
-BackendLLVM::llvm_type_sg_ptr ()
-{
-    return ll.type_ptr (llvm_type_sg());
-}
-
-
-
-llvm::Type *
 BackendLLVM::llvm_type_groupdata ()
 {
     // If already computed, return it
