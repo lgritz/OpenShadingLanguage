@@ -600,7 +600,7 @@ public:
     // entry in the groupdata struct.
     // int find_userdata_index(const Symbol& sym);
 
-    int vector_width() const { return m_width; }
+    int xvector_width() const { return m_batch_width; }
     int true_mask_value() const { return m_true_mask_value; }
 
 private:
@@ -625,7 +625,6 @@ private:
     void build_offsets_of_BatchedTextureOptions(
         std::vector<unsigned int>& offset_by_index);
 
-    int m_width;
     int m_true_mask_value;
 
     // Interface and Factory method to construct a Concrete TargetLibraryHelper

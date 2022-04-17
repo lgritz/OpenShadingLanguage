@@ -121,11 +121,11 @@ BatchedBackendLLVM::BatchedBackendLLVM(ShadingSystemImpl& shadingsys,
                                        ShaderGroup& group, ShadingContext* ctx,
                                        int width)
     : BackendLLVMCommon(shadingsys, group, ctx, width)
-    , m_width(width)
     , m_library_selector(nullptr)
 {
+    m_batch_width = width;
     m_wide_arg_prefix = "W";
-    switch (vector_width()) {
+    switch (batch_width()) {
     case 16: m_true_mask_value = Mask<16>(true).value(); break;
     case 8: m_true_mask_value = Mask<8>(true).value(); break;
     default: OSL_ASSERT(0 && "unsupported vector width");

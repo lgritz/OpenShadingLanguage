@@ -183,6 +183,12 @@ public:
     /// entry in the groupdata struct.
     int find_userdata_index (const Symbol& sym);
 
+    /// Return the batch width, or 1 for a scalar shading back end.
+    int batch_width() const { return m_batch_width; }
+
+    /// Is this a batching back end?
+    bool is_batch() const { return m_batch_width > 1; }
+
     /// Return whether or not we are compiling for an OptiX-based renderer.
     bool use_optix() { return m_use_optix; }
 
@@ -215,7 +221,8 @@ protected:
     llvm::PointerType *m_llvm_type_setup_closure_func;
     int m_llvm_local_mem;             // Amount of memory we use for locals
 
-    bool m_use_optix = false;                   ///< Compile for OptiX?
+    int m_batch_width = 1;  ///< 1 for scalar, bigger for batched shading
+    bool m_use_optix  = false;  ///< Compile for OptiX?
 };
 
 
