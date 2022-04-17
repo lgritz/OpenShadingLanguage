@@ -343,14 +343,6 @@ BackendLLVM::llvm_type_groupdata ()
 
 
 llvm::Type *
-BackendLLVM::llvm_type_groupdata_ptr ()
-{
-    return ll.type_ptr (llvm_type_groupdata());
-}
-
-
-
-llvm::Type *
 BackendLLVM::llvm_type_closure_component ()
 {
     if (m_llvm_type_closure_component)

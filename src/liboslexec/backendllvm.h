@@ -48,6 +48,14 @@ public:
 
     int layer_remap(int origlayer) const { return m_layer_remap[origlayer]; }
 
+    /// Return an llvm::Value* corresponding to the address of the given
+    /// symbol element, with derivative (0=value, 1=dx, 2=dy) and array
+    /// index (NULL if it's not an array).
+    /// FIXME: this seems so close between BackendLLVM and BatchedBackendLLVM,
+    /// they should probably be unified.
+    virtual llvm::Value* llvm_get_pointer(const Symbol& sym, int deriv = 0,
+                                          llvm::Value* arrayindex = nullptr) = 0;
+
     typedef std::map<std::string, llvm::Value*> AllocationMap;
 
     llvm::LLVMContext& llvm_context() const { return ll.context(); }
@@ -65,6 +73,33 @@ public:
 
     /// Return the ShaderGlobals pointer cast as a void*.
     llvm::Value* sg_void_ptr() { return ll.void_ptr(m_llvm_shaderglobals_ptr); }
+
+    llvm::Value *llvm_ptr_cast (llvm::Value* val, const TypeSpec &type) {
+        return ll.ptr_cast (val, type.simpletype());
+    }
+
+    llvm::Value* llvm_wide_ptr_cast(llvm::Value* val, const TypeSpec& type)
+    {
+        return ll.wide_ptr_cast(val, type.simpletype());
+    }
+
+    llvm::Value *llvm_void_ptr (const Symbol &sym, int deriv=0) {
+        return ll.void_ptr (llvm_get_pointer(sym, deriv));
+    }
+
+    /// Return the LLVM type handle for a structure of the common group
+    /// data that holds all the shader params.
+    /// FIXME? This is sooooooo close between BackendLLVM and
+    /// BatchedBackendLLVM, maybe even the same in practice, we should really
+    /// see if we can unify them.
+    virtual llvm::Type* llvm_type_groupdata() = 0;
+
+    /// Return the LLVM type handle for a pointer to the common group
+    /// data that holds all the shader params.
+    llvm::Type* llvm_type_groupdata_ptr()
+    {
+        return ll.type_ptr(llvm_type_groupdata());
+    }
 
     /// Return the group data pointer.
     llvm::Value* groupdata_ptr() const { return m_llvm_groupdata_ptr; }
@@ -227,8 +262,9 @@ public:
     /// Return an llvm::Value* corresponding to the address of the given
     /// symbol element, with derivative (0=value, 1=dx, 2=dy) and array
     /// index (NULL if it's not an array).
-    llvm::Value *llvm_get_pointer (const Symbol& sym, int deriv=0,
-                                   llvm::Value *arrayindex=NULL);
+    virtual llvm::Value*
+    llvm_get_pointer(const Symbol& sym, int deriv = 0,
+                     llvm::Value* arrayindex = nullptr) override;
 
     /// Return the llvm::Value* corresponding to the given element
     /// value, with derivative (0=value, 1=dx, 2=dy), array index (NULL
@@ -412,21 +448,21 @@ public:
     llvm::Type *llvm_type_closure_component ();
     llvm::Type *llvm_type_closure_component_ptr ();
 
-    llvm::Value *llvm_ptr_cast (llvm::Value* val, const TypeSpec &type) {
-        return ll.ptr_cast (val, type.simpletype());
-    }
+    // llvm::Value *llvm_ptr_cast (llvm::Value* val, const TypeSpec &type) {
+    //     return ll.ptr_cast (val, type.simpletype());
+    // }
 
-    llvm::Value *llvm_void_ptr (const Symbol &sym, int deriv=0) {
-        return ll.void_ptr (llvm_get_pointer(sym, deriv));
-    }
+    // llvm::Value *llvm_void_ptr (const Symbol &sym, int deriv=0) {
+    //     return ll.void_ptr (llvm_get_pointer(sym, deriv));
+    // }
 
     /// Return the LLVM type handle for a structure of the common group
     /// data that holds all the shader params.
-    llvm::Type *llvm_type_groupdata ();
+    virtual llvm::Type* llvm_type_groupdata() override;
 
-    /// Return the LLVM type handle for a pointer to the common group
-    /// data that holds all the shader params.
-    llvm::Type *llvm_type_groupdata_ptr ();
+    // Return the LLVM type handle for a pointer to the common group
+    // data that holds all the shader params.
+    // llvm::Type* llvm_type_groupdata_ptr();
 
     // Return the group data pointer.
     // llvm::Value *groupdata_ptr () const { return m_llvm_groupdata_ptr; }

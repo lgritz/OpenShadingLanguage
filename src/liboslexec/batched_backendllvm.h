@@ -72,8 +72,9 @@ public:
     /// Return an llvm::Value* corresponding to the address of the given
     /// symbol element, with derivative (0=value, 1=dx, 2=dy) and array
     /// index (NULL if it's not an array).
-    llvm::Value* llvm_get_pointer(const Symbol& sym, int deriv = 0,
-                                  llvm::Value* arrayindex = NULL);
+    virtual llvm::Value*
+    llvm_get_pointer(const Symbol& sym, int deriv = 0,
+                     llvm::Value* arrayindex = nullptr) override;
 
     /// Allocate a new memory location to store a wide copy of the value
     /// in sym. Optionally pass in the deriv to create wide copy of the deriv.
@@ -345,30 +346,9 @@ public:
     llvm::Type* llvm_type_closure_component();
     llvm::Type* llvm_type_closure_component_ptr();
 
-    llvm::Value* llvm_ptr_cast(llvm::Value* val, const TypeSpec& type)
-    {
-        return ll.ptr_cast(val, type.simpletype());
-    }
-
-    llvm::Value* llvm_wide_ptr_cast(llvm::Value* val, const TypeSpec& type)
-    {
-        return ll.wide_ptr_cast(val, type.simpletype());
-    }
-
-
-    llvm::Value* llvm_void_ptr(const Symbol& sym, int deriv = 0)
-    {
-        return ll.void_ptr(llvm_get_pointer(sym, deriv));
-    }
-
     /// Return the LLVM type handle for a structure of the common group
     /// data that holds all the shader params.
-    llvm::Type* llvm_type_groupdata();
-
-    /// Return the LLVM type handle for a pointer to the common group
-    /// data that holds all the shader params.
-    llvm::Type* llvm_type_groupdata_ptr();
-
+    virtual llvm::Type* llvm_type_groupdata() override;
 
     /// Return the pointer to the block of shadeindices.
     llvm::Value *wide_shadeindex_ptr () const { return m_llvm_wide_shadeindex_ptr; }
