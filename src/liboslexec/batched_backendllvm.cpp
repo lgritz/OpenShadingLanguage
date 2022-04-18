@@ -851,6 +851,7 @@ BatchedBackendLLVM::llvm_load_value(llvm::Value* ptr, const TypeSpec& type,
 
 
 
+#if 0
 llvm::Value*
 BatchedBackendLLVM::llvm_load_constant_value(const Symbol& sym, int arrayindex,
                                              int component, TypeDesc cast,
@@ -923,6 +924,7 @@ BatchedBackendLLVM::llvm_load_constant_value(const Symbol& sym, int arrayindex,
     OSL_ASSERT(0 && "unhandled constant type");
     return NULL;
 }
+#endif
 
 
 

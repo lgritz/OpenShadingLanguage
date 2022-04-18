@@ -69,7 +69,6 @@ public:
                                          TypeDesc cast, bool op_is_uniform,
                                          bool index_is_uniform) = 0;
 
-
     /// Given an llvm::Value* of a pointer (and the type of the data
     /// that it points to), Return the llvm::Value* corresponding to the
     /// given element value, with derivative (0=value, 1=dx, 2=dy),
@@ -85,6 +84,23 @@ public:
                                          bool op_is_uniform,
                                          bool index_is_uniform,
                                          bool symbol_forced_boolean) = 0;
+
+    /// Just like llvm_load_value, but when both the symbol and the
+    /// array index are known to be constants.  This can even handle
+    /// pulling constant-indexed elements out of constant arrays.  Use
+    /// arrayindex==-1 to indicate that it's not an array dereference.
+    llvm::Value *llvm_load_constant_value(const Symbol& sym,
+                                          int arrayindex, int component,
+                                          TypeDesc cast = TypeUnknown,
+                                          bool op_is_uniform = true);
+
+    /// Load the address of a global device-side string pointer, which may
+    /// reside in a global variable, the groupdata struct, or a local value.
+    /// This is only used for OptiX.
+    virtual llvm::Value* llvm_load_device_string(const Symbol& sym, bool follow)
+    {
+        return nullptr;  // only implemented for back ends supporting GPUs
+    }
 
     typedef std::map<std::string, llvm::Value*> AllocationMap;
 
@@ -337,14 +353,6 @@ public:
                                          bool symbol_forced_boolean = false) override;
 #endif
 
-    /// Just like llvm_load_value, but when both the symbol and the
-    /// array index are known to be constants.  This can even handle
-    /// pulling constant-indexed elements out of constant arrays.  Use
-    /// arrayindex==-1 to indicate that it's not an array dereference.
-    llvm::Value *llvm_load_constant_value (const Symbol& sym,
-                                           int arrayindex, int component,
-                                           TypeDesc cast=TypeDesc::UNKNOWN);
-
     /// llvm_load_value with non-constant component designation.  Does
     /// not work with arrays or do type casts!
     llvm::Value *llvm_load_component_value (const Symbol& sym, int deriv,
@@ -362,7 +370,8 @@ public:
 
     /// Load the address of a global device-side string pointer, which may
     /// reside in a global variable, the groupdata struct, or a local value.
-    llvm::Value *llvm_load_device_string (const Symbol& sym, bool follow);
+    /// This is only used for OptiX.
+    virtual llvm::Value *llvm_load_device_string (const Symbol& sym, bool follow) override;
 
     /// Convenience function to load a string for CPU or GPU device
     llvm::Value *llvm_load_string (const Symbol& sym) {

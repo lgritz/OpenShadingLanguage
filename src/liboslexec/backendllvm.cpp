@@ -730,11 +730,84 @@ BackendLLVM::llvm_load_device_string (const Symbol& sym, bool follow)
 
 
 
-llvm::Value *
-BackendLLVM::llvm_load_constant_value (const Symbol& sym, 
-                                       int arrayindex, int component,
-                                       TypeDesc cast)
+llvm::Value*
+BackendLLVMCommon::llvm_load_constant_value(const Symbol& sym, int arrayindex,
+                                            int component, TypeDesc cast,
+                                            bool op_is_uniform)
 {
+#if 1
+    OSL_ASSERT(sym.is_constant()
+               && "Called llvm_load_constant_value for a non-constant symbol");
+
+    // set array indexing to zero for non-arrays
+    if (!sym.typespec().is_array())
+        arrayindex = 0;
+    OSL_ASSERT(arrayindex >= 0
+               && "Called llvm_load_constant_value with negative array index");
+
+
+    // TODO: might want to take this fix for array types back to the non-wide backend
+    TypeSpec elementType = sym.typespec();
+    // The symbol we are creating a constant for might be an array
+    // and our checks for types use non-array types
+    elementType.make_array(0);
+
+    if (elementType.is_float()) {
+        float float_elem = sym.get_float(arrayindex);
+        if (cast == TypeDesc::TypeInt) {
+            int int_elem = static_cast<int>(float_elem);
+            if (op_is_uniform) {
+                return ll.constant(int_elem);
+            } else {
+                return ll.wide_constant(int_elem);
+            }
+        } else if (op_is_uniform) {
+            return ll.constant(float_elem);
+        } else {
+            return ll.wide_constant(float_elem);
+        }
+    }
+    if (elementType.is_int()) {
+        int int_elem = sym.get_int(arrayindex);
+        if (cast == TypeDesc::TypeFloat) {
+            float float_elem = static_cast<float>(int_elem);
+            if (op_is_uniform) {
+                return ll.constant(float_elem);
+            } else {
+                return ll.wide_constant(float_elem);
+            }
+        } else if (op_is_uniform) {
+            return ll.constant(int_elem);
+        } else {
+            return ll.wide_constant(int_elem);
+        }
+    }
+    if (elementType.is_triple() || elementType.is_matrix()) {
+        int ncomps       = (int)sym.typespec().aggregate();
+        float float_elem = sym.get_float(ncomps * arrayindex + component);
+        if (op_is_uniform) {
+            return ll.constant(float_elem);
+        } else {
+            return ll.wide_constant(float_elem);
+        }
+    }
+    if (elementType.is_string() && use_optix()) {
+        OSL_DASSERT(op_is_uniform && "OptiX string must be uniform");
+        OSL_DASSERT((arrayindex == 0) && "String arrays are not currently supported in OptiX");
+        return llvm_load_device_string (sym, /*follow*/ false);
+    }
+    if (elementType.is_string()) {
+        ustring string_elem = sym.get_string(arrayindex);
+        if (op_is_uniform) {
+            return ll.constant(string_elem);
+        } else {
+            return ll.wide_constant(string_elem);
+        }
+    }
+
+    OSL_ASSERT(0 && "unhandled constant type");
+    return NULL;
+#else
     OSL_DASSERT (sym.is_constant() &&
                  "Called llvm_load_constant_value for a non-constant symbol");
 
@@ -770,6 +843,7 @@ BackendLLVM::llvm_load_constant_value (const Symbol& sym,
 
     OSL_ASSERT (0 && "unhandled constant type");
     return NULL;
+#endif
 }
 
 
