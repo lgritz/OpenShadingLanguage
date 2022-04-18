@@ -56,6 +56,36 @@ public:
     virtual llvm::Value* llvm_get_pointer(const Symbol& sym, int deriv = 0,
                                           llvm::Value* arrayindex = nullptr) = 0;
 
+    /// Return the llvm::Value* corresponding to the given element
+    /// value, with derivative (0=value, 1=dx, 2=dy), array index (NULL
+    /// if it's not an array), and component (x=0 or scalar, y=1, z=2).
+    /// If deriv >0 and the symbol doesn't have derivatives, return 0
+    /// for the derivative.  If the component >0 and it's a scalar,
+    /// return the scalar -- this allows automatic casting to triples.
+    /// Finally, auto-cast int<->float if requested (no conversion is
+    /// performed if cast is the default of UNKNOWN).
+    virtual llvm::Value* llvm_load_value(const Symbol& sym, int deriv,
+                                         llvm::Value* arrayindex, int component,
+                                         TypeDesc cast, bool op_is_uniform,
+                                         bool index_is_uniform) = 0;
+
+
+    /// Given an llvm::Value* of a pointer (and the type of the data
+    /// that it points to), Return the llvm::Value* corresponding to the
+    /// given element value, with derivative (0=value, 1=dx, 2=dy),
+    /// array index (NULL if it's not an array), and component (x=0 or
+    /// scalar, y=1, z=2).  If deriv >0 and the symbol doesn't have
+    /// derivatives, return 0 for the derivative.  If the component >0
+    /// and it's a scalar, return the scalar -- this allows automatic
+    /// casting to triples.  Finally, auto-cast int<->float if requested
+    /// (no conversion is performed if cast is the default of UNKNOWN).
+    virtual llvm::Value* llvm_load_value(llvm::Value* ptr, const TypeSpec& type,
+                                         int deriv, llvm::Value* arrayindex,
+                                         int component, TypeDesc cast,
+                                         bool op_is_uniform,
+                                         bool index_is_uniform,
+                                         bool symbol_forced_boolean) = 0;
+
     typedef std::map<std::string, llvm::Value*> AllocationMap;
 
     llvm::LLVMContext& llvm_context() const { return ll.context(); }
@@ -273,6 +303,7 @@ public:
     llvm_get_pointer(const Symbol& sym, int deriv = 0,
                      llvm::Value* arrayindex = nullptr) override;
 
+#if 1
     /// Return the llvm::Value* corresponding to the given element
     /// value, with derivative (0=value, 1=dx, 2=dy), array index (NULL
     /// if it's not an array), and component (x=0 or scalar, y=1, z=2).
@@ -281,9 +312,11 @@ public:
     /// return the scalar -- this allows automatic casting to triples.
     /// Finally, auto-cast int<->float if requested (no conversion is
     /// performed if cast is the default of UNKNOWN).
-    llvm::Value *llvm_load_value (const Symbol& sym, int deriv,
-                                  llvm::Value *arrayindex, int component,
-                                  TypeDesc cast=TypeDesc::UNKNOWN);
+    virtual llvm::Value* llvm_load_value(const Symbol& sym, int deriv,
+                                         llvm::Value* arrayindex, int component,
+                                         TypeDesc cast         = TypeUnknown,
+                                         bool op_is_uniform    = true,
+                                         bool index_is_uniform = true) override;
 
 
     /// Given an llvm::Value* of a pointer (and the type of the data
@@ -295,9 +328,14 @@ public:
     /// and it's a scalar, return the scalar -- this allows automatic
     /// casting to triples.  Finally, auto-cast int<->float if requested
     /// (no conversion is performed if cast is the default of UNKNOWN).
-    llvm::Value *llvm_load_value (llvm::Value *ptr, const TypeSpec &type,
-                              int deriv, llvm::Value *arrayindex,
-                              int component, TypeDesc cast=TypeDesc::UNKNOWN);
+    virtual llvm::Value* llvm_load_value(llvm::Value* ptr, const TypeSpec& type,
+                                         int deriv, llvm::Value* arrayindex,
+                                         int component,
+                                         TypeDesc cast         = TypeUnknown,
+                                         bool op_is_uniform    = true,
+                                         bool index_is_uniform = true,
+                                         bool symbol_forced_boolean = false) override;
+#endif
 
     /// Just like llvm_load_value, but when both the symbol and the
     /// array index are known to be constants.  This can even handle

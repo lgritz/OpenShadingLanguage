@@ -88,11 +88,11 @@ public:
     /// return the scalar -- this allows automatic casting to triples.
     /// Finally, auto-cast int<->float if requested (no conversion is
     /// performed if cast is the default of UNKNOWN).
-    llvm::Value* llvm_load_value(const Symbol& sym, int deriv,
-                                 llvm::Value* arrayindex, int component,
-                                 TypeDesc cast         = TypeDesc::UNKNOWN,
-                                 bool op_is_uniform    = true,
-                                 bool index_is_uniform = true);
+    virtual llvm::Value* llvm_load_value(const Symbol& sym, int deriv,
+                                         llvm::Value* arrayindex, int component,
+                                         TypeDesc cast         = TypeUnknown,
+                                         bool op_is_uniform    = true,
+                                         bool index_is_uniform = true) override;
 
 
     /// Given an llvm::Value* of a pointer (and the type of the data
@@ -104,13 +104,12 @@ public:
     /// and it's a scalar, return the scalar -- this allows automatic
     /// casting to triples.  Finally, auto-cast int<->float if requested
     /// (no conversion is performed if cast is the default of UNKNOWN).
-    llvm::Value* llvm_load_value(llvm::Value* ptr, const TypeSpec& type,
-                                 int deriv, llvm::Value* arrayindex,
-                                 int component,
-                                 TypeDesc cast              = TypeDesc::UNKNOWN,
-                                 bool op_is_uniform         = true,
-                                 bool index_is_uniform      = true,
-                                 bool symbol_forced_boolean = false);
+    virtual llvm::Value*
+    llvm_load_value(llvm::Value* ptr, const TypeSpec& type, int deriv,
+                    llvm::Value* arrayindex, int component,
+                    TypeDesc cast = TypeUnknown, bool op_is_uniform = true,
+                    bool index_is_uniform      = true,
+                    bool symbol_forced_boolean = false) override;
 
     /// Just like llvm_load_value, but when both the symbol and the
     /// array index are known to be constants.  This can even handle

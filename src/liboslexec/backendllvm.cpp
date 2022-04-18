@@ -598,11 +598,14 @@ BackendLLVM::llvm_get_pointer (const Symbol& sym, int deriv,
 
 
 
-llvm::Value *
-BackendLLVM::llvm_load_value (const Symbol& sym, int deriv,
-                                   llvm::Value *arrayindex, int component,
-                                   TypeDesc cast)
+llvm::Value*
+BackendLLVM::llvm_load_value(const Symbol& sym, int deriv,
+                             llvm::Value* arrayindex, int component,
+                             TypeDesc cast, bool op_is_uniform,
+                             bool index_is_uniform)
 {
+    OSL_ASSERT(op_is_uniform && index_is_uniform);
+
     bool has_derivs = sym.has_derivs();
     if (!has_derivs && deriv != 0) {
         // Regardless of what object this is, if it doesn't have derivs but
@@ -643,11 +646,14 @@ BackendLLVM::llvm_load_value (const Symbol& sym, int deriv,
 
 
 
-llvm::Value *
-BackendLLVM::llvm_load_value (llvm::Value *ptr, const TypeSpec &type,
-                                   int deriv, llvm::Value *arrayindex,
-                                   int component, TypeDesc cast)
+llvm::Value*
+BackendLLVM::llvm_load_value(llvm::Value* ptr, const TypeSpec& type, int deriv,
+                             llvm::Value* arrayindex, int component,
+                             TypeDesc cast, bool op_is_uniform,
+                             bool index_is_uniform, bool symbol_forced_boolean)
 {
+    OSL_ASSERT(op_is_uniform && index_is_uniform && !symbol_forced_boolean);
+
     if (!ptr)
         return NULL;  // Error
 
