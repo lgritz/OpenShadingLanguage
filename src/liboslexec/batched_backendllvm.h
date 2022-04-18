@@ -94,7 +94,6 @@ public:
                                          bool op_is_uniform    = true,
                                          bool index_is_uniform = true) override;
 
-
     /// Given an llvm::Value* of a pointer (and the type of the data
     /// that it points to), Return the llvm::Value* corresponding to the
     /// given element value, with derivative (0=value, 1=dx, 2=dy),
@@ -111,17 +110,6 @@ public:
                     bool index_is_uniform      = true,
                     bool symbol_forced_boolean = false) override;
 
-#if 0
-    /// Just like llvm_load_value, but when both the symbol and the
-    /// array index are known to be constants.  This can even handle
-    /// pulling constant-indexed elements out of constant arrays.  Use
-    /// arrayindex==-1 to indicate that it's not an array dereference.
-    llvm::Value* llvm_load_constant_value(const Symbol& sym, int arrayindex,
-                                          int component,
-                                          TypeDesc cast = TypeUnknown,
-                                          bool op_is_uniform = true);
-#endif
-
     /// llvm_load_value with non-constant component designation.  Does
     /// not work with arrays or do type casts!
     llvm::Value* llvm_load_component_value(const Symbol& sym, int deriv,
@@ -135,16 +123,6 @@ public:
                                  int component      = 0,
                                  TypeDesc cast      = TypeDesc::UNKNOWN,
                                  bool op_is_uniform = true)
-    {
-        return llvm_load_value(sym, deriv, NULL, component, cast,
-                               op_is_uniform);
-    }
-
-    /// Legacy version
-    ///
-    llvm::Value* loadLLVMValue(const Symbol& sym, int component = 0,
-                               int deriv = 0, TypeDesc cast = TypeDesc::UNKNOWN,
-                               bool op_is_uniform = true)
     {
         return llvm_load_value(sym, deriv, NULL, component, cast,
                                op_is_uniform);
@@ -419,7 +397,6 @@ public:
                                    std::set<int>* already_run = NULL);
 
 
-
     // Encapsulate creation of function names that encode parameter types,
     // including if each is varying or uniform, and if a mask is required.
     // Utilize llvm::Twine to efficently combine multiple strings
@@ -569,19 +546,6 @@ public:
                                     bool function_is_uniform       = true,
                                     bool functionIsLlvmInlined     = false,
                                     bool ptrToReturnStructIs1stArg = false);
-
-    // TypeDesc llvm_typedesc(const TypeSpec& typespec)
-    // {
-    //     return typespec.is_closure_based()
-    //                ? TypeDesc(TypeDesc::PTR, typespec.arraylength())
-    //                : typespec.simpletype();
-    // }
-
-    // llvm::Type* llvm_wide_type(const TypeSpec& typespec)
-    // {
-    //     // We are the "wide" backend, so all types will be vector types
-    //     return ll.llvm_vector_type(llvm_typedesc(typespec));
-    // }
 
     /// Generate the parameter-passing llvm type definition for an OSL
     /// TypeSpec.

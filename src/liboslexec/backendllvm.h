@@ -67,7 +67,7 @@ public:
     virtual llvm::Value* llvm_load_value(const Symbol& sym, int deriv,
                                          llvm::Value* arrayindex, int component,
                                          TypeDesc cast, bool op_is_uniform,
-                                         bool index_is_uniform) = 0;
+                                         bool index_is_uniform = true) = 0;
 
     /// Given an llvm::Value* of a pointer (and the type of the data
     /// that it points to), Return the llvm::Value* corresponding to the
@@ -100,6 +100,15 @@ public:
     virtual llvm::Value* llvm_load_device_string(const Symbol& sym, bool follow)
     {
         return nullptr;  // only implemented for back ends supporting GPUs
+    }
+
+    /// Legacy version
+    llvm::Value* loadLLVMValue(const Symbol& sym, int component = 0,
+                               int deriv = 0, TypeDesc cast = TypeUnknown,
+                               bool op_is_uniform = true)
+    {
+        return llvm_load_value(sym, deriv, NULL, component, cast,
+                               op_is_uniform);
     }
 
     typedef std::map<std::string, llvm::Value*> AllocationMap;
@@ -319,7 +328,6 @@ public:
     llvm_get_pointer(const Symbol& sym, int deriv = 0,
                      llvm::Value* arrayindex = nullptr) override;
 
-#if 1
     /// Return the llvm::Value* corresponding to the given element
     /// value, with derivative (0=value, 1=dx, 2=dy), array index (NULL
     /// if it's not an array), and component (x=0 or scalar, y=1, z=2).
@@ -351,7 +359,6 @@ public:
                                          bool op_is_uniform    = true,
                                          bool index_is_uniform = true,
                                          bool symbol_forced_boolean = false) override;
-#endif
 
     /// llvm_load_value with non-constant component designation.  Does
     /// not work with arrays or do type casts!
@@ -381,12 +388,10 @@ public:
             : llvm_load_value(sym);
     }
 
-    /// Legacy version
-    ///
-    llvm::Value *loadLLVMValue (const Symbol& sym, int component=0,
-                                int deriv=0, TypeDesc cast=TypeDesc::UNKNOWN) {
-        return llvm_load_value (sym, deriv, NULL, component, cast);
-    }
+    // Legacy version
+    // llvm::Value* loadLLVMValue(const Symbol& sym, int component = 0,
+    //                            int deriv = 0, TypeDesc cast = TypeUnknown,
+    //                            bool op_is_uniform = true);
 
     /// Return an llvm::Value* that is either a scalar and derivs is
     /// false, or a pointer to sym's values (if sym is an aggregate or
