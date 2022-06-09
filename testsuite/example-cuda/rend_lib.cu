@@ -245,7 +245,10 @@ osl_bind_interpolated_param(void* sg_, const void* name, long long type,
 __device__ int
 osl_strlen_is(const char* str)
 {
-    return HDSTR(str).length();
+    // FIXME: Currently, all we have on the Cuda side is the hash, so we
+    // can't determine the length.
+    // return HDSTR(str).length();
+    return 0;
 }
 
 
@@ -259,7 +262,10 @@ osl_hash_is(const char* str)
 __device__ int
 osl_getchar_isi(const char* str, int index)
 {
-    return (str && unsigned(index) < HDSTR(str).length()) ? str[index] : 0;
+    // FIXME: Currently, all we have on the Cuda side is the hash, not
+    // the characters.
+    // return (str && unsigned(index) < HDSTR(str).length()) ? str[index] : 0;
+    return 0;
 }
 
 

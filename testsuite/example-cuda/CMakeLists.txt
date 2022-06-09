@@ -9,21 +9,25 @@ if (NOT CMAKE_BUILD_TYPE)
     set (CMAKE_BUILD_TYPE "Release")
 endif ()
 
-# Is there a better way to get the location of the main OSL CMakeLists.txt?
-set(OSL_LIST_DIR "${CMAKE_CURRENT_LIST_DIR}/../../../../")
+if (DEFINED ENV{OSL_SOURCE_DIR})
+    # Allowe script running the testsuite to specify an unusual location
+    set(OSL_SOURCE_DIR "$ENV{OSL_SOURCE_DIR}")
+else ()
+    # Automatic detection
+    set(OSL_SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/../../../../")
+endif ()
 # We have to make the path absolute or CMake will fail to find the file...
-get_filename_component(OSL_LIST_DIR ${OSL_LIST_DIR} ABSOLUTE)
-set(CMAKE_MODULE_PATH "${OSL_LIST_DIR}/src/cmake;${OSL_LIST_DIR}/src/cmake/modules")
-
+get_filename_component(OSL_SOURCE_DIR ${OSL_SOURCE_DIR} ABSOLUTE)
+set(CMAKE_MODULE_PATH "${OSL_SOURCE_DIR}/src/cmake" "${OSL_SOURCE_DIR}/src/cmake/modules" ${CMAKE_MODULE_PATH})
 include(check_is_enabled)
 include(checked_find_package)
 
 find_package(OSL REQUIRED)
 find_package(CUDA REQUIRED)
-checked_find_package(LLVM 7.0 REQUIRED)
-checked_find_package(OpenEXR 2.0 REQUIRED)
-checked_find_package(OpenImageIO 2.2 REQUIRED)
-checked_find_package(OptiX REQUIRED)
+find_package(LLVM REQUIRED)
+find_package(OpenEXR REQUIRED)
+find_package(OpenImageIO REQUIRED)
+find_package(OptiX REQUIRED)
 
 
 # Make the build area layout look like we expect
@@ -36,7 +40,7 @@ find_library(CUDA_nvrtc_LIBRARY nvrtc HINTS ${CUDA_TOOLKIT_ROOT_DIR} PATH_SUFFIX
 find_library(CUDA_cuda_LIBRARY cuda HINTS ${CUDA_TOOLKIT_ROOT_DIR} PATH_SUFFIXES lib/stubs lib64/stubs)
 
 # TODO: move to sm_60?
-set(CUDA_TARGET_ARCH sm_35)
+set(CUDA_TARGET_ARCH sm_60)
 
 # Compile our "renderer" to PTX
 cuda_compile_ptx(CUDA_PTX_FILES cuda_grid_renderer.cu
