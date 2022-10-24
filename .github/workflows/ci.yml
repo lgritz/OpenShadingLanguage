@@ -304,6 +304,7 @@ jobs:
 
   ubuntu:
     name: "Ubuntu ${{matrix.desc}}"
+    if: 0
     strategy:
       fail-fast: false
       matrix:
@@ -442,6 +443,7 @@ jobs:
 
   macos:
     name: "${{matrix.os}} appleclang${{matrix.aclang}}/C++${{matrix.cxx_std}} py${{matrix.python_ver}} ${{matrix.desc}}"
+    if: 0
     strategy:
       fail-fast: false
       matrix:
