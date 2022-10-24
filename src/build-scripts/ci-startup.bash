@@ -39,7 +39,7 @@ export CMAKE_GENERATOR=${CMAKE_GENERATOR:=Ninja}
 export CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE:=Release}
 export CMAKE_CXX_STANDARD=${CMAKE_CXX_STANDARD:=11}
 
-export PARALLEL=${PARALLEL:=4}
+export PARALLEL=$((2 + `nproc`))
 export PAR_MAKEFLAGS=-j${PARALLEL}
 export CMAKE_BUILD_PARALLEL_LEVEL=${CMAKE_BUILD_PARALLEL_LEVEL:=${PARALLEL}}
 export CTEST_PARALLEL_LEVEL=${CTEST_PARALLEL_LEVEL:=${PARALLEL}}
@@ -57,6 +57,7 @@ mkdir -p build dist
 echo "HOME = $HOME"
 echo "PWD = $PWD"
 echo "LOCAL_DEPS_DIR = $LOCAL_DEPS_DIR"
+echo "PARALLEL = $PARALLEL"
 echo "uname -a: " `uname -a`
 echo "uname -m: " `uname -m`
 echo "uname -s: " `uname -s`
