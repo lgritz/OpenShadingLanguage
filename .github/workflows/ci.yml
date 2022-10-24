@@ -119,7 +119,8 @@ jobs:
             # vfxsuffix: -clang13
             # cxx_std: 17
             openimageio_ver: master
-            python_ver: 3.9
+            python_ver: 2.7
+            # python_ver: 3.9
             pybind11_ver: v2.9.0
             simd: avx2,f16c
             # batched: b8_AVX2
