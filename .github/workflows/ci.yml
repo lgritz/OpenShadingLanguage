@@ -111,7 +111,7 @@ jobs:
           - desc: GPU gcc9/C++17 llvm13 py3.9 boost1.76 exr3.1 oiio-master avx2
             # if: github.repository == 'AcademySoftwareFoundation/OpenShadingLanguage'
             nametag: linux-vfx2022-GPU
-            os: ubuntu-20.04-gpu-6c-112g-336h-16vr
+            os: [ "ubuntu-20.04-gpu-12c-224g-672h-32vr", "ubuntu-latest" ]
             vfxyear: 2022
             vfxsuffix: -clang13
             cxx_std: 17
