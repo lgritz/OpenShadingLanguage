@@ -36,7 +36,6 @@ concurrency:
 jobs:
 
   aswf:
-    if: 0
     name: "VFX${{matrix.vfxyear}} ${{matrix.desc}}"
     strategy:
       fail-fast: false
@@ -318,9 +317,11 @@ jobs:
       matrix:
         include:
           - desc: GPU gcc9/C++17 llvm13 py3.9 boost1.76 exr3.1 oiio-master avx2
-            # if: github.repository == 'AcademySoftwareFoundation/OpenShadingLanguage'
+
+            if: github.repository == 'AcademySoftwareFoundation/OpenShadingLanguage'
             nametag: linux-vfx2022-GPU
             os: ubuntu-20.04-gpu-6c-112g-336h-16vr
+            gpu: 1
             vfxyear: 2019
             vfxsuffix: -clang10
             cxx_std: 14
@@ -448,6 +449,9 @@ jobs:
         run: |
             ${{matrix.setenvs}}
             src/build-scripts/ci-startup.bash
+      - name: Get NVIDIA driver version
+        run: nvidia-smi
+        if: ${{matrix.gpu}}
       - name: Dependencies
         run: |
             ${{matrix.depcmds}}
