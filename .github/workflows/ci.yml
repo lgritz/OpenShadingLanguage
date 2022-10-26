@@ -112,6 +112,7 @@ jobs:
           - desc: GPU gcc9/C++17 llvm13 py3.9 boost1.76 exr3.1 oiio-master avx2
             # if: github.repository == 'AcademySoftwareFoundation/OpenShadingLanguage'
             nametag: linux-vfx2022-GPU
+            gpu: 1
             os: ubuntu-20.04-gpu-6c-112g-336h-16vr
             vfxyear: 2019
             vfxsuffix: -clang10
@@ -280,6 +281,9 @@ jobs:
         run: |
             ${{matrix.setenvs}}
             src/build-scripts/ci-startup.bash
+      - name: Get NVIDIA driver version
+        run: nvidia-smi
+        if: ${{matrix.gpu}}
       - name: Remove existing OIIO
         if: matrix.openimageio_ver != ''
         run: |
