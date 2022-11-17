@@ -317,7 +317,6 @@ jobs:
       matrix:
         include:
           - desc: GPU gcc9/C++17 llvm13 py3.9 boost1.76 exr3.1 oiio-master avx2
-
             if: github.repository == 'AcademySoftwareFoundation/OpenShadingLanguage'
             nametag: linux-vfx2022-GPU
             os: ubuntu-20.04-gpu-6c-112g-336h-16vr

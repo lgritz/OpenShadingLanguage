@@ -61,8 +61,13 @@ if [[ "$ASWF_ORG" != ""  ]] ; then
 else
     # Using native Ubuntu runner
 
+    # Deal with outdated NVIDIA gpg public key
+    sudo apt-key del 7fa2af80
+    wget http://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-keyring_1.0-1_all.deb
+    sudo dpkg -i cuda-keyring_1.0-1_all.deb
+
     # sudo add-apt-repository ppa:ubuntu-toolchain-r/test
-    time sudo apt-get update
+    time sudo apt-get --allow-unauthenticated update 
 
     time sudo apt-get -q install -y \
         git cmake ninja-build ccache g++ \
