@@ -62,7 +62,7 @@ else
     # Using native Ubuntu runner
 
     # Deal with outdated NVIDIA gpg public key for GPU test
-    if [[ "${OSL_GPU_TEST:=0}" != "0" ]]
+    if [[ "${OSL_GPU_TEST:=0}" != "0" ]] ; then
         cat /etc/apt/sources.list
         ls -l /etc/apt/sources.list.d/
         echo '#### cuda.list ####'
