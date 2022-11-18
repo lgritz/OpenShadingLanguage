@@ -67,7 +67,7 @@ else
     sudo dpkg -i cuda-keyring_1.0-1_all.deb
 
     # sudo add-apt-repository ppa:ubuntu-toolchain-r/test
-    time sudo apt-get --allow-unauthenticated update 
+    time sudo apt-get update 
 
     time sudo apt-get -q install -y \
         git cmake ninja-build ccache g++ \
