@@ -62,9 +62,12 @@ else
     # Using native Ubuntu runner
 
     # Deal with outdated NVIDIA gpg public key
-    sudo apt-key del 7fa2af80
-    wget http://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-keyring_1.0-1_all.deb
-    sudo dpkg -i cuda-keyring_1.0-1_all.deb
+    #sudo apt-key del 7fa2af80
+
+    # wget http://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-keyring_1.0-1_all.deb
+    # sudo dpkg -i cuda-keyring_1.0-1_all.deb
+
+    sudo apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/$distro/$arch/3bf863cc.pub
 
     # sudo add-apt-repository ppa:ubuntu-toolchain-r/test
     time sudo apt-get update 
