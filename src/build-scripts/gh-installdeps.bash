@@ -61,33 +61,24 @@ if [[ "$ASWF_ORG" != ""  ]] ; then
 else
     # Using native Ubuntu runner
 
-          cat /etc/apt/sources.list
-          ls -l /etc/apt/sources.list.d/
-          echo '#### cuda.list ####'
-          cat /etc/apt/sources.list.d/cuda.list
-          echo '#### cuda.list.save ####'
-          cat /etc/apt/sources.list.d/cuda.list.save
-          echo '#### nvidia-docker.list ####'
-          cat /etc/apt/sources.list.d/nvidia-docker.list
-          echo '### Get rid of cuda.list.save ###'
-          rm /etc/apt/sources.list.d/cuda.list.save
-          #sudo apt-key del 7fa2af80
-          #wget http://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-keyring_1.0-1_all.deb
-          #sudo dpkg -i cuda-keyring_1.0-1_all.deb
-          sudo apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/3bf863cc.pub
-          time sudo apt-get update
+    # Deal with outdated NVIDIA gpg public key for GPU test
+    if [[ "${OSL_GPU_TEST:=0}" != "0" ]]
+        cat /etc/apt/sources.list
+        ls -l /etc/apt/sources.list.d/
+        echo '#### cuda.list ####'
+        cat /etc/apt/sources.list.d/cuda.list
+        echo '#### cuda.list.save ####'
+        cat /etc/apt/sources.list.d/cuda.list.save
+        echo '#### nvidia-docker.list ####'
+        cat /etc/apt/sources.list.d/nvidia-docker.list
+        echo '### Get rid of cuda.list.save ###'
+        rm /etc/apt/sources.list.d/cuda.list.save
+        sudo apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/3bf863cc.pub
+        # time sudo apt-get update
         #   sudo apt -y install libnpp-11-8
+    fi
 
-    # Deal with outdated NVIDIA gpg public key
-    #sudo apt-key del 7fa2af80
-
-    # wget http://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-keyring_1.0-1_all.deb
-    # sudo dpkg -i cuda-keyring_1.0-1_all.deb
-
-    # sudo apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/$distro/$arch/3bf863cc.pub
-
-    # sudo add-apt-repository ppa:ubuntu-toolchain-r/test
-    # time sudo apt-get update
+    time sudo apt-get update
 
     time sudo apt-get -q install -y \
         git cmake ninja-build ccache g++ \
