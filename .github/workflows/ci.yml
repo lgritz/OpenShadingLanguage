@@ -36,6 +36,7 @@ concurrency:
 jobs:
 
   aswf:
+    if: 0
     name: "VFX${{matrix.vfxyear}} ${{matrix.desc}}"
     strategy:
       fail-fast: false
@@ -334,7 +335,9 @@ jobs:
             simd: avx2,f16c
             # batched: b8_AVX2
             setenvs: export OSL_CMAKE_FLAGS="-DUSE_OPTIX=1" OPTIX_VERSION=7.0
-                    OSL_GPU_TEST=1
+                            OSL_GPU_TEST=1
+                            LLVM_VERSION=13.0.0
+                            LLVM_DISTRO_NAME=ubuntu-20.04
 
           - desc: Debug gcc7/C++14 llvm9 py2.7 oiio2.3 exr2.4 sse4 boost1.65 exr2.4
             nametag: linux-debug-gcc7-llvm9
