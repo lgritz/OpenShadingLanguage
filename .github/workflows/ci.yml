@@ -452,9 +452,6 @@ jobs:
         run: |
             ${{matrix.setenvs}}
             src/build-scripts/ci-startup.bash
-      - name: Get NVIDIA driver version
-        run: nvidia-smi
-        if: ${{matrix.gpu}}
       - name: Dependencies
         run: |
             ${{matrix.depcmds}}

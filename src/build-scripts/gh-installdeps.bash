@@ -74,8 +74,6 @@ else
         echo '### Get rid of cuda.list.save ###'
         rm /etc/apt/sources.list.d/cuda.list.save
         sudo apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/3bf863cc.pub
-        # time sudo apt-get update
-        #   sudo apt -y install libnpp-11-8
     fi
 
     time sudo apt-get update

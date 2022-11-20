@@ -68,9 +68,7 @@ env | sort
 
 if [[ `uname -s` == "Linux" ]] ; then
     head -40 /proc/cpuinfo
-    echo "NVIDIA report:"
     nvidia-smi || /usr/bin/nvidia-smi || /bin/true
-    which nvidia-smi || /bin/true
 elif [[ ${RUNNER_OS} == "macOS" ]] ; then
     sysctl machdep.cpu.features
 fi
