@@ -8,6 +8,7 @@
 
 #include <OpenImageIO/fmath.h>
 #include <OpenImageIO/thread.h>
+#include <OpenImageIO/timer.h>
 
 #include <boost/thread/tss.hpp> /* for thread_specific_ptr */
 
@@ -151,7 +152,7 @@ struct DefaultMMapper final : public llvm::SectionMemoryManager::MemoryMapper {
 };
 static DefaultMMapper llvm_default_mapper;
 
-static OIIO::spin_mutex llvm_global_mutex;
+static std::mutex llvm_global_mutex;
 static bool setup_done = false;
 static std::unique_ptr<std::vector<std::shared_ptr<LLVMMemoryManager>>>
     jitmm_hold;
@@ -170,7 +171,7 @@ llvm::raw_os_ostream raw_cout(std::cout);
 // is gone then the it will be freed.
 LLVM_Util::ScopedJitMemoryUser::ScopedJitMemoryUser()
 {
-    OIIO::spin_lock lock(llvm_global_mutex);
+    std::lock_guard<std::mutex> lock(llvm_global_mutex);
     if (jit_mem_hold_users == 0) {
         OSL_ASSERT(!jitmm_hold);
         jitmm_hold.reset(new std::vector<std::shared_ptr<LLVMMemoryManager>>());
@@ -181,7 +182,7 @@ LLVM_Util::ScopedJitMemoryUser::ScopedJitMemoryUser()
 
 LLVM_Util::ScopedJitMemoryUser::~ScopedJitMemoryUser()
 {
-    OIIO::spin_lock lock(llvm_global_mutex);
+    std::lock_guard<std::mutex> lock(llvm_global_mutex);
     OSL_ASSERT(jit_mem_hold_users > 0);
     --jit_mem_hold_users;
     if (jit_mem_hold_users == 0) {
@@ -197,13 +198,13 @@ struct LLVM_Util::PerThreadInfo::Impl {
     Impl() {}
     ~Impl()
     {
-        delete llvm_context;
         // N.B. Do NOT delete the jitmm -- another thread may need the
         // code! Don't worry, we stashed a pointer in jitmm_hold.
     }
 
-    llvm::LLVMContext* llvm_context = nullptr;
-    LLVMMemoryManager* llvm_jitmm   = nullptr;
+    std::unique_ptr<llvm::LLVMContext> llvm_context;
+    LLVMMemoryManager* llvm_jitmm = nullptr;
+    int context_reuses            = 0;
 };
 
 
@@ -233,7 +234,7 @@ LLVM_Util::total_jit_memory_held()
     // FIXME: This can't possibly be correct. It will always return 0,
     // since jitmem is a local variable.
     size_t jitmem = 0;
-    OIIO::spin_lock lock(llvm_global_mutex);
+    std::lock_guard<std::mutex> lock(llvm_global_mutex);
     return jitmem;
 }
 
@@ -392,9 +393,10 @@ LLVM_Util::LLVM_Util(const PerThreadInfo& per_thread_info, int debuglevel,
     OSL_ASSERT(m_thread);
 
     {
-        OIIO::spin_lock lock(llvm_global_mutex);
-        if (!m_thread->llvm_context) {
-            m_thread->llvm_context = new llvm::LLVMContext();
+        std::lock_guard<std::mutex> lock(llvm_global_mutex);
+        if (!m_thread->llvm_context || ++m_thread->context_reuses > 20) {
+            m_thread->llvm_context.reset(new llvm::LLVMContext());
+            m_thread->context_reuses = 0;
 #if OSL_LLVM_VERSION >= 150
             m_thread->llvm_context->setOpaquePointers(false);
             // FIXME: For now, keep using typed pointers. We're going to have
@@ -416,7 +418,7 @@ LLVM_Util::LLVM_Util(const PerThreadInfo& per_thread_info, int debuglevel,
     }
 
     OSL_ASSERT(m_thread->llvm_context);
-    m_llvm_context = m_thread->llvm_context;
+    m_llvm_context = m_thread->llvm_context.get();
 
     // Set up aliases for types we use over and over
     m_llvm_type_float  = (llvm::Type*)llvm::Type::getFloatTy(*m_llvm_context);
@@ -531,7 +533,7 @@ LLVM_Util::~LLVM_Util()
 void
 LLVM_Util::SetupLLVM()
 {
-    OIIO::spin_lock lock(llvm_global_mutex);
+    std::lock_guard<std::mutex> lock(llvm_global_mutex);
     if (setup_done)
         return;
     // Some global LLVM initialization for the first thread that
@@ -1525,9 +1527,10 @@ LLVM_Util::make_jit_execengine(std::string* err, TargetISA requestedISA,
     // For unknown reasons the MCJIT when constructed registers the GDB listener (which is static)
     // The following is an attempt to unregister it, and pretend it was never registered in the 1st place
     // The underlying GDBRegistrationListener is static, so we are leaking it
-    m_llvm_exec->UnregisterJITEventListener(
-        llvm::JITEventListener::createGDBRegistrationListener());
-
+    if (debugging_symbols || profiling_events) {
+        m_llvm_exec->UnregisterJITEventListener(
+            llvm::JITEventListener::createGDBRegistrationListener());
+    }
     if (debugging_symbols) {
         OSL_ASSERT(m_llvm_module != nullptr);
         OSL_DEV_ONLY(std::cout << "debugging symbols" << std::endl);

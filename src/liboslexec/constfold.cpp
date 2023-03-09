@@ -2414,6 +2414,12 @@ DECLFOLDER(constfold_gettextureinfo)
         // FIXME(ptex) -- exclude folding of ptex, since these things
         // can vary per face.
         ustringhash em;
+        // if (OIIO::Strutil::contains(filename, "metallic.<UDIM>.tif") && dataname == "invCDF_2") {
+        //     static std::atomic<int> count;
+        //     ++count;
+        //     print("gti {} {} ({})\n     group {}\n    layer {}\n    op {}\n", filename, dataname, count,
+        //     rop.group().name(), rop.inst()->layername(), 0);
+        // }
         int result = rop.renderer()->get_texture_info(
             filename, nullptr, rop.shadingcontext()->texture_thread_info(),
             rop.shadingcontext(), 0 /* TODO: subimage? */, dataname, t, mydata,
