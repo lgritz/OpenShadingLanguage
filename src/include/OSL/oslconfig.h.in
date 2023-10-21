@@ -35,6 +35,11 @@
 // before), which is critical if they turn out to be different versions.
 #define OIIO_IMATH_H_INCLUDED 1
 
+// Signal that this is new enough that we're fully on ustringhash in shader
+// execution land.
+#define OSL_ALL_USTRINGHASH_ALL_THE_TIME 1
+#define not_yet_OSL_DEPRECATE_PRE_USTRINGHASH 1
+#define not_yet_OSL_REMOVE_PRE_USTRINGHASH 1
 
 // The fmt library causes trouble for Cuda. Work around by telling fmt not to
 // use the troublesome int128 that Cuda doesn't understand.
