@@ -160,10 +160,19 @@ fmtformat_to_n(OutIt &out, size_t n, const string_view& fmt, Args&&... args)
 }
 
 
+/// OSL_USTRINGREP_IS_HASH will be 1 if the build-time option was enabled to
+/// make the ustringrep be a ustringhash, rather than a ustring directly.
+#define OSL_USTRINGREP_IS_HASH 1
+
+/// ustringrep is the class we use to represent strings in the shader.
+using ustringrep = ustringhash;
+
 /// ustringhash_pod is the type we use to pass hash data in llvm function calls.
+/// It's the "plain old data" bitwise equivalent to a ustringhash.
 using ustringhash_pod = size_t;
 
 /// ustring_pod is the type we use to pass string data in llvm function calls.
+/// It's the "plain old data" bitwise equivalent to a ustring.
 using ustring_pod = const char*;
 
 

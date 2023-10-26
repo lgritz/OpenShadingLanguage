@@ -17,11 +17,9 @@
 
 OSL_NAMESPACE_ENTER
 
-#ifdef OSL_DEPRECATE_PRE_USTRINGHASH
-OSL_DEPRECATED("Use ustringhash instead of StringParam")
-#endif
-using StringParam = ustringhash;
-using DeviceString = ustringhash;
+// Two old synonyms for ustringrep. We may deprecate these in the future.
+using StringParam = ustringrep;
+using DeviceString = ustringrep;
 
 
 #ifndef OSL_REMOVE_PRE_USTRINGHASH
