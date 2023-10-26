@@ -38,8 +38,12 @@
 // Signal that this is new enough that we're fully on ustringhash in shader
 // execution land.
 #define OSL_ALL_USTRINGHASH_ALL_THE_TIME 1
-#define not_yet_OSL_DEPRECATE_PRE_USTRINGHASH 1
-#define not_yet_OSL_REMOVE_PRE_USTRINGHASH 1
+#ifndef OSL_DEPRECATE_PRE_USTRINGHASH
+// NOT YET #    define OSL_DEPRECATE_PRE_USTRINGHASH 1
+#endif
+#ifndef OSL_REMOVE_PRE_USTRINGHASH
+// NOT YET #    define OSL_REMOVE_PRE_USTRINGHASH 1
+#endif
 
 // The fmt library causes trouble for Cuda. Work around by telling fmt not to
 // use the troublesome int128 that Cuda doesn't understand.
@@ -216,6 +220,21 @@ ustringhash_from(ustring u)
         ret = u.uhash();
     return ret;
 }
+
+
+/// Allow comparison between ustringhash_pod and ustringhash
+OSL_HOSTDEVICE inline bool
+operator==(OSL::ustringhash_pod a, OSL::ustringhash b)
+{
+    return a == b.hash();
+}
+
+OSL_HOSTDEVICE inline bool
+operator==(OSL::ustringhash a, OSL::ustringhash_pod b)
+{
+    return a.hash() == b;
+}
+
 
 
 using TypeDesc_pod = int64_t;

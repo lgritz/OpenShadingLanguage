@@ -210,7 +210,7 @@ osl_add_closure_closure(void* sg_, OSL::ClosureColor* a, OSL::ClosureColor* b)
 #define IS_COLOR(type)  (type.vecsemantics == OSL::TypeDesc::COLOR)
 
 __device__ bool
-rend_get_userdata(OSL::StringParam name, void* data, int data_size,
+rend_get_userdata(OSL::ustringhash name, void* data, int data_size,
                   const OSL::TypeDesc& type, int index)
 {
     return false;
