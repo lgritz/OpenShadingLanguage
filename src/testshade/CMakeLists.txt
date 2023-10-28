@@ -77,6 +77,9 @@ EMBED_LLVM_BITCODE_IN_CPP ( "${rs_srcs}" "_host" "testshade_llvm_compiled_rs" te
 
 add_executable ( testshade ${testshade_srcs} testshademain.cpp )
 
+set_source_files_properties (${testshade_srcs}
+                             PROPERTIES UNITY_GROUP testshade)
+
 target_link_libraries (testshade
                        PRIVATE
                            oslexec oslquery)
