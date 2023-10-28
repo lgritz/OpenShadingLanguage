@@ -32,7 +32,7 @@ if (CMAKE_UNITY_BUILD)
     # the rest can be built together if in group mode.
     set_property (SOURCE osltoyrenderer.cpp
                   APPEND PROPERTY SKIP_UNITY_BUILD_INCLUSION TRUE)
-    set_source_files_properties (osltoy
+    set_source_files_properties (${osltoy_srcs}
                                  PROPERTIES UNITY_GROUP osltoy)
 endif ()
 

@@ -26,6 +26,9 @@ target_link_libraries (${local_lib}
 target_compile_features (${local_lib}
                          INTERFACE cxx_std_${DOWNSTREAM_CXX_STANDARD})
 
+set_source_files_properties (${lib_src}
+                             PROPERTIES UNITY_GROUP ${local_lib})
+
 set_target_properties (${local_lib}
     PROPERTIES
         VERSION     ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}

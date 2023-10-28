@@ -11,6 +11,10 @@ if (NOT BUILD_SHARED_LIBS)
          ../liboslexec/typespec.cpp)
 endif ()
 
+set_source_files_properties (${oslc_srcs}
+                             PROPERTIES UNITY_GROUP oslc)
+
+
 add_executable ( oslc ${oslc_srcs} )
 target_link_libraries ( oslc PRIVATE oslcomp ${Boost_LIBRARIES} ${CMAKE_DL_LIBS})
 install_targets (oslc)

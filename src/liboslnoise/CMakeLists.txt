@@ -48,6 +48,9 @@ set_target_properties (${local_lib}
                        LINK_FLAGS  ${link_flags}
                        )
 
+set_source_files_properties (${liboslnoise_srcs}
+                             PROPERTIES UNITY_GROUP ${local_lib})
+
 install_targets (${local_lib})
 
 

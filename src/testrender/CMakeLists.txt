@@ -66,6 +66,9 @@ endif ()
 
 add_executable (testrender ${testrender_srcs})
 
+set_source_files_properties (${testrender_srcs}
+                             PROPERTIES UNITY_GROUP testrender)
+
 target_link_libraries (testrender
     PRIVATE
         oslexec oslquery
