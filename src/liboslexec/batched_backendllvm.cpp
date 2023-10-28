@@ -19,19 +19,6 @@ using namespace OSL::pvt;
 
 OSL_NAMESPACE_ENTER
 
-namespace Strings {
-
-// TODO: What qualifies these to move to strdecls.h?
-//       Being used in more than one .cpp?
-
-// Shader global strings
-static ustring backfacing("backfacing");
-static ustring surfacearea("surfacearea");
-static ustring object2common("object2common");
-static ustring shader2common("shader2common");
-static ustring flipHandedness("flipHandedness");
-}  // namespace Strings
-
 namespace pvt {
 
 namespace  // Unnamed
@@ -40,74 +27,42 @@ namespace  // Unnamed
 // BatchedShaderGlobals struct in batched_shaderglobals.h,
 // as well as the llvm 'sg' type
 // defined in BatchedBackendLLVM::llvm_type_sg().
-static ustring fields[] = {
+// clang-format off
+static std::pair<ustring, bool> batched_sg_fields[] = {
+    // The first field is the name, the second field is if it's uniform
     // Uniform
-    ustring("renderstate"),     //
-    ustring("tracedata"),       //
-    ustring("objdata"),         //
-    ustring("shadingcontext"),  //
-    ustring("renderer"),        //
-    Strings::raytype,           //
-    ustring("pad0"),            //
-    ustring("pad1"),            //
-    ustring("pad2"),            //
-    ustring("pad3"),            //
-    ustring("pad4"),            //
+    { ustring("renderstate"),     true },
+    { ustring("tracedata"),       true },
+    { ustring("objdata"),         true },
+    { ustring("shadingcontext"),  true },
+    { ustring("renderer"),        true },
+    { Strings::raytype,           true },
+    { ustring("pad0"),            true },
+    { ustring("pad1"),            true },
+    { ustring("pad2"),            true },
+    { ustring("pad3"),            true },
+    { ustring("pad4"),            true },
     // Varying
-    Strings::P,               //
-    ustring("dPdz"),          //
-    Strings::I,               //
-    Strings::N,               //
-    Strings::Ng,              //
-    Strings::u,               //
-    Strings::v,               //
-    Strings::dPdu,            //
-    Strings::dPdv,            //
-    Strings::time,            //
-    Strings::dtime,           //
-    Strings::dPdtime,         //
-    Strings::Ps,              //
-    Strings::object2common,   //
-    Strings::shader2common,   //
-    Strings::Ci,              //
-    Strings::surfacearea,     //
-    Strings::flipHandedness,  //
-    Strings::backfacing
-};
-
-static bool field_is_uniform[] = {
-    // Uniform
-    true,  // renderstate
-    true,  // tracedata
-    true,  // objdata
-    true,  // shadingcontext
-    true,  // renderer
-    true,  // raytype
-    true,  // pad0
-    true,  // pad1
-    true,  // pad2
-    true,  // pad3
-    true,  // pad4
-    // Varying
-    false,  // P
-    false,  // dPdz
-    false,  // I
-    false,  // N
-    false,  // Ng
-    false,  // u
-    false,  // v
-    false,  // dPdu
-    false,  // dPdv
-    false,  // time
-    false,  // dtime
-    false,  // dPdtime
-    false,  // Ps
-    false,  // object2common
-    false,  // shader2common
-    false,  // Ci,
-    false,  // surfacearea
-    false,  // flipHandedness
-    false,  // backfacing
+    { Strings::P,                 false },
+    { ustring("dPdz"),            false },
+    { Strings::I,                 false },
+    { Strings::N,                 false },
+    { Strings::Ng,                false },
+    { Strings::u,                 false },
+    { Strings::v,                 false },
+    { Strings::dPdu,              false },
+    { Strings::dPdv,              false },
+    { Strings::time,              false },
+    { Strings::dtime,             false },
+    { Strings::dPdtime,           false },
+    { Strings::Ps,                false },
+    { ustring("object2common"),   false },
+    { ustring("shader2common"),   false },
+    { Strings::Ci,                false },
+    { ustring("surfacearea"),     false },
+    { ustring("flipHandedness"),  false },
+    { ustring("backfacing"),      false },
+// clang-format on
 };
 
 }  // namespace
@@ -115,10 +70,9 @@ static bool field_is_uniform[] = {
 extern bool
 is_shader_global_uniform_by_name(ustring name)
 {
-    for (int i = 0; i < int(std::extent<decltype(fields)>::value); ++i) {
-        if (name == fields[i]) {
-            return field_is_uniform[i];
-        }
+    for (auto&& f : batched_sg_fields) {
+        if (name == f.first)
+            return f.second;
     }
     return false;
 }
@@ -408,11 +362,14 @@ BatchedBackendLLVM::llvm_zero_derivs(const Symbol& sym, llvm::Value* count)
 int
 BatchedBackendLLVM::ShaderGlobalNameToIndex(ustring name, bool& is_uniform)
 {
-    for (int i = 0; i < int(sizeof(fields) / sizeof(fields[0])); ++i)
-        if (name == fields[i]) {
-            is_uniform = field_is_uniform[i];
+    int i = 0;
+    for (auto&& f : batched_sg_fields) {
+        if (name == f.first) {
+            is_uniform = f.second;
             return i;
         }
+        ++i;
+    }
     OSL_DEV_ONLY(std::cout << "ShaderGlobalNameToIndex failed with " << name
                            << std::endl);
     return -1;
