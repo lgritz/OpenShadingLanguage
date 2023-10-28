@@ -110,6 +110,13 @@ set (OSL_PTX_INSTALL_DIR "${CMAKE_INSTALL_FULL_DATADIR}/${PROJECT_NAME}/ptx"
 set (CMAKE_DEBUG_POSTFIX "" CACHE STRING "Library naming postfix for Debug builds (e.g., '_debug')")
 option (OSL_USTRINGREP_IS_HASH "Always use ustringhash for strings" OFF)
 
+if (CMAKE_UNITY_BUILD_BATCH_SIZE)
+    set (UNITY_SMALL_BATCH_SIZE "${CMAKE_UNITY_BUILD_BATCH_SIZE}" CACHE STRING "Unity batch mode size for expensive files")
+else ()
+    set (UNITY_SMALL_BATCH_SIZE 8 CACHE STRING "Unity batch mode size for expensive files")
+endif ()
+message(STATUS "CMAKE_UNITY_BUILD_MODE = ${CMAKE_UNITY_BUILD_MODE}")
+message(STATUS "CMAKE_UNITY_BUILD_BATCH_SIZE = ${CMAKE_UNITY_BUILD_BATCH_SIZE}")
 
 set (OSL_NO_DEFAULT_TEXTURESYSTEM OFF CACHE BOOL "Do not use create a raw OIIO::TextureSystem")
 if (OSL_NO_DEFAULT_TEXTURESYSTEM)

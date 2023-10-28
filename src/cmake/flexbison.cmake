@@ -72,5 +72,9 @@ if ( FLEX_EXECUTABLE AND BISON_EXECUTABLE )
           MAIN_DEPENDENCY ${flexsrc}
           DEPENDS ${${compiler_headers}}
           WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} )
+        # It's not safe to combine these produced cpp files in unity builes.
+        set_source_files_properties ( ${bisonoutputcxx} ${flexoutputcxx}
+                                      PROPERTIES SKIP_UNITY_BUILD_INCLUSION TRUE)
+        # TARGET_DIRECTORY <targets> ...
     endmacro ()
 endif ()

@@ -26,4 +26,14 @@ endif ()
 if (Qt6_FOUND)
     target_compile_definitions(osltoy PRIVATE OSL_QT_MAJOR=6)
 endif ()
+
+if (CMAKE_UNITY_BUILD)
+    # If unity builds are occurring, some files MUST be compiled alone. But
+    # the rest can be built together if in group mode.
+    set_property (SOURCE osltoyrenderer.cpp
+                  APPEND PROPERTY SKIP_UNITY_BUILD_INCLUSION TRUE)
+    set_source_files_properties (osltoy
+                                 PROPERTIES UNITY_GROUP osltoy)
+endif ()
+
 install_targets (osltoy)

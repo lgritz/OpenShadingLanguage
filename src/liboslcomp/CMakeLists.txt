@@ -63,5 +63,14 @@ set_target_properties (${local_lib}
         POSITION_INDEPENDENT_CODE ON
     )
 
+if (CMAKE_UNITY_BUILD)
+    # If unity builds are occurring, some files MUST be compiled alone. But
+    # the rest can be built together if in group mode.
+    set_property (SOURCE oslcomp.cpp
+                  APPEND PROPERTY SKIP_UNITY_BUILD_INCLUSION TRUE)
+    set_source_files_properties (${local_lib}
+                                 PROPERTIES UNITY_GROUP ${local_lib})
+endif ()
+
 install_targets (${local_lib})
 
