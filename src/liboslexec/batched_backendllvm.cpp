@@ -62,8 +62,8 @@ static std::pair<ustring, bool> batched_sg_fields[] = {
     { ustring("surfacearea"),     false },
     { ustring("flipHandedness"),  false },
     { ustring("backfacing"),      false },
-// clang-format on
 };
+// clang-format on
 
 }  // namespace
 
