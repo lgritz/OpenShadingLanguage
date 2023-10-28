@@ -586,14 +586,14 @@ set_target_properties (${local_lib}
 # add_dependencies (${local_lib} "${CMAKE_SOURCE_DIR}/src/build-scripts/hidesymbols.map")
 
 if (CMAKE_UNITY_BUILD)
+    set_source_files_properties (${lib_src}
+                                 PROPERTIES UNITY_GROUP ${local_lib})
     # If unity builds are occurring, some files MUST be compiled alone. But
     # the rest can be built together if in group mode.
     set_property (SOURCE runtimeoptimize.cpp llvm_instance.cpp
                   llvm_gen.cpp shadeimage.cpp
                   batched_llvm_instance.cpp batched_renderservices.cpp 
                   APPEND PROPERTY SKIP_UNITY_BUILD_INCLUSION TRUE)
-    set_source_files_properties (${local_lib}
-                                 PROPERTIES UNITY_GROUP ${local_lib})
 endif ()
 
 foreach(batched_target_lib ${BATCHED_TARGET_LIBS})
