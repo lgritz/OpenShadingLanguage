@@ -159,43 +159,42 @@ BackendLLVM::llvm_zero_derivs(const Symbol& sym, llvm::Value* count)
     }
 }
 
-namespace {
-// N.B. The order of names in this table MUST exactly match the
-// ShaderGlobals struct in oslexec.h, as well as the llvm 'sg' type
-// defined in llvm_type_sg().
-static ustring fields[] = { ustring("P"),
-                            ustring("_dPdz"),
-                            ustring("I"),
-                            ustring("N"),
-                            ustring("Ng"),
-                            ustring("u"),
-                            ustring("v"),
-                            ustring("dPdu"),
-                            ustring("dPdv"),
-                            ustring("time"),
-                            ustring("dtime"),
-                            ustring("dPdtime"),
-                            ustring("Ps"),
-                            ustring("renderstate"),
-                            ustring("tracedata"),
-                            ustring("objdata"),
-                            ustring("shadingcontext"),
-                            ustring("shadingStateUniform"),
-                            ustring("thread_index"),
-                            ustring("shade_index"),
-                            ustring("renderer"),
-                            ustring("object2common"),
-                            ustring("shader2common"),
-                            ustring("Ci"),
-                            ustring("surfacearea"),
-                            ustring("raytype"),
-                            ustring("flipHandedness"),
-                            ustring("backfacing") };
-}  // namespace
 
 int
 BackendLLVM::ShaderGlobalNameToIndex(ustring name)
 {
+    // N.B. The order of names in this table MUST exactly match the
+    // ShaderGlobals struct in oslexec.h, as well as the llvm 'sg' type
+    // defined in llvm_type_sg().
+    static ustring fields[] = { ustring("P"),
+                                ustring("_dPdz"),
+                                ustring("I"),
+                                ustring("N"),
+                                ustring("Ng"),
+                                ustring("u"),
+                                ustring("v"),
+                                ustring("dPdu"),
+                                ustring("dPdv"),
+                                ustring("time"),
+                                ustring("dtime"),
+                                ustring("dPdtime"),
+                                ustring("Ps"),
+                                ustring("renderstate"),
+                                ustring("tracedata"),
+                                ustring("objdata"),
+                                ustring("shadingcontext"),
+                                ustring("shadingStateUniform"),
+                                ustring("thread_index"),
+                                ustring("shade_index"),
+                                ustring("renderer"),
+                                ustring("object2common"),
+                                ustring("shader2common"),
+                                ustring("Ci"),
+                                ustring("surfacearea"),
+                                ustring("raytype"),
+                                ustring("flipHandedness"),
+                                ustring("backfacing") };
+
     for (int i = 0; i < int(sizeof(fields) / sizeof(fields[0])); ++i)
         if (name == fields[i])
             return i;
