@@ -17,9 +17,9 @@ if [[ -n "$CODECOV" ]] ; then
 fi
 
 # On GHA, we can reduce build time with "unity" builds.
-if [[ ${GITHUB_ACTIONS} == true ]] ; then
-    OSL_CMAKE_FLAGS+=" -DCMAKE_UNITY_BUILD=${CMAKE_UNITY_BUILD:=ON} -DCMAKE_UNITY_BUILD_MODE=${CMAKE_UNITY_BUILD_MODE:=BATCH}"
-fi
+# if [[ ${GITHUB_ACTIONS} == true ]] ; then
+#     OSL_CMAKE_FLAGS+=" -DCMAKE_UNITY_BUILD=${CMAKE_UNITY_BUILD:=ON} -DCMAKE_UNITY_BUILD_MODE=${CMAKE_UNITY_BUILD_MODE:=BATCH}"
+# fi
 
 pushd build
 cmake .. -G "$CMAKE_GENERATOR" \
