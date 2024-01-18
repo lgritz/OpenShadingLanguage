@@ -32,17 +32,13 @@ export PYTHONPATH=/usr/local/lib64/python${PYTHON_VERSION}/site-packages:$PYTHON
 export PYTHONPATH=$OSL_ROOT/lib/python${PYTHON_VERSION}/site-packages:$PYTHONPATH
 export BUILD_MISSING_DEPS=${BUILD_MISSING_DEPS:=1}
 export COMPILER=${COMPILER:=gcc}
+export CC=${CC:=gcc}
 export CXX=${CXX:=g++}
 export OSL_CI=true
 export USE_NINJA=${USE_NINJA:=1}
 export CMAKE_GENERATOR=${CMAKE_GENERATOR:=Ninja}
 export CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE:=Release}
 export CMAKE_CXX_STANDARD=${CMAKE_CXX_STANDARD:=11}
-
-export PARALLEL=${PARALLEL:=4}
-export PAR_MAKEFLAGS=-j${PARALLEL}
-export CMAKE_BUILD_PARALLEL_LEVEL=${CMAKE_BUILD_PARALLEL_LEVEL:=${PARALLEL}}
-export CTEST_PARALLEL_LEVEL=${CTEST_PARALLEL_LEVEL:=${PARALLEL}}
 
 export LOCAL_DEPS_DIR=${LOCAL_DEPS_DIR:=$HOME/ext}
 export CMAKE_PREFIX_PATH=${LOCAL_DEPS_DIR}/dist:${CMAKE_PREFIX_PATH}
@@ -51,6 +47,30 @@ export LD_LIBRARY_PATH=${LOCAL_DEPS_DIR}/dist/lib64:$LD_LIBRARY_PATH
 export DYLD_LIBRARY_PATH=${LOCAL_DEPS_DIR}/dist/lib:$DYLD_LIBRARY_PATH
 
 export TESTSUITE_CLEANUP_ON_SUCCESS=${TESTSUITE_CLEANUP_ON_SUCCESS:=1}
+
+# Sonar
+export BUILD_WRAPPER_OUT_DIR="${PWD}/bw_output"
+export BW_OUTPUT_DIR="${PWD}/bw_output"
+
+# Parallel builds
+if [[ `uname -s` == "Linux" ]] ; then
+    echo "procs: " `nproc`
+    head -40 /proc/cpuinfo
+    export PARALLEL=${PARALLEL:=$((2 + `nproc`))}
+elif [[ "${RUNNER_OS}" == "macOS" ]] ; then
+    echo "procs: " `sysctl -n hw.ncpu`
+    sysctl machdep.cpu.features
+    export PARALLEL=${PARALLEL:=$((2 + `sysctl -n hw.ncpu`))}
+elif [[ "${RUNNER_OS}" == "Windows" ]] ; then
+    # Presumably Windows
+    export PARALLEL=${PARALLEL:=$((2 + ${NUMBER_OF_PROCESSORS}))}
+else
+    export PARALLEL=${PARALLEL:=6}
+fi
+export PAR_MAKEFLAGS=-j${PARALLEL}
+export CMAKE_BUILD_PARALLEL_LEVEL=${CMAKE_BUILD_PARALLEL_LEVEL:=${PARALLEL}}
+export CTEST_PARALLEL_LEVEL=${CTEST_PARALLEL_LEVEL:=${PARALLEL}}
+
 
 mkdir -p build dist
 
@@ -66,8 +86,10 @@ ls
 env | sort
 
 if [[ `uname -s` == "Linux" ]] ; then
+    echo "nprocs: " `nproc`
     head -40 /proc/cpuinfo
-elif [[ ${RUNNER_OS} == "macOS" ]] ; then
+elif [[ "${RUNNER_OS}" == "macOS" ]] ; then
+    echo "nprocs: " `sysctl -n hw.ncpu`
     sysctl machdep.cpu.features
 fi
 
