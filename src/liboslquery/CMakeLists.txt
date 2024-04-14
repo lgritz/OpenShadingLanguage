@@ -14,10 +14,14 @@ target_include_directories (${local_lib}
         ${CMAKE_INSTALL_FULL_INCLUDEDIR}
     PRIVATE
         ../liboslexec)
-target_link_libraries (${local_lib}
-    PUBLIC
-        OpenImageIO::OpenImageIO_Util
-    )
+
+if (OSL_OSLQUERY_USE_STATIC_OIIO AND TARGET OpenImageIO::OpenImageIO_Util_static)
+    message (STATUS "Linking oslquery against OpenImageIO_Util_static")
+    target_link_libraries (${local_lib} PUBLIC OpenImageIO::OpenImageIO_Util_static)
+else ()
+    message (STATUS "Linking oslquery against OpenImageIO_Util (dynamic)")
+    target_link_libraries (${local_lib} PUBLIC OpenImageIO::OpenImageIO_Util)
+endif ()
 
 target_compile_features (${local_lib}
                          INTERFACE cxx_std_${DOWNSTREAM_CXX_STANDARD})

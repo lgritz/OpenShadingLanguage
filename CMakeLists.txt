@@ -114,7 +114,8 @@ set (OSL_PTX_INSTALL_DIR "${CMAKE_INSTALL_FULL_DATADIR}/${PROJECT_NAME}/ptx"
      CACHE STRING "Directory where OptiX PTX files will be installed")
 set (CMAKE_DEBUG_POSTFIX "" CACHE STRING "Library naming postfix for Debug builds (e.g., '_debug')")
 option (OSL_USTRINGREP_IS_HASH "Always use ustringhash for strings" OFF)
-
+option (OSL_OSLQUERY_USE_STATIC_OIIO
+        "Build oslquery library against libOpenImageIO_Util_static" OFF)
 
 set (OSL_NO_DEFAULT_TEXTURESYSTEM OFF CACHE BOOL "Do not use create a raw OIIO::TextureSystem")
 if (OSL_NO_DEFAULT_TEXTURESYSTEM)
@@ -167,6 +168,7 @@ list (APPEND CMAKE_MODULE_PATH
 include (colors)
 include (check_is_enabled)
 include (checked_find_package)
+include (fancy_add_executable)
 
 # All the C++ and compiler related options and adjustments
 include (compiler)
