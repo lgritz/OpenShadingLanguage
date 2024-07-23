@@ -70,11 +70,8 @@ NEW or CHANGED dependencies since the last major release are **bold**.
   be operative.
 * (optional) Python: If you are building the Python bindings or running the
   testsuite:
-    * Python >= 2.7 (tested against 2.7, 3.7, 3.8, 3.9, 3.10, 3.11, 3.12)
-      NOTE: It is likely that 1.13 is the last release that will support
-      Python 2.7.
-    * pybind11 >= 2.4.2 (Tested through 2.11. Note that pybind11 v2.10+ does
-      not support Python < 3.6.)
+    * Python >= 3.7 (tested against 3.7, 3.8, 3.9, 3.10, 3.11, 3.12)
+    * pybind11 >= 2.4.2 (Tested through 2.13.)
     * NumPy
 * (optional) Qt5 >= 5.6 or Qt6 (tested Qt5 through 5.15 and Qt6 through 6.6).
   If not found at build time, the `osltoy` application will be disabled.
