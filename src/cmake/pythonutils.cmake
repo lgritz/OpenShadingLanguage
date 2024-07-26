@@ -51,7 +51,7 @@ macro (find_python)
     set (PythonInterp3_FIND_VERSION_MAJOR ${Python3_VERSION_MAJOR})
 
     if (NOT DEFINED PYTHON_SITE_DIR)
-        set (PYTHON_SITE_DIR "${CMAKE_INSTALL_LIBDIR}/python${PYTHON_VERSION_FOUND}/site-packages/OSL")
+        set (PYTHON_SITE_DIR "${CMAKE_INSTALL_LIBDIR}/python${PYTHON_VERSION_FOUND}/site-packages")
     endif ()
     message (VERBOSE "    Python site packages dir ${PYTHON_SITE_DIR}")
     message (VERBOSE "    Python to include 'lib' prefix: ${PYLIB_LIB_PREFIX}")
@@ -127,8 +127,8 @@ macro (setup_python_module)
             )
 
     install (TARGETS ${target_name}
-             RUNTIME DESTINATION ${PYTHON_SITE_DIR} COMPONENT user
-             LIBRARY DESTINATION ${PYTHON_SITE_DIR} COMPONENT user)
+             RUNTIME DESTINATION ${PYTHON_SITE_DIR}/${lib_MODULE} COMPONENT user
+             LIBRARY DESTINATION ${PYTHON_SITE_DIR}/${lib_MODULE} COMPONENT user)
 
 endmacro ()
 
