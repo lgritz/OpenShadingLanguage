@@ -74,7 +74,7 @@ OSL_NAMESPACE_EXIT
 %token <i> INT_LITERAL
 %token <f> FLOAT_LITERAL
 %token <i> COLORTYPE FLOATTYPE INTTYPE MATRIXTYPE 
-%token <i> NORMALTYPE POINTTYPE STRINGTYPE VECTORTYPE VOIDTYPE
+%token <i> NORMALTYPE POINTTYPE STRINGTYPE VECTORTYPE VECTOR2TYPE VOIDTYPE
 %token <i> CLOSURE OUTPUT PUBLIC STRUCT
 %token <i> BREAK CONTINUE DO ELSE FOR IF_TOKEN ILLUMINATE ILLUMINANCE RETURN WHILE
 %token <i> RESERVED
@@ -564,6 +564,7 @@ simple_typename
         | POINTTYPE
         | STRINGTYPE
         | VECTORTYPE
+        | VECTOR2TYPE
         | VOIDTYPE
         ;
 
@@ -1110,15 +1111,16 @@ inline TypeDesc
 OSL::pvt::osllextype (int lex)
 {
     switch (lex) {
-    case COLORTYPE  : return TypeColor;
-    case FLOATTYPE  : return TypeFloat;
-    case INTTYPE    : return TypeInt;
-    case MATRIXTYPE : return TypeMatrix;
-    case NORMALTYPE : return TypeNormal;
-    case POINTTYPE  : return TypePoint;
-    case STRINGTYPE : return TypeString;
-    case VECTORTYPE : return TypeVector;
-    case VOIDTYPE   : return TypeDesc::NONE;
+    case COLORTYPE   : return TypeColor;
+    case FLOATTYPE   : return TypeFloat;
+    case INTTYPE     : return TypeInt;
+    case MATRIXTYPE  : return TypeMatrix;
+    case NORMALTYPE  : return TypeNormal;
+    case POINTTYPE   : return TypePoint;
+    case STRINGTYPE  : return TypeString;
+    case VECTORTYPE  : return TypeVector;
+    case VECTOR2TYPE : return TypeVector2;
+    case VOIDTYPE    : return TypeDesc::NONE;
     default: return TypeDesc::UNKNOWN;
     }
 }

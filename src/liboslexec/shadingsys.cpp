@@ -1425,6 +1425,7 @@ shading_system_setup_op_descriptors(
     OP (trunc,       generic,             none,          true,      0);
     OP (useparam,    useparam,            useparam,      false,     0);
     OP (vector,      construct_triple,    triple,        true,      0);
+    OP (vector2,     construct_vector2,   triple,        true,      0);
     OP (warning,     printf,              warning,       false,     SIDE);
     OP (wavelength_color, blackbody,      none,          true,      0);
     OP (while,       loop_op,             none,          false,     0);
@@ -3122,6 +3123,8 @@ ShadingSystemImpl::ShaderGroupBegin(string_view groupname, string_view usage,
             type = TypeMatrix;
         else if (typestring == "string")
             type = TypeString;
+        else if (typestring == "vector2")
+            type = TypeVector2;
         else {
             err     = true;
             errdesc = fmtformat("Unknown type: {}", typestring);

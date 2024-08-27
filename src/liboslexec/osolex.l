@@ -154,6 +154,7 @@ OSL_NAMESPACE_EXIT
 <DECLARATION>"string"	{  return (yylval->i=STRINGTYPE); }
 <DECLARATION>"struct"	{  return (yylval->i=STRUCT); }
 <DECLARATION>"vector"	{  return (yylval->i=VECTORTYPE); }
+<DECLARATION>"vector2"  {  return (yylval->i=VECTOR2TYPE); }
 
 ^local                  {
                            BEGIN (DECLARATION);

@@ -71,8 +71,9 @@ using namespace OSL::pvt;
 %token <s> IDENTIFIER STRING_LITERAL HINT
 %token <i> INT_LITERAL
 %token <f> FLOAT_LITERAL
-%token <i> COLORTYPE FLOATTYPE INTTYPE MATRIXTYPE 
-%token <i> NORMALTYPE POINTTYPE STRINGTYPE VECTORTYPE VOIDTYPE CLOSURE STRUCT
+%token <i> COLORTYPE FLOATTYPE INTTYPE MATRIXTYPE
+%token <i> NORMALTYPE POINTTYPE STRINGTYPE VECTORTYPE VECTOR2TYPE
+%token <i> VOIDTYPE CLOSURE STRUCT
 %token <i> CODE SYMTYPE ENDOFLINE
 
 // Define the nonterminals 
@@ -210,6 +211,7 @@ simple_typename
         | POINTTYPE
         | STRINGTYPE
         | VECTORTYPE
+        | VECTOR2TYPE
         | VOIDTYPE
         ;
 
@@ -330,15 +332,16 @@ inline TypeDesc
 OSL::pvt::osolextype (int lex)
 {
     switch (lex) {
-    case COLORTYPE  : return TypeColor;
-    case FLOATTYPE  : return TypeFloat;
-    case INTTYPE    : return TypeInt;
-    case MATRIXTYPE : return TypeMatrix;
-    case NORMALTYPE : return TypeNormal;
-    case POINTTYPE  : return TypePoint;
-    case STRINGTYPE : return TypeString;
-    case VECTORTYPE : return TypeVector;
-    case VOIDTYPE   : return TypeDesc::NONE;
+    case COLORTYPE   : return TypeColor;
+    case FLOATTYPE   : return TypeFloat;
+    case INTTYPE     : return TypeInt;
+    case MATRIXTYPE  : return TypeMatrix;
+    case NORMALTYPE  : return TypeNormal;
+    case POINTTYPE   : return TypePoint;
+    case STRINGTYPE  : return TypeString;
+    case VECTORTYPE  : return TypeVector;
+    case VECTOR2TYPE : return TypeVector2;
+    case VOIDTYPE    : return TypeDesc::NONE;
     default: return TypeDesc::UNKNOWN;
     }
 }

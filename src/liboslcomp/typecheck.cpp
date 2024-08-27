@@ -671,7 +671,8 @@ ASTtype_constructor::typecheck(TypeSpec expected, bool report, bool bind)
     static const char* matrix_patterns[]
         = { "mf", "msf", "mss", "mffffffffffffffff", "msffffffffffffffff",
             "mm", NULL };
-    static const char* int_patterns[] = { "if", "ii", NULL };
+    static const char* int_patterns[]  = { "if", "ii", NULL };
+    static const char* vec2_patterns[] = { "v2f", "v2ff", "v2v2", nullptr };
     // Select the pattern for the type of constructor we are...
     const char** patterns = NULL;
     TypeSpec argexpected;  // default to unknown
@@ -696,6 +697,8 @@ ASTtype_constructor::typecheck(TypeSpec expected, bool report, bool bind)
         patterns = matrix_patterns;
     } else if (expected.is_int()) {
         patterns = int_patterns;
+    } else if (expected.is_vector2()) {
+        patterns = vec2_patterns;
     } else {
         if (report)
             errorfmt("Cannot construct type '{}'", expected);
@@ -708,10 +711,12 @@ ASTtype_constructor::typecheck(TypeSpec expected, bool report, bool bind)
     // then with coercion.
     for (int co = 0; co < 2; ++co) {
         bool coerce = co;
-        for (const char** pat = patterns; *pat; ++pat) {
-            const char* code = *pat;
-            if (check_arglist(type_c_str(expected), args(), code + 1, coerce,
-                              bind))
+        for (const char **pat = patterns;  *pat;  ++pat) {
+            int advance = 1;
+            (void) m_compiler->type_from_code (*pat, &advance);
+            const char *code = *pat + advance;
+            if (check_arglist (type_c_str(expected), args(), code, coerce,
+                               bind))
                 return expected;
         }
     }
@@ -2238,15 +2243,15 @@ OSLCompilerImpl::type_from_code(const char* code, int* advance)
     TypeSpec t;
     int i = 0;
     switch (code[i]) {
-    case 'i': t = TypeInt; break;
     case 'f': t = TypeFloat; break;
+    case 'i': t = TypeInt; break;
     case 'c': t = TypeColor; break;
     case 'p': t = TypePoint; break;
     case 'v': t = TypeVector; break;
     case 'n': t = TypeNormal; break;
     case 'm': t = TypeMatrix; break;
     case 's': t = TypeString; break;
-    case 'h': t = OSL::TypeUInt64; break;  // ustringhash_pod
+    case 'h': t = TypeUInt64; break;  // ustringhash_pod
     case 'x': t = TypeDesc(TypeDesc::NONE); break;
     case 'X': t = TypeDesc(TypeDesc::PTR); break;
     case 'L': t = TypeDesc(TypeDesc::LONGLONG); break;
@@ -2270,6 +2275,12 @@ OSLCompilerImpl::type_from_code(const char* code, int* advance)
             *advance = 1;
         return TypeSpec();
     }
+
+    if (code[i] == 'v' && code[i+1] == '2') {  // 'v2' means a Vec2
+        t = OIIO::TypeVector2;
+        ++i;
+    }
+
     ++i;
 
     if (code[i] == '[') {
@@ -2353,6 +2364,8 @@ OSLCompilerImpl::code_from_type(TypeSpec type) const
             out = 'm';
         else if (elem == TypeString)
             out = 's';
+        else if (elem == OIIO::TypeVector2)
+            out = "f2";
         else if (elem == TypeDesc::NONE)
             out = 'x';
         else {

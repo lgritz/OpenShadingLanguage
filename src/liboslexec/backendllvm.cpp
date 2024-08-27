@@ -389,8 +389,9 @@ BackendLLVM::llvm_load_value(const Symbol& sym, int deriv,
             else
                 return ll.constant(sym.get_int());
         }
-        if (sym.typespec().is_triple() || sym.typespec().is_matrix()) {
-            return ll.constant(sym.get_float(component));
+        if (sym.typespec().is_triple() || sym.typespec().is_matrix()
+            || sym.typespec().is_vector2()) {
+            return ll.constant(((float*)sym.data())[component]);
         }
         if (sym.typespec().is_string()) {
             return llvm_const_hash(sym.get_string());

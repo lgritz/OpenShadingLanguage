@@ -3,6 +3,9 @@
 // https://github.com/AcademySoftwareFoundation/OpenShadingLanguage
 
 #pragma once
+
+#if 0
+
 #define VECTOR2_H
 
 // vector2 is a 2D vector
@@ -317,3 +320,4 @@ vector2 atan2(vector2 a, vector2 b)
 }
 
 
+#endif

@@ -509,6 +509,16 @@ LLVM_Util::LLVM_Util(const PerThreadInfo& per_thread_info, int debuglevel,
     m_llvm_type_triple_ptr
         = (llvm::PointerType*)llvm::PointerType::get(m_llvm_type_triple, 0);
 
+    // A vector2 is a struct composed of 2 floats
+    std::vector<llvm::Type*> vector2fields(2, m_llvm_type_float);
+    m_llvm_type_vector2 = type_struct (vector2fields, "Vec2");
+    m_llvm_type_vector2_ptr = (llvm::PointerType *) llvm::PointerType::get (m_llvm_type_vector2, 0);
+
+    // A vector4 is a struct composed of 4 floats
+    std::vector<llvm::Type*> vector4fields(4, m_llvm_type_float);
+    m_llvm_type_vector4 = type_struct (vector4fields, "Vec4");
+    m_llvm_type_vector4_ptr = (llvm::PointerType *) llvm::PointerType::get (m_llvm_type_vector4, 0);
+
     // A matrix is a struct composed 16 floats
     std::vector<llvm::Type*> matrixfields(16, m_llvm_type_float);
     m_llvm_type_matrix = type_struct(matrixfields, "Matrix4");
@@ -4107,6 +4117,8 @@ LLVM_Util::llvm_type(const TypeDesc& typedesc)
         lt = type_ustring();
     else if (t.aggregate == TypeDesc::VEC3)
         lt = type_triple();
+    else if (t.aggregate == TypeDesc::VEC2)
+        lt = type_vector2();
     else if (t.aggregate == TypeDesc::MATRIX44)
         lt = type_matrix();
     else if (t == TypeDesc::NONE)

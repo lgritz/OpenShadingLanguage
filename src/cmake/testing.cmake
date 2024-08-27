@@ -398,7 +398,7 @@ macro (osl_add_all_tests)
                 userdata userdata-defaults userdata-partial userdata-custom userdata-passthrough
                 vararray-connect vararray-default
                 vararray-deserialize vararray-param
-                vecctr vector vector-reg
+                vecctr vector vector-reg vector2
                 wavelength_color wavelength_color-reg Werror xml xml-reg )
 
     # Only run the ocio test if the OIIO we are using has OCIO support

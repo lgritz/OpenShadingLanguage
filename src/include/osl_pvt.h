@@ -9,6 +9,15 @@
 #include <OSL/oslconfig.h>
 
 
+#ifndef OIIO_TYPEDESC_VECTOR2
+// For older OIIO, make sure we have defined Vector2
+namespace OIIO {
+    static constexpr TypeDesc TypeVector2 (TypeDesc::FLOAT, TypeDesc::VEC2, TypeDesc::VECTOR);
+}
+#endif
+
+
+
 OSL_NAMESPACE_ENTER
 namespace pvt {
 
@@ -260,6 +269,11 @@ public:
 
     /// Is it a normal?
     bool is_normal() const { return m_simple == TypeNormal && !is_closure(); }
+
+    /// Is it a vector2?
+    bool is_vector2 () const {
+        return m_simple == TypeDesc(TypeDesc::FLOAT, TypeDesc::VEC2, TypeDesc::VECTOR) && !is_closure();
+    }
 
     /// Is it a simple string?
     bool is_string() const { return m_simple == TypeString && !is_closure(); }

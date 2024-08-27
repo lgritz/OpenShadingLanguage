@@ -1977,6 +1977,27 @@ DECLFOLDER(constfold_triple)
 
 
 
+DECLFOLDER(constfold_vector2)
+{
+    // Turn R=vector2(a,b) into R=C if the components are all constants
+    Opcode &op (rop.inst()->ops()[opnum]);
+    OSL_DASSERT (op.nargs() == 3);
+    Symbol &R (*rop.inst()->argsymbol(op.firstarg()+0));
+    Symbol &A (*rop.inst()->argsymbol(op.firstarg()+1));
+    Symbol &B (*rop.inst()->argsymbol(op.firstarg()+2));
+    if (A.is_constant() && A.typespec().is_float() &&
+            B.is_constant() && B.typespec().is_float()) {
+        OSL_DASSERT (A.typespec().is_float() && B.typespec().is_float());
+        float result[2] = { A.get_float(), B.get_float() };
+        int cind = rop.add_constant (R.typespec(), &result);
+        rop.turn_into_assign (op, cind, "vector2(const,const) => vector2 constant");
+        return 1;
+    }
+    return 0;
+}
+
+
+
 DECLFOLDER(constfold_matrix)
 {
     Opcode& op(rop.inst()->ops()[opnum]);

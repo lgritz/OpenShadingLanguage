@@ -544,6 +544,8 @@ public:
     llvm::Type* type_longlong() const { return m_llvm_type_longlong; }
     llvm::Type* type_void() const { return m_llvm_type_void; }
     llvm::Type* type_triple() const { return m_llvm_type_triple; }
+    llvm::Type* type_vector2() const { return m_llvm_type_vector2; }
+    llvm::Type* type_vector4() const { return m_llvm_type_vector4; }
     llvm::Type* type_matrix() const { return m_llvm_type_matrix; }
     llvm::Type* type_typedesc() const { return m_llvm_type_longlong; }
     llvm::Type* type_ustring() { return m_llvm_type_ustring; }
@@ -566,6 +568,14 @@ public:
     llvm::PointerType* type_triple_ptr() const
     {
         return m_llvm_type_triple_ptr;
+    }
+    llvm::PointerType* type_vector2_ptr() const
+    {
+        return m_llvm_type_vector2_ptr;
+    }
+    llvm::PointerType* type_vector4_ptr() const
+    {
+        return m_llvm_type_vector4_ptr;
     }
     llvm::PointerType* type_matrix_ptr() const
     {
@@ -1094,6 +1104,8 @@ private:
     llvm::Type* m_llvm_type_longlong;
     llvm::Type* m_llvm_type_void;
     llvm::Type* m_llvm_type_triple;
+    llvm::Type* m_llvm_type_vector2;
+    llvm::Type* m_llvm_type_vector4;
     llvm::Type* m_llvm_type_matrix;
     llvm::Type* m_llvm_type_real_ustring;  // True const char *
     llvm::Type*
@@ -1107,6 +1119,8 @@ private:
     llvm::PointerType* m_llvm_type_float_ptr;
     llvm::PointerType* m_llvm_type_longlong_ptr;
     llvm::PointerType* m_llvm_type_triple_ptr;
+    llvm::PointerType* m_llvm_type_vector2_ptr;
+    llvm::PointerType* m_llvm_type_vector4_ptr;
     llvm::PointerType* m_llvm_type_matrix_ptr;
     llvm::PointerType* m_llvm_type_double_ptr;
     llvm::PointerType* m_llvm_type_ustring_ptr;

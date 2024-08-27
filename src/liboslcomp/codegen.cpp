@@ -691,6 +691,48 @@ ASTNode::one_default_literal(const Symbol* sym, ASTNode* init, std::string& out,
             out += fmtformat("0{}0{}0", sep, sep);
             completed = false;
         }
+    } else if (type.is_vector2()) {
+        if (islit && lit->typespec().is_int()) {
+            float f = lit->intval();
+            out += fmtformat("{:.9g}{}{:.9g}", f, sep, f);
+        } else if (islit && lit->typespec().is_float()) {
+            float f = lit->floatval();
+            out += fmtformat("{:.9g}{}{:.9g}", f, sep, f);
+        } else if (init && init->typespec() == type &&
+                   (init->nodetype() == ASTNode::type_constructor_node ||
+                   (init->nodetype() == ASTNode::compound_initializer_node &&
+                   static_cast<ASTcompound_initializer*>(init)->canconstruct()))) {
+            ASTtype_constructor *ctr = (ASTtype_constructor *) init;
+            ASTNode::ref val = ctr->args();
+            float f[2];
+            int nargs = 0;
+            if (val.get() && val->nodetype() == ASTNode::literal_node &&
+                    val->typespec().is_string()) {   // "space" name case
+                val = val->next();
+                completed = false;
+            }
+            bool one_arg = (val && ! val->nextptr());
+            for (int c = 0;  c < 2;  ++c) {
+                if (val.get())
+                    ++nargs;
+                if (val.get() && val->nodetype() == ASTNode::literal_node) {
+                    f[c] = ((ASTliteral *)val.get())->floatval ();
+                    val = val->next();
+                } else if (c > 0 && one_arg) {
+                    f[c] = f[0];
+                } else {
+                    f[c] = 0;
+                    completed = false;
+                }
+            }
+            if (nargs == 1)
+                out += fmtformat("{:.9g}{}{:.9g}", f[0], sep, f[0]);
+            else
+                out += fmtformat("{:.9g}{}{:.9g}", f[0], sep, f[1]);
+        } else {
+            out += fmtformat("0{}0", sep);
+            completed = false;
+        }
     } else if (type.is_matrix()) {
         if (islit && lit->typespec().is_int()) {
             float f = lit->intval();

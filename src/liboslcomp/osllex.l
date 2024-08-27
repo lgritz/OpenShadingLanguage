@@ -169,6 +169,7 @@ OSL_NAMESPACE_EXIT
 "string"                {  SETLINE;  return (yylval->i=STRINGTYPE); }
 "struct"                {  SETLINE;  return (yylval->i=STRUCT); }
 "vector"                {  SETLINE;  return (yylval->i=VECTORTYPE); }
+"vector2"               {  SETLINE;  return (yylval->i=VECTOR2TYPE); }
 "void"                  {  SETLINE;  return (yylval->i=VOIDTYPE); }
 "while"                 {  SETLINE;  return (yylval->i=WHILE); }
 "or"                    {  SETLINE;  return (yylval->i=OR_OP); }

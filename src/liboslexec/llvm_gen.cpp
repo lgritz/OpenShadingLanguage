@@ -1931,6 +1931,31 @@ LLVMGEN(llvm_gen_construct_triple)
 
 
 
+// Construct vector2
+LLVMGEN (llvm_gen_construct_vector2)
+{
+    Opcode &op (rop.inst()->ops()[opnum]);
+    Symbol& Result = *rop.opargsym (op, 0);
+    Symbol& X = *rop.opargsym (op, 1);
+    Symbol& Y = *rop.opargsym (op, 2);
+    ASSERT (Result.typespec().is_vector2() && X.typespec().is_float() &&
+            Y.typespec().is_float());
+
+    // First, copy the floats into the vector
+    int dmax = Result.has_derivs() ? 3 : 1;
+    for (int d = 0;  d < dmax;  ++d) {  // loop over derivs
+        for (int c = 0;  c < 2;  ++c) {  // loop over components
+            const Symbol& comp = *rop.opargsym (op, c+1);
+            llvm::Value* val = rop.llvm_load_value(comp, d, NULL, 0, TypeFloat);
+            rop.llvm_store_value (val, Result, d, NULL, c);
+        }
+    }
+
+    return true;
+}
+
+
+
 /// matrix constructor.  Comes in several varieties:
 ///    matrix (float)
 ///    matrix (space, float)
@@ -3058,6 +3083,8 @@ arg_typecode(Symbol* sym, bool derivs)
         name += "f";
     else if (t.is_triple())
         name += "v";
+    else if (t.is_vector2())
+        name += "v2";
     else
         OSL_ASSERT(0);
     return name;
