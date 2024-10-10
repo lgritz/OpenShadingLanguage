@@ -31,7 +31,7 @@ half_area(const Box3& b)
 inline float
 comp(const Vec3& vec, int i)
 {
-#ifndef __INTEL_LLVM_COMPILER
+#if 1 || !defined(__INTEL_LLVM_COMPILER)
     // This seems good enough for everybody but icx
     return (reinterpret_cast<const float*>(&vec))[i];
 #else
