@@ -465,8 +465,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - desc: Debug gcc7/C++17 llvm9 py3.7 oiio2.5 exr3.1 sse4
-            nametag: linux-debug-gcc7-llvm9
+          - desc: Debug gcc7/C++17 llvm11 py3.8 oiio2.5 exr3.1 sse4
+            nametag: linux-debug-gcc7-llvm11
             runner: ubuntu-20.04
             cxx_compiler: g++-9
             cxx_std: 17
@@ -476,11 +476,11 @@ jobs:
             python_ver: 3.8
             simd: sse4.2
             setenvs: export CMAKE_BUILD_TYPE=Debug
-                            LLVM_VERSION=9.0.0
+                            LLVM_VERSION=11.0.0 LLVM_DISTRO_NAME=ubuntu-20.04
                             PUGIXML_VERSION=v1.9
                             CTEST_TEST_TIMEOUT=240
-          - desc: gcc10/C++17 llvm10 oiio-2.5 avx2
-            nametag: linux-2021ish-gcc10-llvm10
+          - desc: gcc10/C++17 llvm11 oiio-2.5 avx2
+            nametag: linux-2021ish-gcc10-llvm11
             runner: ubuntu-20.04
             cxx_compiler: g++-10
             cxx_std: 17
@@ -490,7 +490,7 @@ jobs:
             pybind11_ver: v2.8.1
             python_ver: 3.8
             simd: avx2,f16c
-            setenvs: export LLVM_VERSION=10.0.0
+            setenvs: export LLVM_VERSION=11.0.0 LLVM_DISTRO_NAME=ubuntu-20.04
                             OPENIMAGEIO_CMAKE_FLAGS="-DBUILD_FMT_VERSION=7.0.1"
                             PUGIXML_VERSION=v1.10
           - desc: latest releases gcc11/C++17 llvm17 oiio-3.0 exr3.2 py3.12 avx2 batch-b16avx512
