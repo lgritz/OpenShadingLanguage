@@ -85,6 +85,7 @@ jobs:
             vfxyear: 2022
             old_node: 1
             cxx_std: 17
+            opencolorio_ver: v2.2.0
             openimageio_ver: release
             python_ver: 3.9
             pybind11_ver: v2.9.0
@@ -103,7 +104,7 @@ jobs:
             pybind11_ver: v2.7.0
             simd: 0
             setenvs: export PUGIXML_VERSION=v1.8
-                            CMAKE_VERSION=3.15.5
+                            CMAKE_VERSION=3.19.0
                             ENABLE_OPENVDB=0
 
 
