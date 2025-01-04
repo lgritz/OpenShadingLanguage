@@ -118,6 +118,7 @@ endif ()
 set (OSL_LIBNAME_SUFFIX "" CACHE STRING
      "Optional name appended to ${PROJECT_NAME} libraries that are built")
 option (OSL_BUILD_TESTS "Build the unit tests, testshade, testrender" ON)
+# option (USE_LLVM_BITCODE "Generate embedded LLVM bitcode" ON)
 if (WIN32)
     option (USE_LLVM_BITCODE "Generate embedded LLVM bitcode" OFF)
 else ()

@@ -38,7 +38,12 @@ function ( EMBED_LLVM_BITCODE_IN_CPP src_list suffix output_name list_to_append_
         if (NOT LLVM_BC_GENERATOR)
             message (FATAL_ERROR "You must have a valid llvm bitcode generator (clang++) somewhere.")
         endif ()
-        message (VERBOSE "Using LLVM_BC_GENERATOR ${LLVM_BC_GENERATOR} to generate bitcode.")
+        if (LLVM_BC_GENERATOR)
+            execute_process ( COMMAND ${LLVM_BC_GENERATOR} -dumpversion
+                              OUTPUT_VARIABLE LLVM_BC_GENERATOR_VERSION
+                              OUTPUT_STRIP_TRAILING_WHITESPACE )
+        endif ()
+        message (VERBOSE "Using LLVM_BC_GENERATOR ${LLVM_BC_GENERATOR} v${LLVM_BC_GENERATOR_VERSION} to generate bitcode.")
 
         if (NOT LLVM_AS_TOOL)
             find_program (LLVM_AS_TOOL NAMES "llvm-as"
@@ -81,6 +86,17 @@ function ( EMBED_LLVM_BITCODE_IN_CPP src_list suffix output_name list_to_append_
         # Command to turn the .cpp file into LLVM assembly language .s, into
         # LLVM bitcode .bc, then back into a C++ file with the bc embedded!
         add_custom_command ( OUTPUT ${src_bc}
+        COMMAND echo "BITCODE GENERATION AND EMBEDDING COMMAND:"
+            ${LLVM_BC_GENERATOR}
+            "lcflags" ${LLVM_COMPILE_FLAGS} "/lcflags"
+            ${ALL_INCLUDE_DIRS}
+            -DOSL_COMPILING_TO_BITCODE=1
+            -Wno-deprecated-register
+            # the following 2 warnings can be restored when all 3rd parties have fixed their export macros
+            # (dllimport attribute is not supported when compiling for Cuda and triggers a ton of warnings)
+            -Wno-ignored-attributes -Wno-unknown-attributes
+            -O3 -fno-math-errno -S -emit-llvm ${extra_clang_args}
+            -o ${src_asm} ${src}
         COMMAND ${LLVM_BC_GENERATOR}
             ${LLVM_COMPILE_FLAGS}
             ${ALL_INCLUDE_DIRS}

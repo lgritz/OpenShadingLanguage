@@ -37,10 +37,13 @@ if (CMAKE_CXX_STANDARD VERSION_LESS CMAKE_CXX_MINIMUM)
     message (FATAL_ERROR "C++${CMAKE_CXX_STANDARD} is not supported, minimum is C++${CMAKE_CXX_MINIMUM}")
 endif ()
 # Remember the -std flags we need will be used later for custom Cuda builds
-set (CSTD_FLAGS "")
-if (CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_CLANG OR CMAKE_COMPILER_IS_INTEL)
-    set (CSTD_FLAGS "-std=c++${CMAKE_CXX_STANDARD}")
-endif ()
+# set (CSTD_FLAGS "")
+# if (CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_CLANG OR CMAKE_COMPILER_IS_INTEL)
+set (CSTD_FLAGS "-std=c++${CMAKE_CXX_STANDARD}")
+# elseif (MSVC)
+#     set (CSTD_FLAGS "/std:c++${CMAKE_CXX_STANDARD}")
+# endif ()
+message (STATUS "CSTD_FLAGS = ${CSTD_FLAGS}")
 
 
 ###########################################################################
@@ -221,10 +224,10 @@ endif ()
 
 
 # Remember the -std flags we need will be used later for custom Cuda builds
-set (CSTD_FLAGS "")
-if (CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_CLANG OR CMAKE_COMPILER_IS_INTEL)
-    set (CSTD_FLAGS "-std=c++${CMAKE_CXX_STANDARD}")
-endif ()
+# set (CSTD_FLAGS "")
+# if (CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_CLANG OR CMAKE_COMPILER_IS_INTEL)
+    # set (CSTD_FLAGS "-std=c++${CMAKE_CXX_STANDARD}")
+# endif ()
 
 
 

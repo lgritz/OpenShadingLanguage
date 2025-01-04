@@ -86,8 +86,8 @@ jobs:
       image: ${{ inputs.container }}
 
     env:
-      CXX: ${{inputs.cxx_compiler}}
-      CC: ${{inputs.cc_compiler}}
+      CXX: "${{inputs.cxx_compiler}}"
+      CC: "${{inputs.cc_compiler}}"
       CMAKE_BUILD_TYPE: ${{inputs.build_type}}
       CMAKE_CXX_STANDARD: ${{inputs.cxx_std}}
       CMAKE_GENERATOR: ${{inputs.generator}}
@@ -120,9 +120,15 @@ jobs:
           path: ./ccache
           key: ${{github.job}}-${{inputs.nametag}}-${{steps.ccache_cache_keys.outputs.date}}
           restore-keys: ${{github.job}}-
-      - name: Setup Nuget.exe (Windows only)
-        if: runner.os == 'Windows'
-        uses: nuget/setup-nuget@a21f25cd3998bf370fde17e3f1b4c12c175172f9 # v2.0.0
+      # - name: Setup Nuget.exe (Windows only)
+      #   if: runner.os == 'Windows'
+      #   uses: nuget/setup-nuget@a21f25cd3998bf370fde17e3f1b4c12c175172f9 # v2.0.0
+      # - name: Install LLVM and Clang (Windows only)
+      #   if: runner.os == 'Windows'
+      #   uses: KyleMayes/install-llvm-action@v2
+      #   with:
+      #     version: "17.0"
+      #     directory: "./llvm"
       - name: Build setup
         shell: bash
         run: |

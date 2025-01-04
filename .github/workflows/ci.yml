@@ -358,7 +358,8 @@ jobs:
             batched: b8_AVX2_noFMA
             setenvs: export OSL_CMAKE_FLAGS="-DSTOP_ON_WARNING=OFF -DEXTRA_CPP_ARGS=-fp-model=consistent"
                             OPENIMAGEIO_CMAKE_FLAGS=-DBUILD_FMT_VERSION=7.1.3
-                            USE_OPENVDB=0 OPENCOLORIO_CXX=g++
+                            USE_OPENVDB=0
+                            OPENCOLORIO_CMAKE_FLAGS="-DCMAKE_CXX_COMPILER=g++"
           - desc: icx/C++17 llvm14 py3.10 oiio-3.0 avx2
             nametag: linux-icx
             runner: ubuntu-latest
@@ -373,8 +374,9 @@ jobs:
             pybind11_ver: v2.10.0
             simd: avx2,f16c
             batched: b8_AVX2_noFMA
-            setenvs: export OSL_CMAKE_FLAGS="-DSTOP_ON_WARNING=OFF" USE_OPENVDB=0
-                            OPENCOLORIO_CXX=g++
+            setenvs: export OSL_CMAKE_FLAGS="-DSTOP_ON_WARNING=OFF"
+                            USE_OPENVDB=0
+                            OPENCOLORIO_CMAKE_FLAGS="-DCMAKE_CXX_COMPILER=g++"
 
           - desc: Debug gcc7/C++17 llvm11 py3.8 oiio2.5 exr3.1 sse4
             nametag: linux-debug-gcc7-llvm11
@@ -548,3 +550,63 @@ jobs:
             openimageio_ver: main
 
 
+  windows:
+    name: "${{matrix.desc}}"
+    uses: ./.github/workflows/build-steps.yml
+    with:
+      nametag: ${{ matrix.nametag || 'unnamed!' }}
+      runner: ${{ matrix.runner }}
+      container: ${{ matrix.container }}
+      cc_compiler: ${{ matrix.cc_compiler }}
+      cxx_compiler: ${{ matrix.cxx_compiler }}
+      cxx_std: ${{ matrix.cxx_std || '17' }}
+      batched: ${{ matrix.batched }}
+      build_type: ${{ matrix.build_type || 'Release' }}
+      depcmds: ${{ matrix.depcmds }}
+      extra_artifacts: ${{ matrix.extra_artifacts }}
+      fmt_ver: ${{ matrix.fmt_ver }}
+      opencolorio_ver: ${{ matrix.opencolorio_ver }}
+      openexr_ver: ${{ matrix.openexr_ver }}
+      openimageio_ver: ${{ matrix.openimageio_ver }}
+      pybind11_ver: ${{ matrix.pybind11_ver }}
+      python_ver: ${{ matrix.python_ver }}
+      setenvs: ${{ matrix.setenvs }}
+      simd: ${{ matrix.simd }}
+      skip_build: ${{ matrix.skip_build }}
+      skip_tests: ${{ matrix.skip_tests }}
+      abi_check: ${{ matrix.abi_check }}
+      build_docs: ${{ matrix.build_docs }}
+      generator: ${{ matrix.generator }}
+      ctest_args: ${{ matrix.ctest_args }}
+      ctest_test_timeout: ${{ matrix.ctest_test_timeout || '800' }}
+      coverage: ${{ matrix.coverage || 0 }}
+      sonar: ${{ matrix.sonar || 0 }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - desc: Windows-2019 VS2019
+            runner: windows-2019
+            nametag: windows-2019
+            vsver: 2019
+            generator: "Visual Studio 16 2019"
+            python_ver: "3.9"
+            # opencolorio_ver: v2.2.1
+            openexr_ver: v3.3.2
+            openimageio_ver: release
+            setenvs: export LLVM_VERSION=18.1.8
+                            OSL_CMAKE_FLAGS="-DUSE_LLVM_BTCODE=ON"
+          - desc: Windows-2022 VS2022
+            runner: windows-2022
+            nametag: windows-2022
+            vsver: 2022
+            generator: "Visual Studio 17 2022"
+            cc_compiler: "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Tools/MSVC/14.42.34433/bin/Hostx64/x64/cl.exe"
+            cxx_compiler: "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Tools/MSVC/14.42.34433/bin/Hostx64/x64/cl.exe"
+            python_ver: "3.9"
+            # opencolorio_ver: v2.2.1
+            openexr_ver: v3.3.2
+            openimageio_ver: release
+            setenvs: export LLVM_VERSION=18.1.8
+                            OSL_CMAKE_FLAGS="-DUSE_LLVM_BTCODE=ON"
+            # setenvs: export LLVM_VERSION=19.1.5
