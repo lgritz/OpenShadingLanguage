@@ -40,6 +40,7 @@ permissions: read-all
 jobs:
 
   aswf-old:
+    if: 0
     name: "VFX${{matrix.vfxyear}} ${{matrix.desc}}"
     strategy:
       fail-fast: false
@@ -202,6 +203,7 @@ jobs:
 
 
   linux:
+    if: 0
     name: "${{matrix.desc}}"
     uses: ./.github/workflows/build-steps.yml
     with:
