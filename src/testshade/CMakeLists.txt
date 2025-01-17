@@ -67,13 +67,22 @@ endif()
 set ( rs_srcs
     rs_simplerend.cpp )
 
-set(include_dirs ${CMAKE_CURRENT_SOURCE_DIR})
-list(APPEND include_dirs ${CMAKE_SOURCE_DIR}/src/include)
-list(APPEND include_dirs ${CMAKE_BINARY_DIR}/include)
-list(APPEND include_dirs ${IMATH_INCLUDES})
-list(APPEND include_dirs ${OpenImageIO_INCLUDES})
+if (USE_LLVM_BITCODE)
 
-EMBED_LLVM_BITCODE_IN_CPP ( "${rs_srcs}" "_host" "testshade_llvm_compiled_rs" testshade_srcs "-DOSL_HOST_RS_BITCODE=1" "${include_dirs}")
+    set(include_dirs ${CMAKE_CURRENT_SOURCE_DIR})
+    list(APPEND include_dirs ${CMAKE_SOURCE_DIR}/src/include)
+    list(APPEND include_dirs ${CMAKE_BINARY_DIR}/include)
+    list(APPEND include_dirs ${IMATH_INCLUDES})
+    list(APPEND include_dirs ${OpenImageIO_INCLUDES})
+
+    EMBED_LLVM_BITCODE_IN_CPP ( "${rs_srcs}" "_host" "testshade_llvm_compiled_rs" testshade_srcs "-DOSL_HOST_RS_BITCODE=1" "${include_dirs}")
+else ()
+    # With MSVC/Mingw, we don't compile to LLVM bitcode, due
+    # to clang being unable to compile MSVC C++ header files at this time.
+    # Instead it is part of the regular build process.
+    add_compile_definitions (OSL_LLVM_NO_BITCODE)
+    list (APPEND testshade_srcs ${rs_srcs})
+endif ()
 
 add_executable ( testshade ${testshade_srcs} testshademain.cpp )
 

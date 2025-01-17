@@ -19,6 +19,9 @@
 
 // Keep free functions in sync with virtual function based SimpleRenderer.
 
+// OSL_PRAGMA_VISIBILITY_PUSH  /* Make the rs functions visible */
+
+
 OSL_RSOP OSL_HOSTDEVICE bool
 rs_get_matrix_xform_time(OSL::OpaqueExecContextPtr /*ec*/,
                          OSL::Matrix44& result, OSL::TransformationPtr xform,
@@ -687,3 +690,5 @@ rs_filefmt(OSL::OpaqueExecContextPtr ec, OSL::ustringhash filename_hash,
                       argValuesSize, argValues);
 }
 #endif  // #ifndef __CUDACC__
+
+// OSL_PRAGMA_VISIBILITY_POP

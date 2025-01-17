@@ -31,7 +31,19 @@ extern "C" {
 
 // Prefix for OSL shade op declarations.
 // "C" linkage (no C++ name mangling) and local visibility
-#define OSL_RSOP extern "C"
+// #define OSL_RSOP extern "C" OSL_LLVM_EXPORT
+#ifndef OSL_RSOP
+#    ifdef __CUDACC__
+#        define OSL_RSOP \
+            extern "C" __device__ OSL_LLVM_EXPORT __attribute__((always_inline))
+#    elif defined(OSL_COMPILING_TO_BITCODE)
+#        define OSL_RSOP \
+            extern "C" OSL_LLVM_EXPORT __attribute__((always_inline))
+#    else
+#        define OSL_RSOP extern "C" OSL_LLVM_EXPORT
+#    endif
+#endif
+
 
 // We are choosing to use unique names encoding parameters directly
 // as opposed to using overloaded functions.
