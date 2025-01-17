@@ -596,6 +596,7 @@ jobs:
             openimageio_ver: release
             setenvs: export LLVM_VERSION=18.1.8
                             OSL_CMAKE_FLAGS="-DUSE_LLVM_BTCODE=ON"
+                            USE_LLVM_BITCODE=ON
           - desc: Windows-2022 VS2022
             runner: windows-2022
             nametag: windows-2022
@@ -609,4 +610,5 @@ jobs:
             openimageio_ver: release
             setenvs: export LLVM_VERSION=18.1.8
                             OSL_CMAKE_FLAGS="-DUSE_LLVM_BTCODE=ON"
+                            USE_LLVM_BITCODE=ON
             # setenvs: export LLVM_VERSION=19.1.5
