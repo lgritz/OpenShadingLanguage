@@ -308,6 +308,12 @@ SimpleRenderer::attribute(string_view name, TypeDesc type, const void* value)
 void
 SimpleRenderer::register_JIT_Global_Variables()  //callable from testshade
 {
+// #ifdef OSL_HOST_RS_BITCODE
+// #    define STRDECL(str, var_name) \
+//         const OSL::ustring& RS_##var_name = OSL::Strings::var_name;
+// #    include <OSL/strdecls.h>
+// #    undef STRDECL
+// #endif
 }
 
 
