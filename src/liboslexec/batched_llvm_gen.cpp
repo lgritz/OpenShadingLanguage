@@ -4606,6 +4606,17 @@ llvm_batched_texture_options(BatchedBackendLLVM& rop, int opnum,
             continue;
         }
 
+        if (name == Strings::colorspace && valtype == TypeDesc::STRING) {
+            if (Val.is_constant()) {
+                // Just ignore this option for now.
+                // FIXME: need full implementation
+                continue;
+            } else {
+                rop.shadingcontext()->errorfmt(
+                    "texture{} optional argument \"{}\" must be constant after optimization ({}:{})",
+                    tex3d ? "3d" : "", name, op.sourcefile(), op.sourceline());
+            }
+        }
         if (name == Strings::time
             && (valtype == TypeDesc::FLOAT || valtype == TypeDesc::INT)) {
             // NOTE: currently no supported 3d texture format makes use of time.

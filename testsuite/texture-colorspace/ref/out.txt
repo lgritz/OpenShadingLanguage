@@ -1,0 +1,5 @@
+Compiled test.osl -> test.oso
+
+Output Cout to out.exr
+color space - none specified: 0.500000 0.500000 0.500000
+color space - sRGB: 0.500000 0.500000 0.500000
