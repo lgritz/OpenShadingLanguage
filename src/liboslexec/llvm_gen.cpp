@@ -2765,6 +2765,7 @@ llvm_gen_texture_options(BackendLLVM& rop, int opnum, int first_optional_arg,
                 rop.shadingcontext()->errorfmt(
                     "texture{} optional argument \"{}\" must be constant after optimization ({}:{})",
                     tex3d ? "3d" : "", name, op.sourcefile(), op.sourceline());
+                continue;
             }
         }
 

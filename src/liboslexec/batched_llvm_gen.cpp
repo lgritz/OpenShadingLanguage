@@ -4615,6 +4615,7 @@ llvm_batched_texture_options(BatchedBackendLLVM& rop, int opnum,
                 rop.shadingcontext()->errorfmt(
                     "texture{} optional argument \"{}\" must be constant after optimization ({}:{})",
                     tex3d ? "3d" : "", name, op.sourcefile(), op.sourceline());
+                continue;
             }
         }
         if (name == Strings::time
@@ -4947,6 +4948,7 @@ llvm_batched_texture_varying_options(BatchedBackendLLVM& rop, int opnum,
             continue;
         }
 
+        SKIP_PARAM_WIDE_STRING(colorspace)
         SKIP_PARAM_WIDE_FLOAT(time)
 
         rop.shadingcontext()->errorfmt(
