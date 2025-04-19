@@ -28,12 +28,13 @@ echo ""
 echo "Before my brew installs:"
 brew list --versions
 
+if [[ "${BREW_UNLINK_PACKAGES}" != "" ]] ; then
+    brew unlink ${BREW_UNLINK_PACKAGES} || true
+fi
+
 brew install --display-times -q gcc ccache cmake ninja || true
 brew link --overwrite gcc
 brew install --display-times -q python@${PYTHON_VERSION} || true
-# brew unlink python@3.8 || true
-# brew unlink python@3.9 || true
-brew unlink python@3.10 || true
 brew link --overwrite --force python@${PYTHON_VERSION} || true
 #brew upgrade --display-times -q cmake || true
 brew install --display-times -q imath openexr opencolorio || true
