@@ -32,11 +32,14 @@ if [[ "${BREW_UNLINK_PACKAGES}" != "" ]] ; then
     brew unlink ${BREW_UNLINK_PACKAGES} || true
 fi
 
-brew install --display-times -q gcc ccache cmake ninja || true
+
+if [[ "${DO_BREW_CMAKE_INSTALL:=1}" != "0" ]] ; then
+    brew install --display-times -q cmake || true
+fi
+brew install --display-times -q gcc ccache ninja || true
 brew link --overwrite gcc
 brew install --display-times -q python@${PYTHON_VERSION} || true
 brew link --overwrite --force python@${PYTHON_VERSION} || true
-#brew upgrade --display-times -q cmake || true
 brew install --display-times -q imath openexr opencolorio || true
 #brew install --display-times -q freetype
 brew install --display-times -q partio pugixml || true
