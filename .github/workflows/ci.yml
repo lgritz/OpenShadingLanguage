@@ -531,7 +531,7 @@ jobs:
             ctest_test_timeout: 120
             setenvs: export HOMEBREW_PREFIX=/usr/local
                             EXTRA_BREW_PACKAGES="openimageio"
-                            LLVMBREWVER="@15"
+                            LLVMBREWVER="@19"
           - desc: MacOS-14-ARM llvm17
             runner: macos-14
             nametag: macos14-arm-p313
