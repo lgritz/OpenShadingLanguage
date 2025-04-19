@@ -607,7 +607,7 @@ jobs:
             opencolorio_ver: v2.3.2
             openexr_ver: v3.3.2
             openimageio_ver: release
-            skip_tests: 1
+            # skip_tests: 1
             setenvs: export LLVM_VERSION=18.1.8
                             OSL_CMAKE_FLAGS="-DUSE_LLVM_BTCODE=ON"
                             PUGIXML_VERSION=v1.14
@@ -620,7 +620,7 @@ jobs:
             opencolorio_ver: v2.3.2
             openexr_ver: v3.3.2
             openimageio_ver: release
-            skip_tests: 1
+            # skip_tests: 1
             setenvs: export LLVM_VERSION=18.1.8
                             OSL_CMAKE_FLAGS="-DUSE_LLVM_BTCODE=ON"
                             PUGIXML_VERSION=v1.14
