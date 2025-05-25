@@ -123,6 +123,7 @@ set (lib_src
           lpexp.cpp lpeparse.cpp automata.cpp accum.cpp
           opclosure.cpp
           shadeimage.cpp
+          backendcpp.cpp
           backendllvm.cpp
           llvm_gen.cpp llvm_instance.cpp llvm_util.cpp
           rs_fallback.cpp

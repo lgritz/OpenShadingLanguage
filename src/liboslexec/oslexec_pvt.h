@@ -665,6 +665,7 @@ public:
     }
     bool dump_uniform_symbols() const { return m_dump_uniform_symbols; }
     bool dump_varying_symbols() const { return m_dump_varying_symbols; }
+    bool debug_output_cpp() const { return m_debug_output_cpp; }
     ustring llvm_prune_ir_strategy() const { return m_llvm_prune_ir_strategy; }
     bool fold_getattribute() const { return m_opt_fold_getattribute; }
     bool opt_texture_handle() const { return m_opt_texture_handle; }
@@ -946,6 +947,7 @@ private:
     bool m_dump_forced_llvm_bool_symbols;  ///< Output symbols BatchedAnalsysis determined could be forced to be an llvm boolean
     bool m_dump_uniform_symbols;  ///< Output symbols BatchedAnalsysis determined are uniform
     bool m_dump_varying_symbols;  ///< Output symbols BatchedAnalsysis determined are varying
+    bool m_debug_output_cpp = false;  ///< Experimental output of cpp equivalent
     ustring m_llvm_prune_ir_strategy;  ///< LLVM IR pruning strategy
     ustring m_debug_groupname;         ///< Name of sole group to debug
     ustring m_debug_layername;         ///< Name of sole layer to debug

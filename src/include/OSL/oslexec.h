@@ -305,6 +305,8 @@ public:
     ///    string only_groupname  Compile only this one group (skip all others)
     ///    int force_derivs       Force all float-based variables to compute
     ///                              and store derivatives. (0)
+    ///    int debug_output_cpp   Debugging output to translate the shader
+    ///                              to sort-of C++. (0)
     ///
     /// Note: the attributes referred to as "string" are actually on the app
     /// side as ustring or const char* (they have the same data layout), NOT

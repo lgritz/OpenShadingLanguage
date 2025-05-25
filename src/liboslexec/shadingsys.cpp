@@ -12,6 +12,7 @@
 #include "oslexec_pvt.h"
 #include <OSL/fmt_util.h>
 #include <OSL/genclosure.h>
+#include "backendcpp.h"
 #include "backendllvm.h"
 #if OSL_USE_BATCHED
 #    include "batched_backendllvm.h"
@@ -1660,6 +1661,7 @@ ShadingSystemImpl::attribute(string_view name, TypeDesc type, const void* val)
              m_dump_forced_llvm_bool_symbols);
     ATTR_SET("dump_uniform_symbols", int, m_dump_uniform_symbols);
     ATTR_SET("dump_varying_symbols", int, m_dump_varying_symbols);
+    ATTR_SET("debug_output_cpp", int, m_debug_output_cpp);
     ATTR_SET_STRING("llvm_prune_ir_strategy", m_llvm_prune_ir_strategy);
     ATTR_SET("strict_messages", int, m_strict_messages);
     ATTR_SET("range_checking", int, m_range_checking);
@@ -1851,6 +1853,7 @@ ShadingSystemImpl::getattribute(string_view name, TypeDesc type, void* val)
                 m_dump_forced_llvm_bool_symbols);
     ATTR_DECODE("dump_uniform_symbols", int, m_dump_uniform_symbols);
     ATTR_DECODE("dump_varying_symbols", int, m_dump_varying_symbols);
+    ATTR_DECODE("debug_output_cpp", int, m_debug_output_cpp);
     ATTR_DECODE("strict_messages", int, m_strict_messages);
     ATTR_DECODE("error_repeats", int, m_error_repeats);
     ATTR_DECODE("range_checking", int, m_range_checking);
@@ -3818,6 +3821,11 @@ ShadingSystemImpl::optimize_group(ShaderGroup& group, ShadingContext* ctx,
         m_stat_opt_locking_time += rop.m_stat_opt_locking_time;
         m_stat_opt_locking_time += locking_time + rop.m_stat_opt_locking_time;
         m_stat_specialization_time += rop.m_stat_specialization_time;
+    }
+
+    if (debug_output_cpp()) {
+        BackendCpp cpper(*this, group, ctx);
+        cpper.run();
     }
 
     if (need_jit) {
