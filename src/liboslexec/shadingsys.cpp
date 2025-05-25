@@ -1457,6 +1457,7 @@ shading_system_setup_op_descriptors(
     OP (while,       loop_op,             none,          false,     0);
     OP (xor,         bitwise_binary_op,   xor,           true,      0);
 #undef OP
+#undef OP2
 #undef TEX
 #undef SIDE
 #undef STRCHARS

@@ -94,9 +94,8 @@ typedef std::shared_ptr<ShaderInstance> ShaderInstanceRef;
 class Dictionary;
 class RuntimeOptimizer;
 class BackendLLVM;
-#if OSL_USE_BATCHED
 class BatchedBackendLLVM;
-#endif
+class BackendCpp;
 struct ConnectedParam;
 
 OSL_DLL_EXPORT void
@@ -124,21 +123,25 @@ typedef int (*OpFolder)(RuntimeOptimizer& rop, int opnum);
 
 /// Signature of an LLVM-IR-generating method
 typedef bool (*OpLLVMGen)(BackendLLVM& rop, int opnum);
-#if OSL_USE_BATCHED
 typedef bool (*OpLLVMGenWide)(BatchedBackendLLVM& rop, int opnum);
-#endif
+
+/// Signature of a Cpp-like emitter
+typedef bool (*OpCppGen)(BackendCpp& rop, int opnum);
+
+
 
 struct OpDescriptor {
-    ustring name;       // name of op
-    OpLLVMGen llvmgen;  // llvm-generating routine
-#if OSL_USE_BATCHED
-    OpLLVMGenWide llvmgenwide;  // wide version of llvm-generating routine
-#endif
-    OpFolder folder;     // constant-folding routine
-    bool simple_assign;  // wholly overwrites arg0, no other writes,
-                         //     no side effects
-    int flags;           // other flags
-    OpDescriptor() {}
+    ustring name;                           // name of op
+    OpLLVMGen llvmgen { nullptr };          // llvm-generating routine
+    OpLLVMGenWide llvmgenwide { nullptr };  // wide version
+    OpFolder folder { nullptr };            // constant-folding routine
+    OpCppGen cppgen { nullptr };            // CPP-generating routine
+    // simple if wholly overwrites arg0, no other writes, no side effects
+    bool simple_assign { false };
+    int flags { 0 };  // other flags
+
+    OpDescriptor() = default;
+
     OpDescriptor(const char* n, OpLLVMGen ll,
 #if OSL_USE_BATCHED
                  OpLLVMGenWide llw,
@@ -761,7 +764,16 @@ public:
         if (i != m_op_descriptor.end())
             return &(i->second);
         else
-            return NULL;
+            return nullptr;
+    }
+
+    OpDescriptor* op_descriptormod(ustring opname)
+    {
+        OpDescriptorMap::iterator i = m_op_descriptor.find(opname);
+        if (i != m_op_descriptor.end())
+            return &(i->second);
+        else
+            return nullptr;
     }
 
     void pointcloud_stats(int search, int get, int results, int writes = 0)
