@@ -153,32 +153,31 @@ BackendCpp::op_gen_init()
         extern bool cpp_gen_##cg (BackendCpp &rop, int opnum);          \
         op->cppgen = cpp_gen_##cg;                                      \
     }
-// #define OP(name,cg) OP2(name,name,ll,fold,simp,flag)
 
     // print("running BackendCpp::op_gen_init()\n");
 
     // name          cg gen               folder         simple     flags
     // OP (aassign,     aassign);
-    // OP (abs,         generic);
-    // OP (acos,        generic);
+    OP (abs,         generic);
+    OP (acos,        generic);
     OP (add,         binop);
     // OP (and,         andor);
     // OP (area,        area);
     // OP (aref,        aref);
     // OP (arraycopy,   arraycopy);
     // OP (arraylength, arraylength);
-    // OP (asin,        generic);
+    OP (asin,        generic);
     // OP (assign,      assign);
-    // OP (atan,        generic);
-    // OP (atan2,       generic);
+    OP (atan,        generic);
+    OP (atan2,       generic);
     // OP (backfacing,  get_simple_SG_field);
-    // OP (bitand,      bitwise_binary_op);
-    // OP (bitor,       bitwise_binary_op);
+    OP (bitand,      binop);
+    OP (bitor,       binop);
     // OP (blackbody,   blackbody);
     // OP (break,       loopmod_op);
     // OP (calculatenormal, calculatenormal);
-    // OP (cbrt,        generic);
-    // OP (ceil,        generic);
+    OP (cbrt,        generic);
+    OP (ceil,        generic);
     // OP (cellnoise,   noise);
     // OP (clamp,       clamp);
     // OP (closure,     closure);
@@ -186,37 +185,37 @@ BackendCpp::op_gen_init()
     // OP (compassign,  compassign);
     // OP (compl,       unary_op);
     // OP (compref,     compref);
-    // OP (concat,      generic);
+    OP (concat,      generic);
     // OP (continue,    loopmod_op);
-    // OP (cos,         generic);
-    // OP (cosh,        generic);
-    // OP (cross,       generic);
-    // OP (degrees,     generic);
-    // OP (determinant, generic);
+    OP (cos,         generic);
+    OP (cosh,        generic);
+    OP (cross,       generic);
+    OP (degrees,     generic);
+    OP (determinant, generic);
     // OP (dict_find,   dict_find);
     // OP (dict_next,   dict_next);
     // OP (dict_value,  dict_value);
-    // OP (distance,    generic);
+    OP (distance,    generic);
     // OP (div,         div);
-    // OP (dot,         generic);
+    OP (dot,         generic);
     // OP (Dx,          DxDy);
     // OP (Dy,          DxDy);
     // OP (Dz,          Dz);
     // OP (dowhile,     loop_op);
     OP (end,         nop);
-    // OP (endswith,    generic);
+    OP (endswith,    generic);
     // OP (environment, environment);
     // OP (eq,          compare_op);
-    // OP (erf,         generic);
-    // OP (erfc,        generic);
+    OP (erf,         generic);
+    OP (erfc,        generic);
     // OP (error,       printf);
     // OP (exit,        return);
-    // OP (exp,         generic);
-    // OP (exp2,        generic);
-    // OP (expm1,       generic);
-    // OP (fabs,        generic);
+    OP (exp,         generic);
+    OP (exp2,        generic);
+    OP (expm1,       generic);
+    OP (fabs,        generic);
     // OP (filterwidth, filterwidth);
-    // OP (floor,       generic);
+    OP (floor,       generic);
     // OP (fmod,        modulus);
     // OP (for,         loop_op);
     // OP (format,      printf);
@@ -225,34 +224,34 @@ BackendCpp::op_gen_init()
     // OP (functioncall_nr,functioncall_nr);
     // OP (ge,          compare_op);
     // OP (getattribute, getattribute);
-    // OP (getchar,      generic);
+    OP (getchar,      generic);
     // OP (getmatrix,   getmatrix);
     // OP (getmessage,  getmessage);
     // OP (gettextureinfo, gettextureinfo);
     // OP (gt,          compare_op);
-    // OP (hash,        generic);
+    OP (hash,        generic);
     // OP (hashnoise,   noise);
     // OP (if,          if);
-    // OP (inversesqrt, generic);
-    // OP (isconnected, generic);
+    OP (inversesqrt, generic);
+    OP (isconnected, generic);
     // OP (isconstant,  isconstant);
-    // OP (isfinite,    generic);
-    // OP (isinf,       generic);
-    // OP (isnan,       generic);
+    OP (isfinite,    generic);
+    OP (isinf,       generic);
+    OP (isnan,       generic);
     // OP (le,          compare_op);
-    // OP (length,      generic);
-    // OP (log,         generic);
-    // OP (log10,       generic);
-    // OP (log2,        generic);
-    // OP (logb,        generic);
+    OP (length,      generic);
+    OP (log,         generic);
+    OP (log10,       generic);
+    OP (log2,        generic);
+    OP (logb,        generic);
     // OP (lt,          compare_op);
     // OP (luminance,   luminance);
     // OP (matrix,      matrix);
-    // OP (max,         minmax);
+    OP (max,         generic);
     // OP (mxcompassign, mxcompassign);
     // OP (mxcompref,   mxcompref);
-    // OP (min,         minmax);
-    // OP (mix,         mix);
+    OP (min,         generic);
+    OP (mix,         generic);
     // OP (mod,         modulus);
     OP (mul,         binop);
     // OP (neg,         neg);
@@ -260,48 +259,48 @@ BackendCpp::op_gen_init()
     // OP (noise,       noise);
     OP (nop,         nop);
     // OP (normal,      construct_triple);
-    // OP (normalize,   generic);
+    OP (normalize,   generic);
     // OP (or,          andor);
     // OP (pnoise,      noise);
     // OP (point,       construct_triple);
     // OP (pointcloud_search, pointcloud_search);
     // OP (pointcloud_get, pointcloud_get);
     // OP (pointcloud_write, );
-    // OP (pow,         generic);
+    OP (pow,         generic);
     // OP (printf,      printf);
     // OP (psnoise,     noise);
-    // OP (radians,     generic);
+    OP (radians,     generic);
     // OP (raytype,     raytype);
     // OP (regex_match, regex);
     // OP (regex_search, regex);
     // OP (return,      return);
-    // OP (round,       generic);
+    OP (round,       generic);
     // OP (select,      select);
     // OP (setmessage,  setmessage);
-    // OP (shl,         bitwise_binary_op);
-    // OP (shr,         bitwise_binary_op);
-    // OP (sign,        generic);
-    // OP (sin,         generic);
+    OP (shl,         binop);
+    OP (shr,         binop);
+    OP (sign,        generic);
+    OP (sin,         generic);
     // OP (sincos,      sincos);
-    // OP (sinh,        generic);
-    // OP (smoothstep,  generic);
+    OP (sinh,        generic);
+    OP (smoothstep,  generic);
     // OP (snoise,      noise);
     // OP (spline,      spline);
     // OP (splineinverse, spline);
     // OP (split,       split);
-    // OP (sqrt,        generic);
-    // OP (startswith,  generic);
-    // OP (step,        generic);
-    // OP (stof,        generic);
-    // OP (stoi,        generic);
-    // OP (strlen,      generic);
-    // OP2(strtof,stof, generic);
-    // OP2(strtoi,stoi, generic);
+    OP (sqrt,        generic);
+    OP (startswith,  generic);
+    OP (step,        generic);
+    OP (stof,        generic);
+    OP (stoi,        generic);
+    OP (strlen,      generic);
+    OP (strtof,      generic);
+    OP (strtoi,      generic);
     OP (sub,         binop);
-    // OP (substr,      generic);
+    OP (substr,      generic);
     // OP (surfacearea, get_simple_SG_field);
-    // OP (tan,         generic);
-    // OP (tanh,        generic);
+    OP (tan,         generic);
+    OP (tanh,        generic);
     OP (texture,     generic /* FIXME! texture*/);
     // OP (texture3d,   texture3d);
     // OP (trace,       trace);
@@ -309,15 +308,16 @@ BackendCpp::op_gen_init()
     // OP (transformc,  transformc);
     // OP (transformn,  transform);
     // OP (transformv,  transform);
-    // OP (transpose,   generic);
-    // OP (trunc,       generic);
+    OP (transpose,   generic);
+    OP (trunc,       generic);
     OP (useparam,    nop /*useparam*/);
     // OP (vector,      construct_triple);
     // OP (warning,     printf);
     // OP (wavelength_color, blackbody);
     // OP (while,       loop_op);
-    // OP (xor,         bitwise_binary_op);
+    OP (xor,         binop);
 #undef OP
+#undef OP2
     // clang-format on
 }
 
@@ -334,14 +334,14 @@ cpp_gen_nop(BackendCpp& rop, int opnum)
 
 
 // C++ code generator for "generic" functions: just express it as a function
-// call like:    result = func(arg1, ...);
+// call like:    result = osl_func(arg1, ...);
 bool
 cpp_gen_generic(BackendCpp& rop, int opnum)
 {
     Opcode& op(rop.inst()->ops()[opnum]);
     OSL_DASSERT(op.nargs() >= 1);
     Symbol& R(*rop.inst()->argsymbol(op.firstarg() + 0));
-    rop.outputfmt("{}{} = {}(", rop.indentstr(), R.name(), op.opname());
+    rop.outputfmt("{}{} = osl_{}(", rop.indentstr(), R.name(), op.opname());
     for (int a = 1; a < op.nargs(); ++a) {
         const Symbol* s(rop.inst()->argsymbol(op.firstarg() + a));
         if (a > 1)
@@ -370,6 +370,16 @@ cpp_gen_binop(BackendCpp& rop, int opnum)
         opsym = "-";
     else if (op.opname() == "mul")
         opsym = "*";
+    else if (op.opname() == "bitand")
+        opsym = "&";
+    else if (op.opname() == "bitor")
+        opsym = "|";
+    else if (op.opname() == "xor")
+        opsym = "^";
+    else if (op.opname() == "shl")
+        opsym = "<<";
+    else if (op.opname() == "shr")
+        opsym = ">>";
     else
         OSL_ASSERT_MSG(0, "Unknown binary op %s", op.opname().c_str());
     rop.outputfmt("{}{} = {} {} {};\n", rop.indentstr(), R.name(), A.name(),
