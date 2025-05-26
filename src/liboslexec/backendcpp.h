@@ -29,6 +29,8 @@ public:
 
     virtual void run();
 
+    void build_cpp_code(int opbegin, int opend, bool do_indent_block = true);
+
     /// output text
     template<typename... Args>
     inline void outputfmt(const char* fmt, Args&&... args) const

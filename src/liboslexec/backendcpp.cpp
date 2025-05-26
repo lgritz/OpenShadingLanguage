@@ -77,64 +77,77 @@ BackendCpp::run()
             inst()->symbol(i)->print(std::cout, 256);
         }
         outputfmtln("//  code:");
-        outputfmtln("{{\n");
-        increment_indent();
-        for (size_t i = 0, e = inst()->ops().size(); i < e; ++i) {
-            const Opcode& op(inst()->ops()[i]);
-            if (i == (size_t)inst()->maincodebegin())
-                outputfmt("{}// (main)\n", indentstr());
-            // outputfmt("{}// {}: {}", indentstr(), i, op.opname());
-            // bool allconst = true;
-            // for (int a = 0; a < op.nargs(); ++a) {
-            //     const Symbol* s(inst()->argsymbol(op.firstarg() + a));
-            //     outputfmt(" {}", s->name());
-            //     if (s->symtype() == SymTypeConst) {
-            //         outputfmt(" (");
-            //         s->print_vals(out, 16);
-            //         outputfmt(")");
-            //     }
-            //     if (op.argread(a))
-            //         allconst &= s->is_constant();
-            // }
-            // for (size_t j = 0; j < Opcode::max_jumps; ++j)
-            //     if (op.jump(j) >= 0)
-            //         outputfmt(" {}", op.jump(j));
-            // outputfmt("\t# ");
-            // //        out << "    rw " << fmtformat("{:x}", op.argread_bits())
-            // //            << ' ' << op.argwrite_bits();
-            // if (op.argtakesderivs_all())
-            //     outputfmt(" %derivs({}) ", op.argtakesderivs_all());
-            // if (allconst)
-            //     outputfmt("  CONST");
-            // if (i == 0 || bblockid(i) != bblockid(i - 1))
-            //     outputfmt("  BBLOCK-START");
-            // std::string filename = op.sourcefile().string();
-            // size_t slash         = filename.find_last_of("/");
-            // if (slash != std::string::npos)
-            //     filename.erase(0, slash + 1);
-            // if (filename.length())
-            //     outputfmt("  ({}:{})", filename, op.sourceline());
-            // outputfmt("\n");
+        build_cpp_code(0, int(inst()->ops().size()));
+        outputfmtln("\n\n\n");
+    }
+}
 
-            auto* opdesc = shadingsys().op_descriptor(op.opname());
-            if (opdesc && opdesc->cppgen) {
-                // If the opcode has a C++ generator, call it
-                if (!opdesc->cppgen(*this, i))
-                    outputfmt("{}// Cpp {} FAILED\n", indentstr(), op.opname());
-            } else {
-                // Otherwise, generate the default C++ code for it
-                outputfmt("{}// NO CPP GENERATOR FOR {}\n", indentstr(),
-                          op.opname());
-            }
-            // outputfmt("{}{}(", indentstr(), op.opname());
-            // for (int a = 0; a < op.nargs(); ++a) {
-            //     const Symbol* s(inst()->argsymbol(op.firstarg() + a));
-            //     outputfmt("{}{}", a == 0 ? "" : ", ", s->name());
-            // }
-            // outputfmt(";\n");
+
+
+void
+BackendCpp::build_cpp_code(int opbegin, int opend, bool do_indent_block)
+{
+    if (do_indent_block) {
+        outputfmt("{}{{\n", indentstr());
+        increment_indent();
+    }
+    for (int opnum = opbegin; opnum < opend; ++opnum) {
+        const Opcode& op(inst()->ops()[opnum]);
+        if (opnum == (size_t)inst()->maincodebegin())
+            outputfmt("{}// (main)\n", indentstr());
+        // outputfmt("{}// {}: {}", indentstr(), i, op.opname());
+        // bool allconst = true;
+        // for (int a = 0; a < op.nargs(); ++a) {
+        //     const Symbol* s(inst()->argsymbol(op.firstarg() + a));
+        //     outputfmt(" {}", s->name());
+        //     if (s->symtype() == SymTypeConst) {
+        //         outputfmt(" (");
+        //         s->print_vals(out, 16);
+        //         outputfmt(")");
+        //     }
+        //     if (op.argread(a))
+        //         allconst &= s->is_constant();
+        // }
+        // for (size_t j = 0; j < Opcode::max_jumps; ++j)
+        //     if (op.jump(j) >= 0)
+        //         outputfmt(" {}", op.jump(j));
+        // outputfmt("\t# ");
+        // //        out << "    rw " << fmtformat("{:x}", op.argread_bits())
+        // //            << ' ' << op.argwrite_bits();
+        // if (op.argtakesderivs_all())
+        //     outputfmt(" %derivs({}) ", op.argtakesderivs_all());
+        // if (allconst)
+        //     outputfmt("  CONST");
+        // if (i == 0 || bblockid(i) != bblockid(i - 1))
+        //     outputfmt("  BBLOCK-START");
+        // std::string filename = op.sourcefile().string();
+        // size_t slash         = filename.find_last_of("/");
+        // if (slash != std::string::npos)
+        //     filename.erase(0, slash + 1);
+        // if (filename.length())
+        //     outputfmt("  ({}:{})", filename, op.sourceline());
+        // outputfmt("\n");
+
+        auto* opdesc = shadingsys().op_descriptor(op.opname());
+        if (opdesc && opdesc->cppgen) {
+            // If the opcode has a C++ generator, call it
+            if (!opdesc->cppgen(*this, opnum))
+                outputfmt("{}// Cpp {} FAILED\n", indentstr(), op.opname());
+        } else {
+            // Otherwise, generate the default C++ code for it
+            outputfmt("{}// NO CPP GENERATOR FOR {}\n", indentstr(),
+                      op.opname());
         }
+
+        // If the op we coded jumps around, skip past its recursive block
+        // executions.
+        int next = op.farthest_jump();
+        if (next >= 0)
+            opnum = next - 1;
+    }
+    if (do_indent_block) {
         decrement_indent();
-        outputfmtln("}}\n\n\n");
+        outputfmt("{}}}\n", indentstr());
     }
 }
 
@@ -178,8 +191,8 @@ BackendCpp::op_gen_init()
     // OP (calculatenormal, calculatenormal);
     OP (cbrt,        generic);
     OP (ceil,        generic);
-    // OP (cellnoise,   noise);
-    // OP (clamp,       clamp);
+    OP (cellnoise,   generic /*noise*/);
+    OP (clamp,       generic);
     // OP (closure,     closure);
     // OP (color,       construct_color);
     // OP (compassign,  compassign);
@@ -205,7 +218,7 @@ BackendCpp::op_gen_init()
     OP (end,         nop);
     OP (endswith,    generic);
     // OP (environment, environment);
-    // OP (eq,          compare_op);
+    OP (eq,          binop);
     OP (erf,         generic);
     OP (erfc,        generic);
     // OP (error,       printf);
@@ -216,59 +229,59 @@ BackendCpp::op_gen_init()
     OP (fabs,        generic);
     // OP (filterwidth, filterwidth);
     OP (floor,       generic);
-    // OP (fmod,        modulus);
+    OP (fmod,        generic);
     // OP (for,         loop_op);
     // OP (format,      printf);
     // OP (fprintf,     printf);
     // OP (functioncall, functioncall);
     // OP (functioncall_nr,functioncall_nr);
-    // OP (ge,          compare_op);
+    OP (ge,          binop);
     // OP (getattribute, getattribute);
     OP (getchar,      generic);
     // OP (getmatrix,   getmatrix);
     // OP (getmessage,  getmessage);
     // OP (gettextureinfo, gettextureinfo);
-    // OP (gt,          compare_op);
+    OP (gt,          binop);
     OP (hash,        generic);
-    // OP (hashnoise,   noise);
-    // OP (if,          if);
+    OP (hashnoise,   generic /*noise*/);
+    OP (if,          if);
     OP (inversesqrt, generic);
     OP (isconnected, generic);
     // OP (isconstant,  isconstant);
     OP (isfinite,    generic);
     OP (isinf,       generic);
     OP (isnan,       generic);
-    // OP (le,          compare_op);
+    OP (le,          binop);
     OP (length,      generic);
     OP (log,         generic);
     OP (log10,       generic);
     OP (log2,        generic);
     OP (logb,        generic);
-    // OP (lt,          compare_op);
-    // OP (luminance,   luminance);
+    OP (lt,          binop);
+    OP (luminance,   generic);
     // OP (matrix,      matrix);
     OP (max,         generic);
     // OP (mxcompassign, mxcompassign);
     // OP (mxcompref,   mxcompref);
     OP (min,         generic);
     OP (mix,         generic);
-    // OP (mod,         modulus);
+    OP (mod,         generic);
     OP (mul,         binop);
     // OP (neg,         neg);
-    // OP (neq,         compare_op);
-    // OP (noise,       noise);
+    OP (neq,         binop);
+    OP (noise,       generic /*noise*/);
     OP (nop,         nop);
     // OP (normal,      construct_triple);
     OP (normalize,   generic);
     // OP (or,          andor);
-    // OP (pnoise,      noise);
+    OP (pnoise,      generic /*noise*/);
     // OP (point,       construct_triple);
     // OP (pointcloud_search, pointcloud_search);
     // OP (pointcloud_get, pointcloud_get);
     // OP (pointcloud_write, );
     OP (pow,         generic);
     // OP (printf,      printf);
-    // OP (psnoise,     noise);
+    OP (psnoise,     generic /*noise*/);
     OP (radians,     generic);
     // OP (raytype,     raytype);
     // OP (regex_match, regex);
@@ -284,7 +297,7 @@ BackendCpp::op_gen_init()
     // OP (sincos,      sincos);
     OP (sinh,        generic);
     OP (smoothstep,  generic);
-    // OP (snoise,      noise);
+    OP (snoise,      generic /*noise*/);
     // OP (spline,      spline);
     // OP (splineinverse, spline);
     // OP (split,       split);
@@ -354,6 +367,26 @@ cpp_gen_generic(BackendCpp& rop, int opnum)
 
 
 
+// C++ code generator for "generic" functions: just express it as a function
+// call like:    result = osl_func(arg1, ...);
+bool
+cpp_gen_if(BackendCpp& rop, int opnum)
+{
+    Opcode& op(rop.inst()->ops()[opnum]);
+    Symbol& cond = *rop.opargsym(op, 0);
+
+    // Then block
+    rop.outputfmt("{}if ({})\n", rop.indentstr(), cond.name());
+    rop.build_cpp_code(opnum + 1, op.jump(0));
+    if (op.jump(0) != op.jump(1)) {
+        rop.outputfmt("{}else", rop.indentstr());
+        rop.build_cpp_code(op.jump(0), op.jump(1));
+    }
+    return true;
+}
+
+
+
 // binary ops
 bool
 cpp_gen_binop(BackendCpp& rop, int opnum)
@@ -370,6 +403,20 @@ cpp_gen_binop(BackendCpp& rop, int opnum)
         opsym = "-";
     else if (op.opname() == "mul")
         opsym = "*";
+
+    else if (op.opname() == "eq")
+        opsym = "==";
+    else if (op.opname() == "neq")
+        opsym = "!=";
+    else if (op.opname() == "lt")
+        opsym = "<";
+    else if (op.opname() == "gt")
+        opsym = ">";
+    else if (op.opname() == "le")
+        opsym = "<=";
+    else if (op.opname() == "ge")
+        opsym = ">=";
+
     else if (op.opname() == "bitand")
         opsym = "&";
     else if (op.opname() == "bitor")
