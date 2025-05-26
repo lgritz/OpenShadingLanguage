@@ -78,7 +78,21 @@ BackendCpp::run()
             inst()->symbol(i)->print(m_out, 256);
 
         }
+
         outputfmt("//  code:\n");
+        outputfmt("{}void /*shader*/ {} (\n", indentstr(), inst()->layername());
+        increment_indent();
+        FOREACH_PARAM(Symbol & s, inst()) {
+            if (s.symtype() == SymTypeParam
+                || s.symtype() == SymTypeOutputParam) {
+                outputfmt("{}{} {} /* = init TBD */;", indentstr(),
+                          s.typespec().string(), s.cpp_safe_name());
+                outputfmt("\n");
+            }
+        }
+        decrement_indent();
+        outputfmt("{}  )\n", indentstr());
+
         outputfmt("{}{{\n", indentstr());
         increment_indent();
         FOREACH_SYM(Symbol & s, inst()) {
@@ -90,11 +104,6 @@ BackendCpp::run()
                 // outputfmt("{}// const {} = ", indentstr(), s.name());
                 s.print_vals(m_out, 16);
                 outputfmt(";\n");
-            } else if (s.symtype() == SymTypeParam
-                       || s.symtype() == SymTypeOutputParam) {
-                outputfmt("{}// param {} = ", indentstr(), s.cpp_safe_name());
-                s.print_vals(m_out, 16);
-                outputfmt("\n");
             } else if (s.symtype() == SymTypeTemp
                        || s.symtype() == SymTypeLocal) {
                 outputfmt("{}{} {};", indentstr(), s.typespec().string(),
@@ -123,39 +132,6 @@ BackendCpp::build_cpp_code(int opbegin, int opend, bool do_indent_block)
         const Opcode& op(inst()->ops()[opnum]);
         if (opnum == (size_t)inst()->maincodebegin())
             outputfmt("{}// (main)\n", indentstr());
-        // outputfmt("{}// {}: {}", indentstr(), i, op.opname());
-        // bool allconst = true;
-        // for (int a = 0; a < op.nargs(); ++a) {
-        //     const Symbol* s(inst()->argsymbol(op.firstarg() + a));
-        //     outputfmt(" {}", s->name());
-        //     if (s->symtype() == SymTypeConst) {
-        //         outputfmt(" (");
-        //         s->print_vals(out, 16);
-        //         outputfmt(")");
-        //     }
-        //     if (op.argread(a))
-        //         allconst &= s->is_constant();
-        // }
-        // for (size_t j = 0; j < Opcode::max_jumps; ++j)
-        //     if (op.jump(j) >= 0)
-        //         outputfmt(" {}", op.jump(j));
-        // outputfmt("\t# ");
-        // //        out << "    rw " << fmtformat("{:x}", op.argread_bits())
-        // //            << ' ' << op.argwrite_bits();
-        // if (op.argtakesderivs_all())
-        //     outputfmt(" %derivs({}) ", op.argtakesderivs_all());
-        // if (allconst)
-        //     outputfmt("  CONST");
-        // if (i == 0 || bblockid(i) != bblockid(i - 1))
-        //     outputfmt("  BBLOCK-START");
-        // std::string filename = op.sourcefile().string();
-        // size_t slash         = filename.find_last_of("/");
-        // if (slash != std::string::npos)
-        //     filename.erase(0, slash + 1);
-        // if (filename.length())
-        //     outputfmt("  ({}:{})", filename, op.sourceline());
-        // outputfmt("\n");
-
         auto* opdesc = shadingsys().op_descriptor(op.opname());
         if (opdesc && opdesc->cppgen) {
             // If the opcode has a C++ generator, call it
