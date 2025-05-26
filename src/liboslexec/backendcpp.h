@@ -48,6 +48,10 @@ public:
     std::string str() const { return m_out.str(); }
     std::ostream& outstream() { return m_out; }
 
+    std::string cpp_typedesc_name(TypeDesc ype);
+    std::string cpp_sym_type_name(const Symbol& sym);
+    std::string cpp_var_declaration(const Symbol& sym);
+
 private:
     int m_indentlevel = 0;
     string_view m_indentview;

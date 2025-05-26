@@ -45,11 +45,66 @@ BackendCpp::indent(int delta)
 
 
 
+std::string
+BackendCpp::cpp_typedesc_name(TypeDesc type)
+{
+    if (type.basetype == TypeDesc::STRING)
+        type.basetype = TypeDesc::USTRINGHASH;
+    return type.c_str();
+}
+
+
+
+std::string
+BackendCpp::cpp_sym_type_name(const Symbol& sym)
+{
+    std::string str;
+    TypeSpec t = sym.typespec();
+    if (t.is_closure() || t.is_closure_array()) {
+        if (t.is_unsized_array())
+            str = "closure_color_t[]";
+        else if (t.arraylength() > 0)
+            str = Strutil::fmt::format("closure_color_t[{}]", t.arraylength());
+    } else if (t.structure() > 0) {
+        StructSpec* ss = t.structspec();
+        if (ss)
+            str += Strutil::fmt::format("struct {}", t.structspec()->name());
+        else
+            str += Strutil::fmt::format("struct {}", t.structure());
+        if (t.is_unsized_array())
+            str += "[]";
+        else if (t.arraylength() > 0)
+            str += Strutil::fmt::format("[{}]", t.arraylength());
+    } else {
+        str = cpp_typedesc_name(t.simpletype());
+    }
+    return str;
+}
+
+
+
+std::string
+BackendCpp::cpp_var_declaration(const Symbol& sym)
+{
+    std::string decl;
+    if (sym.symtype() == SymTypeConst) {
+        decl = fmtformat("const {} {}", cpp_sym_type_name(sym),
+                         sym.cpp_safe_name());
+    } else if (sym.symtype() == SymTypeParam
+               || sym.symtype() == SymTypeOutputParam) {
+        decl = fmtformat("{} {} /* = init TBD */", cpp_sym_type_name(sym),
+                         sym.cpp_safe_name());
+    } else if (sym.symtype() == SymTypeTemp || sym.symtype() == SymTypeLocal) {
+        decl = fmtformat("{} {}", cpp_sym_type_name(sym), sym.cpp_safe_name());
+    }
+    return decl;
+}
+
+
+
 void
 BackendCpp::run()
 {
-
-    auto& out [[maybe_unused]]   = std::cout;
     int nlayers = (int)group().nlayers();
     for (int layer = 0; layer < nlayers; ++layer) {
         set_inst(layer);
@@ -60,7 +115,7 @@ BackendCpp::run()
         outputfmt("// Layer {}: {}\n", layer, inst()->layername());
 
         outputfmt("// Shader {}{}\n", inst()->shadername(),
-                    inst()->unused() ? " (UNUSED)" : "");
+                  inst()->unused() ? " (UNUSED)" : "");
         outputfmt("// connections in={}\n", inst()->nconnections());
         outputfmt("// out={}\n", inst()->outgoing_connections());
         //         outputfmtn((inst()->writes_globals() ? " writes_globals" : ""););
@@ -72,22 +127,24 @@ BackendCpp::run()
         //         outputfmtn((inst()->entry_layer() ? " entry_layer" : ""););
         //         outputfmtn((inst()->last_layer() ? " last_layer" : ""););
         //         outputfmtn("\n";);
-        outputfmt("//  symbols:\n");
-        for (size_t i = 0, e = inst()->symbols().size(); i < e; ++i) {
-            outputfmt("// ");
-            inst()->symbol(i)->print(m_out, 256);
+        // outputfmt("//  symbols:\n");
+        // for (size_t i = 0, e = inst()->symbols().size(); i < e; ++i) {
+        //     outputfmt("// ");
+        //     inst()->symbol(i)->print(m_out, 256);
 
-        }
+        // }
 
         outputfmt("//  code:\n");
         outputfmt("{}void /*shader*/ {} (\n", indentstr(), inst()->layername());
         increment_indent();
-        FOREACH_PARAM(Symbol & s, inst()) {
+        FOREACH_PARAM(Symbol & s, inst())
+        {
+            if (!s.everused())
+                continue;  // skip unused symbols
             if (s.symtype() == SymTypeParam
                 || s.symtype() == SymTypeOutputParam) {
-                outputfmt("{}{} {} /* = init TBD */;", indentstr(),
-                          s.typespec().string(), s.cpp_safe_name());
-                outputfmt("\n");
+                outputfmt("{}{}; /* = init TBD */\n", indentstr(),
+                          cpp_var_declaration(s));
             }
         }
         decrement_indent();
@@ -95,20 +152,18 @@ BackendCpp::run()
 
         outputfmt("{}{{\n", indentstr());
         increment_indent();
-        FOREACH_SYM(Symbol & s, inst()) {
+        FOREACH_SYM(Symbol & s, inst())
+        {
             using namespace OIIO::Strutil;
+            if (!s.everused())
+                continue;  // skip unused symbols
             if (s.symtype() == SymTypeConst) {
-                outputfmt("{}const {} {} = ", indentstr(),
-                          s.typespec().string(), s.cpp_safe_name());
-                // outputfmt("\n");
-                // outputfmt("{}// const {} = ", indentstr(), s.name());
+                outputfmt("{}{} = ", indentstr(), cpp_var_declaration(s));
                 s.print_vals(m_out, 16);
                 outputfmt(";\n");
             } else if (s.symtype() == SymTypeTemp
                        || s.symtype() == SymTypeLocal) {
-                outputfmt("{}{} {};", indentstr(), s.typespec().string(),
-                          s.cpp_safe_name());
-                outputfmt("\n");
+                outputfmt("{}{};\n", indentstr(), cpp_var_declaration(s));
             }
         }
         build_cpp_code(0, int(inst()->ops().size()), false);
@@ -177,19 +232,19 @@ BackendCpp::op_gen_init()
     // OP (aassign,     aassign);
     OP (abs,         generic);
     OP (acos,        generic);
-    OP (add,         binop);
+    OP (add,         binary_op);
     // OP (and,         andor);
     // OP (area,        area);
     // OP (aref,        aref);
     // OP (arraycopy,   arraycopy);
     // OP (arraylength, arraylength);
     OP (asin,        generic);
-    // OP (assign,      assign);
+    OP (assign,      assign);
     OP (atan,        generic);
     OP (atan2,       generic);
     // OP (backfacing,  get_simple_SG_field);
-    OP (bitand,      binop);
-    OP (bitor,       binop);
+    OP (bitand,      binary_op);
+    OP (bitor,       binary_op);
     // OP (blackbody,   blackbody);
     // OP (break,       loopmod_op);
     // OP (calculatenormal, calculatenormal);
@@ -213,7 +268,7 @@ BackendCpp::op_gen_init()
     // OP (dict_next,   dict_next);
     // OP (dict_value,  dict_value);
     OP (distance,    generic);
-    // OP (div,         div);
+    OP (div,         generic);
     OP (dot,         generic);
     // OP (Dx,          DxDy);
     // OP (Dy,          DxDy);
@@ -222,7 +277,7 @@ BackendCpp::op_gen_init()
     OP (end,         nop);
     OP (endswith,    generic);
     // OP (environment, environment);
-    OP (eq,          binop);
+    OP (eq,          binary_op);
     OP (erf,         generic);
     OP (erfc,        generic);
     // OP (error,       printf);
@@ -239,13 +294,13 @@ BackendCpp::op_gen_init()
     // OP (fprintf,     printf);
     // OP (functioncall, functioncall);
     // OP (functioncall_nr,functioncall_nr);
-    OP (ge,          binop);
+    OP (ge,          binary_op);
     // OP (getattribute, getattribute);
     OP (getchar,      generic);
     // OP (getmatrix,   getmatrix);
     // OP (getmessage,  getmessage);
     // OP (gettextureinfo, gettextureinfo);
-    OP (gt,          binop);
+    OP (gt,          binary_op);
     OP (hash,        generic);
     OP (hashnoise,   generic /*noise*/);
     OP (if,          if);
@@ -255,13 +310,13 @@ BackendCpp::op_gen_init()
     OP (isfinite,    generic);
     OP (isinf,       generic);
     OP (isnan,       generic);
-    OP (le,          binop);
+    OP (le,          binary_op);
     OP (length,      generic);
     OP (log,         generic);
     OP (log10,       generic);
     OP (log2,        generic);
     OP (logb,        generic);
-    OP (lt,          binop);
+    OP (lt,          binary_op);
     OP (luminance,   generic);
     // OP (matrix,      matrix);
     OP (max,         generic);
@@ -270,9 +325,9 @@ BackendCpp::op_gen_init()
     OP (min,         generic);
     OP (mix,         generic);
     OP (mod,         generic);
-    OP (mul,         binop);
+    OP (mul,         binary_op);
     // OP (neg,         neg);
-    OP (neq,         binop);
+    OP (neq,         binary_op);
     OP (noise,       generic /*noise*/);
     OP (nop,         nop);
     // OP (normal,      construct_triple);
@@ -294,8 +349,8 @@ BackendCpp::op_gen_init()
     OP (round,       generic);
     // OP (select,      select);
     // OP (setmessage,  setmessage);
-    OP (shl,         binop);
-    OP (shr,         binop);
+    OP (shl,         binary_op);
+    OP (shr,         binary_op);
     OP (sign,        generic);
     OP (sin,         generic);
     // OP (sincos,      sincos);
@@ -313,7 +368,7 @@ BackendCpp::op_gen_init()
     OP (strlen,      generic);
     OP (strtof,      generic);
     OP (strtoi,      generic);
-    OP (sub,         binop);
+    OP (sub,         binary_op);
     OP (substr,      generic);
     // OP (surfacearea, get_simple_SG_field);
     OP (tan,         generic);
@@ -332,7 +387,7 @@ BackendCpp::op_gen_init()
     // OP (warning,     printf);
     // OP (wavelength_color, blackbody);
     // OP (while,       loop_op);
-    OP (xor,         binop);
+    OP (xor,         binary_op);
 #undef OP
 #undef OP2
     // clang-format on
@@ -383,7 +438,7 @@ cpp_gen_if(BackendCpp& rop, int opnum)
     rop.outputfmt("{}if ({})\n", rop.indentstr(), cond.name());
     rop.build_cpp_code(opnum + 1, op.jump(0));
     if (op.jump(0) != op.jump(1)) {
-        rop.outputfmt("{}else", rop.indentstr());
+        rop.outputfmt("{}else\n", rop.indentstr());
         rop.build_cpp_code(op.jump(0), op.jump(1));
     }
     return true;
@@ -391,9 +446,23 @@ cpp_gen_if(BackendCpp& rop, int opnum)
 
 
 
+bool
+cpp_gen_assign(BackendCpp& rop, int opnum)
+{
+    Opcode& op(rop.inst()->ops()[opnum]);
+    OSL_DASSERT(op.nargs() == 2);
+    Symbol& R(*rop.inst()->argsymbol(op.firstarg() + 0));
+    Symbol& A(*rop.inst()->argsymbol(op.firstarg() + 1));
+    rop.outputfmt("{}{} = {};\n", rop.indentstr(), R.cpp_safe_name(),
+                  A.cpp_safe_name());
+    return true;
+}
+
+
+
 // binary ops
 bool
-cpp_gen_binop(BackendCpp& rop, int opnum)
+cpp_gen_binary_op(BackendCpp& rop, int opnum)
 {
     Opcode& op(rop.inst()->ops()[opnum]);
     OSL_DASSERT(op.nargs() == 3);
