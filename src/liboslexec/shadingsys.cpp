@@ -3827,6 +3827,9 @@ ShadingSystemImpl::optimize_group(ShaderGroup& group, ShadingContext* ctx,
     if (debug_output_cpp()) {
         BackendCpp cpper(*this, group, ctx);
         cpper.run();
+        std::string filename = fmtformat("group-cpp-{}.cpp", group.name());
+        std::string cpp_output = cpper.str();
+        OIIO::Filesystem::write_text_file (filename, cpp_output);
     }
 
     if (need_jit) {

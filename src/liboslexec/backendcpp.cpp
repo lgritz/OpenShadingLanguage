@@ -48,6 +48,7 @@ BackendCpp::indent(int delta)
 void
 BackendCpp::run()
 {
+
     auto& out [[maybe_unused]]   = std::cout;
     int nlayers = (int)group().nlayers();
     for (int layer = 0; layer < nlayers; ++layer) {
@@ -58,27 +59,27 @@ BackendCpp::run()
 
         outputfmt("// Layer {}: {}\n", layer, inst()->layername());
 
-        outputfmtln("// Shader {}{}", inst()->shadername(),
+        outputfmt("// Shader {}{}\n", inst()->shadername(),
                     inst()->unused() ? " (UNUSED)" : "");
-        outputfmtln("// connections in={}", inst()->nconnections());
-        outputfmtln("// out={}", inst()->outgoing_connections());
-        //         outputfmtln((inst()->writes_globals() ? " writes_globals" : ""););
-        //         outputfmtln((inst()->userdata_params() ? " userdata_params" : ""););
-        //         outputfmtln((inst()->run_lazily() ? " run_lazily" : " run_unconditionally"););
-        //         outputfmtln((inst()->outgoing_connections() ? " outgoing_connections" : ""););
-        //         outputfmtln((inst()->renderer_outputs() ? " renderer_outputs" : ""););
-        //         outputfmtln((inst()->writes_globals() ? " writes_globals" : ""););
-        //         outputfmtln((inst()->entry_layer() ? " entry_layer" : ""););
-        //         outputfmtln((inst()->last_layer() ? " last_layer" : ""););
-        //         outputfmtln("\n";);
-        outputfmtln("//  symbols:");
+        outputfmt("// connections in={}\n", inst()->nconnections());
+        outputfmt("// out={}\n", inst()->outgoing_connections());
+        //         outputfmtn((inst()->writes_globals() ? " writes_globals" : ""););
+        //         outputfmtn((inst()->userdata_params() ? " userdata_params" : ""););
+        //         outputfmtn((inst()->run_lazily() ? " run_lazily" : " run_unconditionally"););
+        //         outputfmtn((inst()->outgoing_connections() ? " outgoing_connections" : ""););
+        //         outputfmtn((inst()->renderer_outputs() ? " renderer_outputs" : ""););
+        //         outputfmtn((inst()->writes_globals() ? " writes_globals" : ""););
+        //         outputfmtn((inst()->entry_layer() ? " entry_layer" : ""););
+        //         outputfmtn((inst()->last_layer() ? " last_layer" : ""););
+        //         outputfmtn("\n";);
+        outputfmt("//  symbols:\n");
         for (size_t i = 0, e = inst()->symbols().size(); i < e; ++i) {
             outputfmt("// ");
-            inst()->symbol(i)->print(std::cout, 256);
+            inst()->symbol(i)->print(m_out, 256);
         }
-        outputfmtln("//  code:");
+        outputfmt("//  code:\n");
         build_cpp_code(0, int(inst()->ops().size()));
-        outputfmtln("\n\n\n");
+        outputfmt("\n\n\n\n");
     }
 }
 

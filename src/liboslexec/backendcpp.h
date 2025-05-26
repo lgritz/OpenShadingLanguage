@@ -33,18 +33,10 @@ public:
 
     /// output text
     template<typename... Args>
-    inline void outputfmt(const char* fmt, Args&&... args) const
+    inline void outputfmt(const char* fmt, Args&&... args)
     {
         // FIXME: temporary, just echo to the terminal
-        fmt::print(fmt, std::forward<Args>(args)...);
-    }
-
-    /// output text with newline
-    template<typename... Args>
-    inline void outputfmtln(const char* fmt, Args&&... args) const
-    {
-        // FIXME: temporary, just echo to the terminal
-        fmt::println(fmt, std::forward<Args>(args)...);
+        m_out << OIIO::Strutil::fmt::format(fmt, std::forward<Args>(args)...);
     }
 
     void indent(int delta);
@@ -52,9 +44,14 @@ public:
     void decrement_indent() { indent(-4); }
     string_view indentstr() const { return m_indentview; }
 
+    /// Retrieve the output
+    std::string str() const { return m_out.str(); }
+    std::ostream& outstream() { return m_out; }
+
 private:
     int m_indentlevel = 0;
     string_view m_indentview;
+    std::ostringstream m_out;
 
     void op_gen_init();
 };
