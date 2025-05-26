@@ -41,6 +41,19 @@ Symbol::unmangled() const
 
 
 
+std::string
+Symbol::cpp_safe_name() const
+{
+    std::string result;
+    if (m_name.size() && m_name[0] == '$')
+        result = fmtformat("___{}", string_view(m_name).substr(1));
+    else
+        result = m_name.string();
+    return result;
+}
+
+
+
 const char*
 Symbol::symtype_shortname(SymType s)
 {

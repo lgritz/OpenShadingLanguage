@@ -76,9 +76,36 @@ BackendCpp::run()
         for (size_t i = 0, e = inst()->symbols().size(); i < e; ++i) {
             outputfmt("// ");
             inst()->symbol(i)->print(m_out, 256);
+
         }
         outputfmt("//  code:\n");
-        build_cpp_code(0, int(inst()->ops().size()));
+        outputfmt("{}{{\n", indentstr());
+        increment_indent();
+        FOREACH_SYM(Symbol & s, inst()) {
+            using namespace OIIO::Strutil;
+            if (s.symtype() == SymTypeConst) {
+                outputfmt("{}const {} {} = ", indentstr(),
+                          s.typespec().string(), s.cpp_safe_name());
+                // outputfmt("\n");
+                // outputfmt("{}// const {} = ", indentstr(), s.name());
+                s.print_vals(m_out, 16);
+                outputfmt(";\n");
+            } else if (s.symtype() == SymTypeParam
+                       || s.symtype() == SymTypeOutputParam) {
+                outputfmt("{}// param {} = ", indentstr(), s.cpp_safe_name());
+                s.print_vals(m_out, 16);
+                outputfmt("\n");
+            } else if (s.symtype() == SymTypeTemp
+                       || s.symtype() == SymTypeLocal) {
+                outputfmt("{}{} {};", indentstr(), s.typespec().string(),
+                          s.cpp_safe_name());
+                outputfmt("\n");
+            }
+        }
+        build_cpp_code(0, int(inst()->ops().size()), false);
+
+        decrement_indent();
+        outputfmt("{}}}\n", indentstr());
         outputfmt("\n\n\n\n");
     }
 }
@@ -360,7 +387,7 @@ cpp_gen_generic(BackendCpp& rop, int opnum)
         const Symbol* s(rop.inst()->argsymbol(op.firstarg() + a));
         if (a > 1)
             rop.outputfmt(", ");
-        rop.outputfmt("{}", s->name());
+        rop.outputfmt("{}", s->cpp_safe_name());
     }
     rop.outputfmt(");\n");
     return true;
@@ -430,8 +457,8 @@ cpp_gen_binop(BackendCpp& rop, int opnum)
         opsym = ">>";
     else
         OSL_ASSERT_MSG(0, "Unknown binary op %s", op.opname().c_str());
-    rop.outputfmt("{}{} = {} {} {};\n", rop.indentstr(), R.name(), A.name(),
-                  opsym, B.name());
+    rop.outputfmt("{}{} = {} {} {};\n", rop.indentstr(), R.cpp_safe_name(),
+                  A.cpp_safe_name(), opsym, B.cpp_safe_name());
     return true;
 }
 

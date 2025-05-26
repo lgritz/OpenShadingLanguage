@@ -541,6 +541,10 @@ public:
     /// render time should always use the unmangled version for clarity.
     string_view unmangled() const;
 
+    /// The mangled name of the symbol, but only using symbols that are
+    /// safe to use in C++ code.
+    std::string cpp_safe_name() const;
+
     /// Data type of this symbol.
     ///
     const TypeSpec& typespec() const { return m_typespec; }
