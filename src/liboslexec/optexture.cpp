@@ -383,13 +383,15 @@ osl_texture3d(OpaqueExecContextPtr oec, ustringhash_pod name_, void* handle,
     float4 result_simd, dresultds_simd, dresultdt_simd, dresultdr_simd;
     ustringhash em;
     ustringhash name = ustringhash_from(name_);
+    int nchans       = chans + (alpha ? 1 : 0);  // num chans we're asking for
     bool ok = rs_texture3d(oec, name, (TextureSystem::TextureHandle*)handle,
 #ifndef __CUDA_ARCH__
                            sg->context->texture_thread_info(),
 #else
                            nullptr,
 #endif
-                           *opt, P, dPdx, dPdy, dPdz, 4, (float*)&result_simd,
+                           *opt, P, dPdx, dPdy, dPdz, nchans,
+                           (float*)&result_simd,
                            derivs ? (float*)&dresultds_simd : nullptr,
                            derivs ? (float*)&dresultdt_simd : nullptr,
                            derivs ? (float*)&dresultdr_simd : nullptr,
