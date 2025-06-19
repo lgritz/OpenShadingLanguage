@@ -283,6 +283,10 @@ osl_texture(OpaqueExecContextPtr oec, ustringhash_pod name_, void* handle,
             void* dresultdy_, void* alpha_, void* dalphadx_, void* dalphady_,
             void* errormessage_)
 {
+    // FIXME: The use of vfloat4 here is only helpful in architectures where
+    // there are 4x SIMD ops.  Perhaps it would be better if we had one big
+    // #if around this whole thing that had separate implementations for
+    // SIMD vs vector architectures.
 #ifndef __CUDA_ARCH__
     using float4 = OIIO::simd::vfloat4;
 #else
@@ -305,17 +309,17 @@ osl_texture(OpaqueExecContextPtr oec, ustringhash_pod name_, void* handle,
     float4 result_simd, dresultds_simd, dresultdt_simd;
     ustringhash em;
     ustringhash name = ustringhash_from(name_);
+    int nchans       = chans + (alpha ? 1 : 0);  // num chans we're asking for
     bool ok = rs_texture(oec, name, (TextureSystem::TextureHandle*)handle,
 #ifndef __CUDA_ARCH__
                          sg->context->texture_thread_info(),
 #else
                          nullptr,
 #endif
-                         *opt, s, t, dsdx, dtdx, dsdy, dtdy, 4,
+                         *opt, s, t, dsdx, dtdx, dsdy, dtdy, nchans,
                          (float*)&result_simd,
-                         derivs ? (float*)&dresultds_simd : NULL,
-                         derivs ? (float*)&dresultdt_simd : NULL,
-                         errormessage ? &em : nullptr);
+                         derivs ? (float*)&dresultds_simd : nullptr,
+                         derivs ? (float*)&dresultdt_simd : nullptr, &em);
 
     for (int i = 0; i < chans; ++i)
         result[i] = result_simd[i];
@@ -341,7 +345,7 @@ osl_texture(OpaqueExecContextPtr oec, ustringhash_pod name_, void* handle,
     }
 
     if (errormessage)
-        *errormessage = ok ? ustringhash {}.hash() : em.hash();
+        *errormessage = em.hash();
     return ok;
 }
 
@@ -383,17 +387,18 @@ osl_texture3d(OpaqueExecContextPtr oec, ustringhash_pod name_, void* handle,
     float4 result_simd, dresultds_simd, dresultdt_simd, dresultdr_simd;
     ustringhash em;
     ustringhash name = ustringhash_from(name_);
+    int nchans       = chans + (alpha ? 1 : 0);  // num chans we're asking for
     bool ok = rs_texture3d(oec, name, (TextureSystem::TextureHandle*)handle,
 #ifndef __CUDA_ARCH__
                            sg->context->texture_thread_info(),
 #else
                            nullptr,
 #endif
-                           *opt, P, dPdx, dPdy, dPdz, 4, (float*)&result_simd,
+                           *opt, P, dPdx, dPdy, dPdz, nchans,
+                           (float*)&result_simd,
                            derivs ? (float*)&dresultds_simd : nullptr,
                            derivs ? (float*)&dresultdt_simd : nullptr,
-                           derivs ? (float*)&dresultdr_simd : nullptr,
-                           errormessage ? &em : nullptr);
+                           derivs ? (float*)&dresultdr_simd : nullptr, &em);
 
     for (int i = 0; i < chans; ++i)
         result[i] = result_simd[i];
@@ -421,7 +426,7 @@ osl_texture3d(OpaqueExecContextPtr oec, ustringhash_pod name_, void* handle,
     }
 
     if (errormessage)
-        *errormessage = ok ? ustringhash {}.hash() : em.hash();
+        *errormessage = em.hash();
     return ok;
 }
 
@@ -464,7 +469,7 @@ osl_environment(OpaqueExecContextPtr oec, ustringhash_pod name_, void* handle,
                              nullptr,
 #endif
                              *opt, R, dRdx, dRdy, 4, (float*)&local_result,
-                             NULL, NULL, errormessage ? &em : nullptr);
+                             nullptr, nullptr, &em);
 
     for (int i = 0; i < chans; ++i)
         result[i] = local_result[i];
@@ -492,7 +497,7 @@ osl_environment(OpaqueExecContextPtr oec, ustringhash_pod name_, void* handle,
     }
 
     if (errormessage)
-        *errormessage = ok ? ustringhash {}.hash() : em.hash();
+        *errormessage = em.hash();
     return ok;
 }
 
