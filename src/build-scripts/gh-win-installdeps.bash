@@ -71,6 +71,9 @@ export ZLIB_ROOT=$PWD/ext/dist
 src/build-scripts/build_libpng.bash
 export PNG_ROOT=$PWD/ext/dist
 
+src/build-scripts/build_libtiff.bash
+export PNG_ROOT=$PWD/ext/dist
+
 source src/build-scripts/build_pybind11.bash
 export pybind11_ROOT=$PWD/ext/dist
 
