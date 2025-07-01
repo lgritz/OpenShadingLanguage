@@ -140,6 +140,12 @@ function ( MAKE_CUDA_BITCODE src suffix generated_bc extra_clang_args )
         list (APPEND LLVM_COMPILE_FLAGS -Xclang -no-opaque-pointers)
     endif ()
 
+    if (OSL_MSVS_VERSION)
+        # if (LLVM_VERSION VERSION_LESS 19.0)
+            list (APPEND LLVM_COMPILE_FLAGS -D_ALLOW_COMPILER_AND_STL_VERSION_MISMATCH)
+        # endif ()
+    endif ()
+
     if (NOT CUDA_NO_FTZ)
         set (CLANG_FTZ_FLAG "-fcuda-flush-denormals-to-zero")
     endif ()

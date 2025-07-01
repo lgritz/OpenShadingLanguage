@@ -80,6 +80,12 @@ function ( EMBED_LLVM_BITCODE_IN_CPP src_list suffix output_name list_to_append_
             list (APPEND LLVM_COMPILE_FLAGS -Xclang -no-opaque-pointers)
         endif ()
 
+        if (OSL_MSVS_VERSION)
+            # if (LLVM_VERSION VERSION_LESS 19.0)
+                list (APPEND LLVM_COMPILE_FLAGS -D_ALLOW_COMPILER_AND_STL_VERSION_MISMATCH)
+            # endif ()
+        endif ()
+
         # Command to turn the .cpp file into LLVM assembly language .s, into
         # LLVM bitcode .bc, then back into a C++ file with the bc embedded!
         add_custom_command ( OUTPUT ${src_bc}
