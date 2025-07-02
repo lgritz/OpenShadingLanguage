@@ -60,7 +60,8 @@ checked_find_package (LLVM REQUIRED
                       VERSION_MIN 11.0
                       VERSION_MAX 20.9
                       PRINT LLVM_SYSTEM_LIBRARIES CLANG_LIBRARIES
-                            LLVM_SHARED_MODE)
+                            LLVM_SHARED_MODE
+                            LLVM_LIB_DIR)
 # ensure include directory is added (in case of non-standard locations
 include_directories (BEFORE SYSTEM "${LLVM_INCLUDES}")
 link_directories ("${LLVM_LIB_DIR}")

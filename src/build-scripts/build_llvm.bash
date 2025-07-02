@@ -42,6 +42,7 @@ fi
 echo "Installed LLVM ${LLVM_VERSION} in ${LLVM_INSTALL_DIR}"
 ls -a $LLVM_INSTALL_DIR || true
 ls -a $LLVM_INSTALL_DIR/* || true
+ls -a $LLVM_INSTALL_DIR/lib/cmake || true
 export LLVM_DIRECTORY=$LLVM_INSTALL_DIR
 export PATH=${LLVM_INSTALL_DIR}/bin:$PATH
 export LLVM_ROOT=${LLVM_INSTALL_DIR}
