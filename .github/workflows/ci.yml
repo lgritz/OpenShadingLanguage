@@ -609,7 +609,7 @@ jobs:
             openimageio_ver: release
             skip_tests: 1
             setenvs: export LLVM_VERSION=20.1.5
-                            OSL_CMAKE_FLAGS="-DUSE_LLVM_BTCODE=ON -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded"
+                            OSL_CMAKE_FLAGS="-DUSE_LLVM_BTCODE=ON"
                             PUGIXML_VERSION=v1.14
                             OpenImageIO_BUILD_MISSING_DEPS="Freetype;TIFF;libdeflate;libjpeg-turbo"
                             OPENIMAGEIO_CMAKE_FLAGS="-DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded"
@@ -624,7 +624,7 @@ jobs:
             openimageio_ver: release
             skip_tests: 1
             setenvs: export LLVM_VERSION=20.1.6
-                            OSL_CMAKE_FLAGS="-DUSE_LLVM_BTCODE=ON -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded"
+                            OSL_CMAKE_FLAGS="-DUSE_LLVM_BTCODE=ON"
                             PUGIXML_VERSION=v1.14
                             OpenImageIO_BUILD_MISSING_DEPS="Freetype;TIFF;libdeflate;libjpeg-turbo"
                             OPENIMAGEIO_CMAKE_FLAGS="-DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded"

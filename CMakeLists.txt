@@ -120,6 +120,7 @@ set (OSL_LIBNAME_SUFFIX "" CACHE STRING
 option (OSL_BUILD_TESTS "Build the unit tests, testshade, testrender" ON)
 if (WIN32)
     option (USE_LLVM_BITCODE "Generate embedded LLVM bitcode" OFF)
+    set_from_env (CMAKE_MSVC_RUNTIME_LIBRARY)
 else ()
     option (USE_LLVM_BITCODE "Generate embedded LLVM bitcode" ON)
 endif ()
