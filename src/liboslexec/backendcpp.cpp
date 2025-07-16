@@ -233,7 +233,7 @@ BackendCpp::op_gen_init()
     OP (abs,         generic);
     OP (acos,        generic);
     OP (add,         binary_op);
-    // OP (and,         andor);
+    OP (and,         binary_op);
     // OP (area,        area);
     // OP (aref,        aref);
     // OP (arraycopy,   arraycopy);
@@ -255,7 +255,7 @@ BackendCpp::op_gen_init()
     // OP (closure,     closure);
     // OP (color,       construct_color);
     // OP (compassign,  compassign);
-    // OP (compl,       unary_op);
+    OP (compl,       unary_op);
     // OP (compref,     compref);
     OP (concat,      generic);
     // OP (continue,    loopmod_op);
@@ -326,13 +326,13 @@ BackendCpp::op_gen_init()
     OP (mix,         generic);
     OP (mod,         generic);
     OP (mul,         binary_op);
-    // OP (neg,         neg);
+    OP (neg,         unary_op);
     OP (neq,         binary_op);
     OP (noise,       generic /*noise*/);
     OP (nop,         nop);
     // OP (normal,      construct_triple);
     OP (normalize,   generic);
-    // OP (or,          andor);
+    OP (or,          binary_op);
     OP (pnoise,      generic /*noise*/);
     // OP (point,       construct_triple);
     // OP (pointcloud_search, pointcloud_search);
@@ -435,7 +435,7 @@ cpp_gen_if(BackendCpp& rop, int opnum)
     Symbol& cond = *rop.opargsym(op, 0);
 
     // Then block
-    rop.outputfmt("{}if ({})\n", rop.indentstr(), cond.name());
+    rop.outputfmt("{}if ({})\n", rop.indentstr(), cond.cpp_safe_name());
     rop.build_cpp_code(opnum + 1, op.jump(0));
     if (op.jump(0) != op.jump(1)) {
         rop.outputfmt("{}else\n", rop.indentstr());
@@ -455,6 +455,29 @@ cpp_gen_assign(BackendCpp& rop, int opnum)
     Symbol& A(*rop.inst()->argsymbol(op.firstarg() + 1));
     rop.outputfmt("{}{} = {};\n", rop.indentstr(), R.cpp_safe_name(),
                   A.cpp_safe_name());
+    return true;
+}
+
+
+
+// unary ops
+bool
+cpp_gen_unary_op(BackendCpp& rop, int opnum)
+{
+    Opcode& op(rop.inst()->ops()[opnum]);
+    OSL_DASSERT(op.nargs() == 2);
+    Symbol& R(*rop.inst()->argsymbol(op.firstarg() + 0));
+    Symbol& A(*rop.inst()->argsymbol(op.firstarg() + 1));
+    const char* opsym = "UNKNOWN";
+    if (op.opname() == "neg")
+        opsym = "-";
+    else if (op.opname() == "compl")
+        opsym = "~";
+
+    else
+        OSL_ASSERT_MSG(0, "Unknown unary op %s", op.opname().c_str());
+    rop.outputfmt("{}{} = {} {};\n", rop.indentstr(), R.cpp_safe_name(),
+                  opsym, A.cpp_safe_name());
     return true;
 }
 
@@ -500,6 +523,12 @@ cpp_gen_binary_op(BackendCpp& rop, int opnum)
         opsym = "<<";
     else if (op.opname() == "shr")
         opsym = ">>";
+
+    else if (op.opname() == "and")
+        opsym = "&&";
+    else if (op.opname() == "or")
+        opsym = "||";
+
     else
         OSL_ASSERT_MSG(0, "Unknown binary op %s", op.opname().c_str());
     rop.outputfmt("{}{} = {} {} {};\n", rop.indentstr(), R.cpp_safe_name(),
