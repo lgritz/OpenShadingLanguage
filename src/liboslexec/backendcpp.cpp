@@ -77,6 +77,8 @@ BackendCpp::cpp_sym_type_name(const Symbol& sym)
             str += Strutil::fmt::format("[{}]", t.arraylength());
     } else {
         str = cpp_typedesc_name(t.simpletype());
+        if (sym.has_derivs())
+            str = Strutil::format("Dual2<{}>", str);
     }
     return str;
 }
@@ -234,7 +236,7 @@ BackendCpp::op_gen_init()
     OP (acos,        generic);
     OP (add,         binary_op);
     OP (and,         binary_op);
-    // OP (area,        area);
+    OP (area,        generic);
     // OP (aref,        aref);
     // OP (arraycopy,   arraycopy);
     // OP (arraylength, arraylength);
@@ -247,7 +249,7 @@ BackendCpp::op_gen_init()
     OP (bitor,       binary_op);
     // OP (blackbody,   blackbody);
     // OP (break,       loopmod_op);
-    // OP (calculatenormal, calculatenormal);
+    OP (calculatenormal, generic);
     OP (cbrt,        generic);
     OP (ceil,        generic);
     OP (cellnoise,   generic /*noise*/);
@@ -270,9 +272,9 @@ BackendCpp::op_gen_init()
     OP (distance,    generic);
     OP (div,         generic);
     OP (dot,         generic);
-    // OP (Dx,          DxDy);
-    // OP (Dy,          DxDy);
-    // OP (Dz,          Dz);
+    OP (Dx,          generic);
+    OP (Dy,          generic);
+    OP (Dz,          generic);
     // OP (dowhile,     loop_op);
     OP (end,         nop);
     OP (endswith,    generic);
@@ -286,7 +288,7 @@ BackendCpp::op_gen_init()
     OP (exp2,        generic);
     OP (expm1,       generic);
     OP (fabs,        generic);
-    // OP (filterwidth, filterwidth);
+    OP (filterwidth, generic);
     OP (floor,       generic);
     OP (fmod,        generic);
     // OP (for,         loop_op);
