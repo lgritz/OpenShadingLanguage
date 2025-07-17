@@ -424,7 +424,7 @@ jobs:
             opencolorio_ver: v2.4.2
             openexr_ver: v3.3.3
             openimageio_ver: release
-            pybind11_ver: v2.13.6
+            pybind11_ver: v3.0.0
             python_ver: "3.12"
             simd: avx2,f16c
             batched: b8_AVX2,b8_AVX512,b16_AVX512
@@ -460,7 +460,7 @@ jobs:
             opencolorio_ver: v2.2.1
             openexr_ver: v3.1.11
             openimageio_ver: release
-            pybind11_ver: v2.9.2
+            pybind11_ver: v2.13.6
             python_ver: "3.10"
             simd: avx2,f16c
             batched: b8_AVX2,b8_AVX512,b16_AVX512

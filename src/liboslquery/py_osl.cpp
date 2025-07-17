@@ -25,12 +25,14 @@ declare_oslqueryparam(py::module& m)
                                [](const Parameter& p) {
                                    return PY_STR(p.name.string());
                                })
-        .def_readwrite("type", &Parameter::type)
+        .def_property(
+            "type", [](const Parameter& p) { return PY_STR(p.type.c_str()); },
+            [](Parameter& p, TypeDesc type) { p.type = type; },
+            py::return_value_policy::reference_internal)
         .def_readwrite("isoutput", &Parameter::isoutput)
         .def_readwrite("varlenarray", &Parameter::varlenarray)
         .def_readwrite("isstruct", &Parameter::isstruct)
         .def_readwrite("isclosure", &Parameter::isclosure)
-        .def_readwrite("type", &Parameter::type)
         .def_property_readonly(
             "value",
             [](const Parameter& p) {
