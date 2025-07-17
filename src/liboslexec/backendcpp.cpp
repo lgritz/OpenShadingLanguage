@@ -255,7 +255,7 @@ BackendCpp::op_gen_init()
     OP (cellnoise,   generic /*noise*/);
     OP (clamp,       generic);
     // OP (closure,     closure);
-    // OP (color,       construct_color);
+    OP (color,       construct);
     // OP (compassign,  compassign);
     OP (compl,       unary_op);
     // OP (compref,     compref);
@@ -266,9 +266,9 @@ BackendCpp::op_gen_init()
     OP (cross,       generic);
     OP (degrees,     generic);
     OP (determinant, generic);
-    // OP (dict_find,   dict_find);
-    // OP (dict_next,   dict_next);
-    // OP (dict_value,  dict_value);
+    OP (dict_find,   generic);
+    OP (dict_next,   generic);
+    OP (dict_value,  generic);
     OP (distance,    generic);
     OP (div,         generic);
     OP (dot,         generic);
@@ -320,7 +320,7 @@ BackendCpp::op_gen_init()
     OP (logb,        generic);
     OP (lt,          binary_op);
     OP (luminance,   generic);
-    // OP (matrix,      matrix);
+    OP (matrix,      construct);
     OP (max,         generic);
     // OP (mxcompassign, mxcompassign);
     // OP (mxcompref,   mxcompref);
@@ -332,11 +332,11 @@ BackendCpp::op_gen_init()
     OP (neq,         binary_op);
     OP (noise,       generic /*noise*/);
     OP (nop,         nop);
-    // OP (normal,      construct_triple);
+    OP (normal,      construct);
     OP (normalize,   generic);
     OP (or,          binary_op);
     OP (pnoise,      generic /*noise*/);
-    // OP (point,       construct_triple);
+    OP (point,       construct);
     // OP (pointcloud_search, pointcloud_search);
     // OP (pointcloud_get, pointcloud_get);
     // OP (pointcloud_write, );
@@ -349,7 +349,7 @@ BackendCpp::op_gen_init()
     // OP (regex_search, regex);
     // OP (return,      return);
     OP (round,       generic);
-    // OP (select,      select);
+    OP (select,      generic);
     // OP (setmessage,  setmessage);
     OP (shl,         binary_op);
     OP (shr,         binary_op);
@@ -361,7 +361,7 @@ BackendCpp::op_gen_init()
     OP (snoise,      generic /*noise*/);
     // OP (spline,      spline);
     // OP (splineinverse, spline);
-    // OP (split,       split);
+    OP (split,       generic);
     OP (sqrt,        generic);
     OP (startswith,  generic);
     OP (step,        generic);
@@ -385,7 +385,7 @@ BackendCpp::op_gen_init()
     OP (transpose,   generic);
     OP (trunc,       generic);
     OP (useparam,    nop /*useparam*/);
-    // OP (vector,      construct_triple);
+    OP (vector,      construct);
     // OP (warning,     printf);
     // OP (wavelength_color, blackbody);
     // OP (while,       loop_op);
@@ -457,6 +457,26 @@ cpp_gen_assign(BackendCpp& rop, int opnum)
     Symbol& A(*rop.inst()->argsymbol(op.firstarg() + 1));
     rop.outputfmt("{}{} = {};\n", rop.indentstr(), R.cpp_safe_name(),
                   A.cpp_safe_name());
+    return true;
+}
+
+
+
+bool
+cpp_gen_construct(BackendCpp& rop, int opnum)
+{
+    Opcode& op(rop.inst()->ops()[opnum]);
+    OSL_DASSERT(op.nargs() >= 2);
+    Symbol& R(*rop.inst()->argsymbol(op.firstarg() + 0));
+    rop.outputfmt("{}{} = {}(", rop.indentstr(), R.cpp_safe_name(),
+                  rop.cpp_sym_type_name(R));
+    int nargs = op.nargs() - 1;
+    for (int a = 0; a < nargs; ++a) {
+        Symbol& A(*rop.inst()->argsymbol(op.firstarg() + a + 1));
+        rop.outputfmt("{}{}", a ? ", " : "", A.cpp_safe_name());
+    }
+    rop.outputfmt(");\n");
+    // FIXME: Probably doesn't handle derivatives properly
     return true;
 }
 
