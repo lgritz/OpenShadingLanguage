@@ -532,12 +532,15 @@ jobs:
             cc_compiler: clang
             cxx_compiler: clang++
             cxx_std: 17
+            openimageio_ver: lg-buildpng
             python_ver: "3.13"
             aclang: 14
             ctest_test_timeout: 120
             setenvs: export HOMEBREW_PREFIX=/usr/local
-                            EXTRA_BREW_PACKAGES="openimageio"
                             LLVMBREWVER="@17"
+                            PNG_ROOT=/usr/local
+                            OPENIMAGEIO_REPO=lgritz/OpenImageIO
+                            PNG_FIND_DEBUG=1
           - desc: MacOS-14-ARM llvm19 oiio-release
             runner: macos-14
             nametag: macos14-arm-p313
@@ -546,8 +549,7 @@ jobs:
             cxx_std: 17
             python_ver: "3.13"
             aclang: 15
-            setenvs: export EXTRA_BREW_PACKAGES="openimageio"
-                            LLVMBREWVER="@19"
+            setenvs: export LLVMBREWVER="@19"
           - desc: MacOS-15-ARM aclang16/C++17/py3.13 llvm19 oiio-main
             runner: macos-15
             nametag: macos15-arm-py313
