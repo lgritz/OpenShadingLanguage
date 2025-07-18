@@ -538,6 +538,8 @@ jobs:
             ctest_test_timeout: 120
             setenvs: export HOMEBREW_PREFIX=/usr/local
                             LLVMBREWVER="@17"
+                            DO_BREW_UPDATE=1
+                            EXTRA_BREW_PACKAGES="libpng"
           - desc: MacOS-14-ARM llvm19 oiio-release
             runner: macos-14
             nametag: macos14-arm-p313
