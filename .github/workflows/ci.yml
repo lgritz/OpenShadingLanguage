@@ -541,6 +541,7 @@ jobs:
                             PNG_ROOT=/usr/local
                             OPENIMAGEIO_REPO=lgritz/OpenImageIO
                             PNG_FIND_DEBUG=1
+                            OpenImageIO_BUILD_LOCAL_DEPS="PNG"
           - desc: MacOS-14-ARM llvm19 oiio-release
             runner: macos-14
             nametag: macos14-arm-p313
