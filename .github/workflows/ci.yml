@@ -640,6 +640,8 @@ jobs:
                             LLVM_VERSION="20.1.5"
                             OPENIMAGEIO_CMAKE_FLAGS="-DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded"
                             CMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded
+                            OPENIMAGEIO_REPO=lgritz/OpenImageIO
+                            OPENIMAGEIO_VERSION=lg-windowsstatic
 
   optix-gpu:
     if: ${{ ! contains(github.ref, 'windows-only') && ! contains(github.ref, 'macos-only') }}
