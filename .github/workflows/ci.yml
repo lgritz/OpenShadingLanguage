@@ -629,16 +629,17 @@ jobs:
             runner: windows-2025
             nametag: windows-2025
             generator: "Visual Studio 17 2022"
-            python_ver: "3.9"
+            cxx_std: 17
             opencolorio_ver: v2.3.2
             openexr_ver: v3.3.2
             # openimageio_ver: release
             openimageio_ver: lg-windowsstatic
+            python_ver: "3.9"
             skip_tests: 1
             setenvs: export OSL_CMAKE_FLAGS="-DUSE_LLVM_BTCODE=ON"
                             PUGIXML_VERSION=v1.14
                             OpenImageIO_BUILD_MISSING_DEPS="Freetype;TIFF;libdeflate;libjpeg-turbo"
-                            LLVM_VERSION="20.1.5"
+                            LLVM_VERSION="19.1.7"
                             OPENIMAGEIO_CMAKE_FLAGS="-DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded"
                             CMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded
                             OPENIMAGEIO_REPO=lgritz/OpenImageIO
