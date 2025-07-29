@@ -641,6 +641,12 @@ jobs:
                             OpenImageIO_BUILD_MISSING_DEPS="Freetype;TIFF;libdeflate;libjpeg-turbo"
                             LLVM_VERSION="19.1.7"
                             OPENIMAGEIO_CMAKE_FLAGS="-DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded"
+                            OPENEXR_CMAKE_FLAGS="-DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded"
+                            OPENCOLORIO_CMAKE_FLAGS="-DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded"
+                            PUGIXML_CMAKE_FLAGS="-DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded"
+                            PYBIND11_BUILD_OPTS="-DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded"
+                            LIBPNG_CONFIG_OPTS="-DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded"
+                            ZLIB_CONFIG_OPTS="-DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded"
                             CMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded
                             OPENIMAGEIO_REPO=lgritz/OpenImageIO
 
