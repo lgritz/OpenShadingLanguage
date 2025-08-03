@@ -103,7 +103,7 @@ using namespace OSL::pvt;
 
 // flex itself will generate fatal warnings about signed vs unsigned.
 // Bypass that nonsense.
-#if OSL_GNUC_VERSION >= 60000
+#if OSL_GNUC_VERSION
 #pragma GCC diagnostic ignored "-Wsign-compare"
 #endif
 
@@ -112,7 +112,7 @@ using namespace OSL::pvt;
 #pragma GCC diagnostic ignored "-Wdeprecated-register"
 #pragma GCC diagnostic ignored "-Wregister"
 #endif
-#if OSL_GNUC_VERSION >= 90000
+#if OSL_GNUC_VERSION
 #pragma GCC diagnostic ignored "-Wregister"
 #endif
 
