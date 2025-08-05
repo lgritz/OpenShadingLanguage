@@ -13,8 +13,8 @@
 #include <OSL/oslconfig.h>
 #include <OSL/wide.h>
 
-#if OSL_LLVM_VERSION < 120
-#    error "LLVM minimum version required for OSL is 12.0"
+#if OSL_LLVM_VERSION < 130
+#    error "LLVM minimum version required for OSL is 13.0"
 #endif
 
 OSL_PRAGMA_WARNING_PUSH
