@@ -68,16 +68,10 @@ public:
         // what the native mask type should be.  And if necessary maintain a
         // 16 bit and 32 bit native mask representation to be passed as a
         // livein.
-        m_native_mask_type = llvm::FixedVectorType::get(llvm_type_int32,
-                                                        WidthT);
-#if OSL_LLVM_VERSION >= 112
+        m_native_mask_type      = llvm::FixedVectorType::get(llvm_type_int32,
+                                                             WidthT);
         m_wide_zero_initializer = llvm::ConstantDataVector::getSplat(
             WidthT, llvm::ConstantInt::get(context, llvm::APInt(32, 0)));
-#else
-        m_wide_zero_initializer = llvm::ConstantVector::getSplat(
-            llvm::ElementCount(WidthT, false),
-            llvm::ConstantInt::get(context, llvm::APInt(32, 0)));
-#endif
     }
 
     bool run(llvm::Function& F) const
