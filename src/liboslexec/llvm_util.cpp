@@ -13,8 +13,8 @@
 #include <OSL/oslconfig.h>
 #include <OSL/wide.h>
 
-#if OSL_LLVM_VERSION < 110
-#    error "LLVM minimum version required for OSL is 11.0"
+#if OSL_LLVM_VERSION < 120
+#    error "LLVM minimum version required for OSL is 12.0"
 #endif
 
 OSL_PRAGMA_WARNING_PUSH
@@ -86,9 +86,7 @@ OSL_GCC_PRAGMA(GCC diagnostic ignored "-Wmaybe-uninitialized")
 
 #include <llvm/Support/DynamicLibrary.h>
 
-#if OSL_LLVM_VERSION >= 120
-#    include <llvm/CodeGen/Passes.h>
-#endif
+#include <llvm/CodeGen/Passes.h>
 
 #ifdef OSL_LLVM_NEW_PASS_MANAGER
 // New pass manager
@@ -198,9 +196,7 @@ static std::unique_ptr<std::vector<std::shared_ptr<LLVMMemoryManager>>>
 static int jit_mem_hold_users = 0;
 
 
-#if OSL_LLVM_VERSION >= 120
 llvm::raw_os_ostream raw_cout(std::cout);
-#endif
 
 };  // namespace
 
@@ -1559,12 +1555,9 @@ LLVM_Util::make_jit_execengine(std::string* err, TargetISA requestedISA,
 
     options.NoZerosInBSS          = false;
     options.GuaranteedTailCallOpt = false;
-#if OSL_LLVM_VERSION < 120
-    options.StackAlignmentOverride = 0;
-#endif
-    options.FunctionSections = true;
-    options.UseInitArray     = false;
-    options.FloatABIType     = llvm::FloatABI::Default;
+    options.FunctionSections      = true;
+    options.UseInitArray          = false;
+    options.FloatABIType          = llvm::FloatABI::Default;
 #if OSL_LLVM_VERSION < 190
     options.RelaxELFRelocations = false;
 #endif
@@ -1818,10 +1811,7 @@ LLVM_Util::nvptx_target_machine()
         options.AllowFPOpFusion       = llvm::FPOpFusion::Fast;
         options.NoZerosInBSS          = 0;
         options.GuaranteedTailCallOpt = 0;
-#if OSL_LLVM_VERSION < 120
-        options.StackAlignmentOverride = 0;
-#endif
-        options.UseInitArray = 0;
+        options.UseInitArray          = 0;
 
         // Verify that the NVPTX target has been initialized
         std::string error;
@@ -1903,10 +1893,6 @@ void
 LLVM_Util::setup_new_optimization_passes(int optlevel, bool target_host)
 {
 #ifdef OSL_LLVM_NEW_PASS_MANAGER
-#    if OSL_LLVM_VERSION <= 110
-#        error "New pass manager not supported in LLVM 11 and earlier"
-#    endif
-
     OSL_DEV_ONLY(std::cout << "setup_new_optimization_passes " << optlevel);
     OSL_ASSERT(m_new_pass_manager == nullptr);
 
@@ -2454,9 +2440,6 @@ LLVM_Util::setup_legacy_optimization_passes(int optlevel, bool target_host)
 
         // Eliminate and remove as much as possible up front
         mpm.add(llvm::createReassociatePass());
-#        if OSL_LLVM_VERSION < 120
-        mpm.add(llvm::createConstantPropagationPass());
-#        endif
         mpm.add(llvm::createDeadCodeEliminationPass());
         mpm.add(llvm::createCFGSimplificationPass());
 
@@ -2514,9 +2497,6 @@ LLVM_Util::setup_legacy_optimization_passes(int optlevel, bool target_host)
         mpm.add(llvm::createLowerExpectIntrinsicPass());
 
         mpm.add(llvm::createReassociatePass());
-#    if OSL_LLVM_VERSION < 120
-        mpm.add(llvm::createConstantPropagationPass());
-#    endif
         mpm.add(llvm::createDeadCodeEliminationPass());
         mpm.add(llvm::createCFGSimplificationPass());
 
@@ -2535,16 +2515,12 @@ LLVM_Util::setup_legacy_optimization_passes(int optlevel, bool target_host)
         mpm.add(llvm::createPromoteMemoryToRegisterPass());
         mpm.add(llvm::createGlobalOptimizerPass());
         mpm.add(llvm::createReassociatePass());
-#    if OSL_LLVM_VERSION < 120
-        mpm.add(llvm::createIPConstantPropagationPass());
-#    else
         // createIPConstantPropagationPass disappeared with LLVM 12.
         // Comments in their PR indicate that IPSCCP is better, but I don't
         // know if that means such a pass should be *right here*. I leave it
         // to others who use opt==13 to continue to curate this particular
         // list of passes.
         mpm.add(llvm::createIPSCCPPass());
-#    endif
 
         mpm.add(llvm::createDeadArgEliminationPass());
         mpm.add(llvm::createInstructionCombiningPass());
@@ -2553,9 +2529,6 @@ LLVM_Util::setup_legacy_optimization_passes(int optlevel, bool target_host)
         mpm.add(llvm::createPostOrderFunctionAttrsLegacyPass());
         mpm.add(llvm::createReversePostOrderFunctionAttrsPass());
         mpm.add(llvm::createFunctionInliningPass());
-#    if OSL_LLVM_VERSION < 120
-        mpm.add(llvm::createConstantPropagationPass());
-#    endif
         mpm.add(llvm::createDeadCodeEliminationPass());
         mpm.add(llvm::createCFGSimplificationPass());
 
@@ -2571,9 +2544,6 @@ LLVM_Util::setup_legacy_optimization_passes(int optlevel, bool target_host)
         mpm.add(llvm::createTailCallEliminationPass());
 
         mpm.add(llvm::createFunctionInliningPass());
-#    if OSL_LLVM_VERSION < 120
-        mpm.add(llvm::createConstantPropagationPass());
-#    endif
 
         mpm.add(llvm::createIPSCCPPass());
         mpm.add(llvm::createDeadArgEliminationPass());

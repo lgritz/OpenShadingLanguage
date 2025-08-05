@@ -57,7 +57,7 @@ checked_find_package (pugixml REQUIRED
 
 # LLVM library setup
 checked_find_package (LLVM REQUIRED
-                      VERSION_MIN 11.0
+                      VERSION_MIN 12.0
                       VERSION_MAX 20.9
                       PRINT LLVM_SYSTEM_LIBRARIES CLANG_LIBRARIES
                             LLVM_SHARED_MODE)
@@ -79,14 +79,9 @@ if (LLVM_VERSION VERSION_GREATER_EQUAL 15.0 AND CMAKE_COMPILER_IS_CLANG
          "If you are using LLVM 15 or higher, you should also use clang version "
          "15 or higher, or you may get build errors.${ColorReset}\n")
 endif ()
-if (LLVM_VERSION VERSION_GREATER_EQUAL 16.0)
-    if (CMAKE_CXX_STANDARD VERSION_LESS 17)
-        message (WARNING "${ColorYellow}LLVM 16+ requires C++17 or higher. "
-            "Please set CMAKE_CXX_STANDARD to 17 or higher.${ColorReset}\n")
-    endif ()
-endif ()
 
-# Use opaque pointers starting with LLVM 16
+# Use opaque pointers by default starting with LLVM 16
+# FIXME: Does LLVM 15 fully support opaque pointers? Can we fully switch?
 if (${LLVM_VERSION} VERSION_GREATER_EQUAL 16.0)
   set(LLVM_OPAQUE_POINTERS ON)
   add_compile_definitions (OSL_LLVM_OPAQUE_POINTERS)
@@ -95,6 +90,7 @@ else()
 endif()
 
 # Enable new pass manager for LLVM 16+
+# FIXME: Is the new pass manager available in LLVM 15? Can we fully switch?
 if (${LLVM_VERSION} VERSION_GREATER_EQUAL 16.0)
   set(LLVM_NEW_PASS_MANAGER ON)
   add_compile_definitions (OSL_LLVM_NEW_PASS_MANAGER)
