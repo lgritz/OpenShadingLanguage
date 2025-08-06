@@ -13,8 +13,8 @@
 #include <OSL/oslconfig.h>
 #include <OSL/wide.h>
 
-#if OSL_LLVM_VERSION < 130
-#    error "LLVM minimum version required for OSL is 13.0"
+#if OSL_LLVM_VERSION < 140
+#    error "LLVM minimum version required for OSL is 14.0"
 #endif
 
 OSL_PRAGMA_WARNING_PUSH
@@ -51,12 +51,8 @@ OSL_GCC_PRAGMA(GCC diagnostic ignored "-Wmaybe-uninitialized")
 #else
 #    include <llvm/TargetParser/Host.h>
 #endif
+#include <llvm/MC/TargetRegistry.h>
 #include <llvm/Support/raw_os_ostream.h>
-#if OSL_LLVM_VERSION < 140
-#    include <llvm/Support/TargetRegistry.h>
-#else
-#    include <llvm/MC/TargetRegistry.h>
-#endif
 
 #include <llvm/Analysis/BasicAliasAnalysis.h>
 #include <llvm/Analysis/TargetTransformInfo.h>

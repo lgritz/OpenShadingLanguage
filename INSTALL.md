@@ -49,7 +49,7 @@ NEW or CHANGED minimum dependencies since the last major release are **bold**.
     $OpenImageIO_ROOT/lib to be in your LD_LIBRARY_PATH (or
     DYLD_LIBRARY_PATH on OS X).
 
-* [LLVM](http://www.llvm.org) 13, 14, 15, 16, 17, 18, 19, 20, including
+* [LLVM](http://www.llvm.org) 14, 15, 16, 17, 18, 19, 20, including
   clang libraries.
 
 * (optional) For GPU rendering on NVIDIA GPUs:
