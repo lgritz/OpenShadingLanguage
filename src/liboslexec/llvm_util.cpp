@@ -2064,7 +2064,11 @@ LLVM_Util::setup_new_optimization_passes(int optlevel, bool target_host)
                 llvm::LoopPassManager lpm;
                 const bool use_memory_ssa = true;  // Needed by LICM
                 lpm.addPass(llvm::LoopRotatePass());
+#        if OSL_LLVM_VERSION >= 150
                 lpm.addPass(llvm::LICMPass(llvm::LICMOptions()));
+#        else
+                lpm.addPass(llvm::LICMPass());
+#        endif
                 lpm.addPass(llvm::SimpleLoopUnswitchPass(false));
                 fpm.addPass(createFunctionToLoopPassAdaptor(std::move(lpm),
                                                             use_memory_ssa));
@@ -2240,7 +2244,11 @@ LLVM_Util::setup_new_optimization_passes(int optlevel, bool target_host)
                 llvm::LoopPassManager lpm;
                 const bool use_memory_ssa = true;  // Needed by LICM
                 lpm.addPass(llvm::LoopRotatePass());
+#    if OSL_LLVM_VERSION >= 150
                 lpm.addPass(llvm::LICMPass(llvm::LICMOptions()));
+#    else
+                lpm.addPass(llvm::LICMPass());
+#    endif
                 lpm.addPass(llvm::SimpleLoopUnswitchPass(false));
                 fpm.addPass(createFunctionToLoopPassAdaptor(std::move(lpm),
                                                             use_memory_ssa));

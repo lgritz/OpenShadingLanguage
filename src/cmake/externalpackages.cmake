@@ -91,7 +91,7 @@ endif()
 
 # Enable new pass manager for LLVM 16+
 # FIXME: Is the new pass manager available in LLVM 15? Can we fully switch?
-if (${LLVM_VERSION} VERSION_GREATER_EQUAL 16.0)
+if (${LLVM_VERSION} VERSION_GREATER_EQUAL 14.0)
   set(LLVM_NEW_PASS_MANAGER ON)
   add_compile_definitions (OSL_LLVM_NEW_PASS_MANAGER)
 else()
