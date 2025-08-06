@@ -80,15 +80,6 @@ if (LLVM_VERSION VERSION_GREATER_EQUAL 15.0 AND CMAKE_COMPILER_IS_CLANG
          "15 or higher, or you may get build errors.${ColorReset}\n")
 endif ()
 
-# Use opaque pointers by default starting with LLVM 16
-# FIXME: Does LLVM 14 fully support opaque pointers? Can we fully switch?
-if (${LLVM_VERSION} VERSION_GREATER_EQUAL 14.0)
-  set(LLVM_OPAQUE_POINTERS ON)
-  add_compile_definitions (OSL_LLVM_OPAQUE_POINTERS)
-else()
-  set(LLVM_OPAQUE_POINTERS OFF)
-endif()
-
 
 
 checked_find_package (partio)

@@ -441,12 +441,6 @@ LLVM_Util::LLVM_Util(const PerThreadInfo& per_thread_info, int debuglevel,
         OIIO::spin_lock lock(llvm_global_mutex);
         if (!m_thread->llvm_context) {
             m_thread->llvm_context = new llvm::LLVMContext();
-#if OSL_LLVM_VERSION >= 150 && !defined(OSL_LLVM_OPAQUE_POINTERS)
-            m_thread->llvm_context->setOpaquePointers(false);
-            // FIXME: For now, keep using typed pointers. We're going to have
-            // to fix this and switch to opaque pointers by llvm 16.
-#endif
-            //static SetCommandLineOptionsForLLVM sSetCommandLineOptionsForLLVM;
         }
 
         if (!m_thread->llvm_jitmm) {
@@ -4122,13 +4116,6 @@ llvm::Value*
 LLVM_Util::op_load(llvm::Type* type, llvm::Value* ptr,
                    const std::string& llname)
 {
-#ifndef OSL_LLVM_OPAQUE_POINTERS
-    OSL_PRAGMA_WARNING_PUSH
-    OSL_GCC_PRAGMA(GCC diagnostic ignored "-Wdeprecated-declarations")
-    OSL_ASSERT(type
-               == ptr->getType()->getScalarType()->getPointerElementType());
-    OSL_PRAGMA_WARNING_POP
-#endif
     return builder().CreateLoad(type, ptr, llname);
 }
 
@@ -5798,13 +5785,6 @@ llvm::Value*
 LLVM_Util::GEP(llvm::Type* type, llvm::Value* ptr, llvm::Value* elem,
                const std::string& llname)
 {
-#ifndef OSL_LLVM_OPAQUE_POINTERS
-    OSL_PRAGMA_WARNING_PUSH
-    OSL_GCC_PRAGMA(GCC diagnostic ignored "-Wdeprecated-declarations")
-    OSL_ASSERT(type
-               == ptr->getType()->getScalarType()->getPointerElementType());
-    OSL_PRAGMA_WARNING_POP
-#endif
     return builder().CreateGEP(type, ptr, elem, llname);
 }
 
@@ -5814,13 +5794,6 @@ llvm::Value*
 LLVM_Util::GEP(llvm::Type* type, llvm::Value* ptr, int elem,
                const std::string& llname)
 {
-#ifndef OSL_LLVM_OPAQUE_POINTERS
-    OSL_PRAGMA_WARNING_PUSH
-    OSL_GCC_PRAGMA(GCC diagnostic ignored "-Wdeprecated-declarations")
-    OSL_ASSERT(type
-               == ptr->getType()->getScalarType()->getPointerElementType());
-    OSL_PRAGMA_WARNING_POP
-#endif
     return builder().CreateConstGEP1_32(type, ptr, elem, llname);
 }
 
@@ -5830,13 +5803,6 @@ llvm::Value*
 LLVM_Util::GEP(llvm::Type* type, llvm::Value* ptr, int elem1, int elem2,
                const std::string& llname)
 {
-#ifndef OSL_LLVM_OPAQUE_POINTERS
-    OSL_PRAGMA_WARNING_PUSH
-    OSL_GCC_PRAGMA(GCC diagnostic ignored "-Wdeprecated-declarations")
-    OSL_ASSERT(type
-               == ptr->getType()->getScalarType()->getPointerElementType());
-    OSL_PRAGMA_WARNING_POP
-#endif
     return builder().CreateConstGEP2_32(type, ptr, elem1, elem2, llname);
 }
 
@@ -5845,13 +5811,6 @@ llvm::Value*
 LLVM_Util::GEP(llvm::Type* type, llvm::Value* ptr, int elem1, int elem2,
                int elem3, const std::string& llname)
 {
-#ifndef OSL_LLVM_OPAQUE_POINTERS
-    OSL_PRAGMA_WARNING_PUSH
-    OSL_GCC_PRAGMA(GCC diagnostic ignored "-Wdeprecated-declarations")
-    OSL_ASSERT(type
-               == ptr->getType()->getScalarType()->getPointerElementType());
-    OSL_PRAGMA_WARNING_POP
-#endif
     llvm::Value* elements[3] = { constant(elem1), constant(elem2),
                                  constant(elem3) };
     return builder().CreateGEP(type, ptr, toArrayRef(elements), llname);
