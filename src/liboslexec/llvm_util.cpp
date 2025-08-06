@@ -2289,10 +2289,6 @@ LLVM_Util::setup_new_optimization_passes(int optlevel, bool target_host)
     }
 }
 
-void
-LLVM_Util::setup_legacy_optimization_passes(int optlevel, bool target_host)
-{
-}
 
 
 void

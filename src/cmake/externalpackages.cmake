@@ -89,14 +89,6 @@ else()
   set(LLVM_OPAQUE_POINTERS OFF)
 endif()
 
-# Enable new pass manager for LLVM 16+
-# FIXME: Is the new pass manager available in LLVM 15? Can we fully switch?
-# if (${LLVM_VERSION} VERSION_GREATER_EQUAL 14.0)
-#   set(LLVM_NEW_PASS_MANAGER ON)
-#   add_compile_definitions (OSL_LLVM_NEW_PASS_MANAGER)
-# else()
-#   set(LLVM_NEW_PASS_MANAGER OFF)
-# endif()
 
 
 checked_find_package (partio)
