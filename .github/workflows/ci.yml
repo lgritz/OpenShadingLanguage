@@ -612,7 +612,7 @@ jobs:
             opencolorio_ver: v2.3.2
             openexr_ver: v3.3.2
             openimageio_ver: release
-            skip_tests: 1
+            skip_tests: 0
             setenvs: export OSL_CMAKE_FLAGS="-DUSE_LLVM_BTCODE=ON"
                             PUGIXML_VERSION=v1.14
                             OpenImageIO_BUILD_MISSING_DEPS="Freetype;TIFF;libdeflate;libjpeg-turbo"
@@ -625,7 +625,7 @@ jobs:
             opencolorio_ver: v2.3.2
             openexr_ver: v3.3.2
             openimageio_ver: release
-            skip_tests: 1
+            skip_tests: 0
             setenvs: export OSL_CMAKE_FLAGS="-DUSE_LLVM_BTCODE=ON"
                             PUGIXML_VERSION=v1.14
                             OpenImageIO_BUILD_MISSING_DEPS="Freetype;TIFF;libdeflate;libjpeg-turbo"
@@ -638,7 +638,7 @@ jobs:
             opencolorio_ver: v2.5.1
             openexr_ver: v3.4.5
             openimageio_ver: release
-            skip_tests: 1
+            skip_tests: 0
             setenvs: export OSL_CMAKE_FLAGS="-DUSE_LLVM_BTCODE=ON"
                             PUGIXML_VERSION=v1.14
                             OpenImageIO_BUILD_MISSING_DEPS="Freetype;TIFF;libdeflate;libjpeg-turbo"
