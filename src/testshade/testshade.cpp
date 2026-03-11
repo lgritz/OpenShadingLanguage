@@ -41,8 +41,10 @@
 #include "simplerend.h"
 
 
+#ifdef OSL_USE_RS_BITCODE
 extern int testshade_llvm_compiled_rs_size;
 extern unsigned char testshade_llvm_compiled_rs_block[];
+#endif
 
 using namespace OSL;
 using OIIO::ParamValue;
@@ -243,12 +245,20 @@ set_shadingsys_options()
         use_rs_bitcode = atoi(use_rs_bitcode_env);
     }
 
+#ifdef OSL_USE_RS_BITCODE
     if (use_rs_bitcode) {
         shadingsys->attribute("rs_bitcode",
                               { OSL::TypeDesc::UINT8,
                                 testshade_llvm_compiled_rs_size },
                               testshade_llvm_compiled_rs_block);
     }
+#else
+    if (use_rs_bitcode) {
+        std::cerr
+            << "rs_bitcode requested but not available (USE_LLVM_BITCODE=OFF)\n";
+        use_rs_bitcode = false;
+    }
+#endif
 
     shadingsys->attribute("profile", int(profile));
     shadingsys->attribute("debug_nan", debugnan);

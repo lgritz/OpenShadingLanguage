@@ -137,10 +137,11 @@ macro ( TESTSUITE )
             add_one_testsuite ("${_testname}" "${_testsrcdir}"
                                ENV TESTSHADE_OPT=0 )
         endif ()
-        # Run the same test again using bitcode based free function renderer 
+        # Run the same test again using bitcode based free function renderer
         # services keeping unoptimized, unless it matches a few patterns that
         # we don't test unoptimized (or has an OPTIMIZEONLY marker file).
-        if (NOT _testname MATCHES "optix"
+        if (USE_LLVM_BITCODE
+            AND NOT _testname MATCHES "optix"
             AND NOT _testname MATCHES "render"
             AND NOT EXISTS "${_testsrcdir}/NOSCALAR"
             AND NOT EXISTS "${_testsrcdir}/BATCHED_REGRESSION"
@@ -159,11 +160,12 @@ macro ( TESTSUITE )
             add_one_testsuite ("${_testname}.opt" "${_testsrcdir}"
                                ENV TESTSHADE_OPT=2 )
         endif ()
-        # Run the same test again using bitcode based free function renderer 
+        # Run the same test again using bitcode based free function renderer
         # services keeping aggressive -O2 runtime
         # optimization, triggered by setting TESTSHADE_OPT env variable.
         # Skip OptiX-only tests and those with a NOOPTIMIZE marker file.
-        if (NOT _testname MATCHES "optix"
+        if (USE_LLVM_BITCODE
+            AND NOT _testname MATCHES "optix"
             AND NOT _testname MATCHES "render"
             AND NOT EXISTS "${_testsrcdir}/NOSCALAR"
             AND NOT EXISTS "${_testsrcdir}/BATCHED_REGRESSION"
@@ -237,14 +239,16 @@ macro ( TESTSUITE )
         endif ()
 
         # if there is an RS_BITCODE marker file in the directory.
-        if ((EXISTS "${_testsrcdir}/RS_BITCODE" OR test_all_rs_bitcode)
+        if (USE_LLVM_BITCODE
+            AND (EXISTS "${_testsrcdir}/RS_BITCODE" OR test_all_rs_bitcode)
             AND NOT EXISTS "${_testsrcdir}/BATCHED_REGRESSION"
             AND NOT EXISTS "${_testsrcdir}/RS_BITCODE_REGRESSION"
             AND NOT EXISTS "${_testsrcdir}/OPTIMIZEONLY")
             add_one_testsuite ("${_testname}.rsbitcode" "${_testsrcdir}"
                                 ENV TESTSHADE_OPT=0 TESTSHADE_RS_BITCODE=1 )
         endif ()
-        if ((EXISTS "${_testsrcdir}/RS_BITCODE" OR test_all_rs_bitcode)
+        if (USE_LLVM_BITCODE
+            AND (EXISTS "${_testsrcdir}/RS_BITCODE" OR test_all_rs_bitcode)
             AND NOT EXISTS "${_testsrcdir}/BATCHED_REGRESSION"
             AND NOT EXISTS "${_testsrcdir}/RS_BITCODE_REGRESSION"
             AND NOT EXISTS "${_testsrcdir}/NOOPTIMIZE")
@@ -253,8 +257,9 @@ macro ( TESTSUITE )
         endif ()
 
         # if there is an RS_BITCODE_REGRESSION marker file in the directory.
-        if (EXISTS "${_testsrcdir}/RS_BITCODE_REGRESSION" OR (
-                test_all_rs_bitcode AND EXISTS "${_testsrcdir}/BATCHED_REGRESSION")
+        if (USE_LLVM_BITCODE
+            AND (EXISTS "${_testsrcdir}/RS_BITCODE_REGRESSION" OR (
+                test_all_rs_bitcode AND EXISTS "${_testsrcdir}/BATCHED_REGRESSION"))
             AND NOT EXISTS "${_testsrcdir}/NOOPTIMIZE")
             # optimized for right now
             add_one_testsuite ("${_testname}.regress.rsbitcode.opt" "${_testsrcdir}"

@@ -73,11 +73,17 @@ list(APPEND include_dirs ${CMAKE_BINARY_DIR}/include)
 list(APPEND include_dirs ${IMATH_INCLUDES})
 list(APPEND include_dirs ${OpenImageIO_INCLUDES})
 
-EMBED_LLVM_BITCODE_IN_CPP ( "${rs_srcs}" "_host" "testshade_llvm_compiled_rs" testshade_srcs "-DOSL_HOST_RS_BITCODE=1" "${include_dirs}")
+if (USE_LLVM_BITCODE)
+    EMBED_LLVM_BITCODE_IN_CPP ( "${rs_srcs}" "_host" "testshade_llvm_compiled_rs" testshade_srcs "-DOSL_HOST_RS_BITCODE=1" "${include_dirs}")
+endif ()
 
 add_executable ( testshade ${testshade_srcs} testshademain.cpp )
 
 target_include_directories (testshade BEFORE PRIVATE ${OpenImageIO_INCLUDES})
+
+if (USE_LLVM_BITCODE)
+    target_compile_definitions (testshade PRIVATE OSL_USE_RS_BITCODE=1)
+endif ()
 
 target_link_libraries (testshade
                        PRIVATE
@@ -114,6 +120,9 @@ if (NOT CODECOV)
                            PRIVATE
                                oslexec oslquery oslcomp)
     target_include_directories (libtestshade BEFORE PRIVATE ${OpenImageIO_INCLUDES})
+    if (USE_LLVM_BITCODE)
+        target_compile_definitions (libtestshade PRIVATE OSL_USE_RS_BITCODE=1)
+    endif ()
     set_target_properties (libtestshade PROPERTIES PREFIX "")
 
     install_targets ( libtestshade )
