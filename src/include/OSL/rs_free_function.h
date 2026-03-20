@@ -327,10 +327,11 @@ rs_allocate_closure(OSL::OpaqueExecContextPtr oec, size_t size,
 /// of rs_allocate_closure when the closure being allocated is the OSL
 /// `debug()` closure. Renderers can override this to handle debug closures
 /// differently (e.g., allocate from a separate pool, or return nullptr to
-/// suppress debug closures in production builds). The default fallback
+/// suppress debug closures in production builds). The `id` parameter is the
+/// closure ID as registered by the renderer. The default fallback
 /// implementation simply delegates to rs_allocate_closure.
 OSL_RSOP OSL_HOSTDEVICE void*
-rs_allocate_debug_closure(OSL::OpaqueExecContextPtr oec, size_t size,
+rs_allocate_debug_closure(OSL::OpaqueExecContextPtr oec, int id, size_t size,
                           size_t alignment);
 
 /// Report errors, warnings, printf, and fprintf.

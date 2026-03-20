@@ -330,8 +330,8 @@ rs_allocate_closure(OSL::OpaqueExecContextPtr exec_ctx, size_t size,
 }
 
 OSL_RSOP OSL_HOSTDEVICE void*
-rs_allocate_debug_closure(OSL::OpaqueExecContextPtr exec_ctx, size_t size,
-                          size_t alignment)
+rs_allocate_debug_closure(OSL::OpaqueExecContextPtr exec_ctx, int id,
+                          size_t size, size_t alignment)
 {
     return rs_allocate_closure(exec_ctx, size, alignment);
 }

@@ -120,7 +120,7 @@ osl_allocate_debug_closure_component(OpaqueExecContextPtr oec, int id, int size)
 {
     const size_t needed = sizeof(ClosureComponent) + size;
     ClosureComponent* comp
-        = (ClosureComponent*)rs_allocate_debug_closure(oec, needed,
+        = (ClosureComponent*)rs_allocate_debug_closure(oec, id, needed,
                                                        alignof(ClosureComponent));
     if (comp) {
         comp->id = id;
@@ -140,7 +140,7 @@ osl_allocate_weighted_debug_closure_component(OpaqueExecContextPtr oec, int id,
         return NULL;
     const size_t needed = sizeof(ClosureComponent) + size;
     ClosureComponent* comp
-        = (ClosureComponent*)rs_allocate_debug_closure(oec, needed,
+        = (ClosureComponent*)rs_allocate_debug_closure(oec, id, needed,
                                                        alignof(ClosureComponent));
     if (comp) {
         comp->id = id;
