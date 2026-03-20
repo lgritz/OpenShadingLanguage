@@ -118,10 +118,9 @@ osl_allocate_weighted_closure_component(OpaqueExecContextPtr oec, int id,
 OSL_SHADEOP OSL_HOSTDEVICE void*
 osl_allocate_debug_closure_component(OpaqueExecContextPtr oec, int id, int size)
 {
-    const size_t needed = sizeof(ClosureComponent) + size;
-    ClosureComponent* comp
-        = (ClosureComponent*)rs_allocate_debug_closure(oec, id, needed,
-                                                       alignof(ClosureComponent));
+    const size_t needed    = sizeof(ClosureComponent) + size;
+    ClosureComponent* comp = (ClosureComponent*)
+        rs_allocate_debug_closure(oec, id, needed, alignof(ClosureComponent));
     if (comp) {
         comp->id = id;
         comp->w  = Color3(1.0f);
@@ -138,10 +137,9 @@ osl_allocate_weighted_debug_closure_component(OpaqueExecContextPtr oec, int id,
     const Color3* w = (const Color3*)w_;
     if (w->x == 0.0f && w->y == 0.0f && w->z == 0.0f)
         return NULL;
-    const size_t needed = sizeof(ClosureComponent) + size;
-    ClosureComponent* comp
-        = (ClosureComponent*)rs_allocate_debug_closure(oec, id, needed,
-                                                       alignof(ClosureComponent));
+    const size_t needed    = sizeof(ClosureComponent) + size;
+    ClosureComponent* comp = (ClosureComponent*)
+        rs_allocate_debug_closure(oec, id, needed, alignof(ClosureComponent));
     if (comp) {
         comp->id = id;
         comp->w  = *w;
