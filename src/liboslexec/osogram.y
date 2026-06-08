@@ -28,7 +28,7 @@
 #endif
 
 #if (OSL_CLANG_VERSION >= 150000) || (OSL_APPLE_CLANG_VERSION >= 140000) \
-    || (OSL_INTEL_CLANG_VERSION >= 140000)
+    || (OSL_INTEL_CLANG_VERSION >= 140000) || (OSL_GNUC_VERSION >= 160000)
 #pragma clang diagnostic ignored "-Wunused-but-set-variable"
 #endif
 

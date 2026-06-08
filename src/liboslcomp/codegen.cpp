@@ -937,8 +937,7 @@ ASTNode::codegen_initlist(ref init, TypeSpec type, Symbol* sym)
         && !type.is_structure_array()) {
         TypeDesc elemtype = type.simpletype().elementtype();
         bool all_const    = true;
-        int length        = 0;
-        for (ref i = init; i; i = i->next(), ++length) {
+        for (ref i = init; i; i = i->next()) {
             // It's not a constant if the initializer isn't a literal
             if (i->nodetype() != ASTNode::literal_node) {
                 all_const = false;

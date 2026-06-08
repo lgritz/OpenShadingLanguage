@@ -1246,14 +1246,13 @@ OSLCompilerImpl::track_variable_dependencies()
 
     m_symdeps.clear();
     std::vector<Symbol*> read, written;
-    int opnum = 0;
     // We define a pseudo-symbol just for tracking derivatives.  This
     // symbol "depends on" whatever things have derivs taken of them.
     if (!m_derivsym)
         m_derivsym = new Symbol(ustring("$derivs"), TypeSpec(), SymTypeGlobal);
     // Loop over all ops...
     for (OpcodeVec::const_iterator op = m_ircode.begin(); op != m_ircode.end();
-         ++op, ++opnum) {
+         ++op) {
         // Gather the list of syms read and written by the op.  Reuse the
         // vectors defined outside the loop to cut down on malloc/free.
         read.clear();
