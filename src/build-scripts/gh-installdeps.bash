@@ -146,11 +146,11 @@ else
     if [[ "$LLVM_VERSION" != "" ]] ; then
         source src/build-scripts/build_llvm.bash
     fi
-    if [[ "$LLVM_NEW" != "" ]] ; then
+    if [[ "$LLVM_UBUNTU" != "" ]] ; then
         wget https://apt.llvm.org/llvm.sh
         chmod +x llvm.sh
-        sudo ./llvm.sh $LLVM_NEW
-        sudo apt install llvm-${LLVM_NEW}* clang-${LLVM_NEW}* lld-${LLVM_NEW}* lldb-${LLVM_NEW}*
+        sudo ./llvm.sh $LLVM_UBUNTU
+        # sudo apt install llvm-${LLVM_UBUNTU}* clang-${LLVM_UBUNTU}* lld-${LLVM_UBUNTU}* lldb-${LLVM_NEW}*
     fi
 fi
 

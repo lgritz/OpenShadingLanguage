@@ -390,7 +390,7 @@ jobs:
                             FREETYPE_VERSION=VER-2-14-3
                             OPENCOLORIO_CXX=c++
                             xEXTRA_DEP_PACKAGES=llvm-19-dev
-                            LLVM_NEW=20
+                            LLVM_UBUNTU=20
 
           - desc: latest releases clang18/C++17 llvm18 oiio-rel exr3.4 py3.12 avx2 batch-b16avx512
             nametag: linux-latest-releases
