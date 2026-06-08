@@ -14,6 +14,13 @@ export OSL_BUILD_DIR=${OSL_BUILD_DIR:=${OSL_SRC_DIR}/build}
 export OSL_INSTALL_DIR=${OSL_INSTALL_DIR:=${OSL_SRC_DIR}/dist}
 export OSL_CMAKE_BUILD_TYPE=${OSL_CMAKE_BUILD_TYPE:=${CMAKE_BUILD_TYPE:=Release}}
 
+if [[ "$OSL_CC" != "" ]] ; then
+    CC=$OSL_CC
+fi
+if [[ "$OSL_CXX" != "" ]] ; then
+    CXX=$OSL_CXX
+fi
+
 if [[ "$USE_SIMD" != "" ]] ; then
     OSL_CMAKE_FLAGS="$OSL_CMAKE_FLAGS -DUSE_SIMD=$USE_SIMD"
 fi

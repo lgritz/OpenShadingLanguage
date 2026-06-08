@@ -28,13 +28,11 @@
 #endif
 
 #if (OSL_CLANG_VERSION >= 150000) || (OSL_APPLE_CLANG_VERSION >= 140000) \
-    || (OSL_INTEL_CLANG_VERSION >= 140000)
-#pragma clang diagnostic ignored "-Wunused-but-set-variable"
+    || (OSL_INTEL_CLANG_VERSION >= 140000) || (OSL_GNUC_VERSION >= 160000)
+OSL_CLANG_PRAGMA(GCC diagnostic ignored "-Wunused-but-set-variable")
 #endif
 
-#if defined(__GNUC__) || defined(__clang__)
-#pragma GCC visibility push(hidden)
-#endif
+OSL_PRAGMA_VISIBILITY_PUSH
 
 %}
 
@@ -343,6 +341,4 @@ OSL::pvt::osolextype (int lex)
     }
 }
 
-#if defined(__GNUC__) || defined(__clang__)
-#pragma GCC visibility pop
-#endif
+OSL_PRAGMA_VISIBILITY_POP
