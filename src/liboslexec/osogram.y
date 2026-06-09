@@ -23,13 +23,11 @@
 
 #include "osoreader.h"
 
-#ifdef __clang__
-#pragma clang diagnostic ignored "-Wparentheses-equality"
-#endif
+OSL_CLANG_PRAGMA(GCC diagnostic ignored "-Wparentheses-equality")
 
 #if (OSL_CLANG_VERSION >= 150000) || (OSL_APPLE_CLANG_VERSION >= 140000) \
     || (OSL_INTEL_CLANG_VERSION >= 140000) || (OSL_GNUC_VERSION >= 160000)
-OSL_CLANG_PRAGMA(GCC diagnostic ignored "-Wunused-but-set-variable")
+OSL_GCC_PRAGMA(GCC diagnostic ignored "-Wunused-but-set-variable")
 #endif
 
 OSL_PRAGMA_VISIBILITY_PUSH
