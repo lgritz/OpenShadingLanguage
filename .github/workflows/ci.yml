@@ -78,7 +78,7 @@ jobs:
       coverage: ${{ matrix.coverage || 0 }}
       sonar: ${{ matrix.sonar || 0 }}
       old_node: ${{ matrix.old_node || 0 }}
-      llvm_action_ver: ${{ matrix.llvm_action_ver }}
+      # llvm_action_ver: ${{ matrix.llvm_action_ver }}
       clang_format: ${{ matrix.clang_format }}
     strategy:
       fail-fast: false
@@ -174,7 +174,7 @@ jobs:
       ctest_test_timeout: ${{ matrix.ctest_test_timeout || '800' }}
       coverage: ${{ matrix.coverage || 0 }}
       sonar: ${{ matrix.sonar || 0 }}
-      llvm_action_ver: ${{ matrix.llvm_action_ver }}
+      # llvm_action_ver: ${{ matrix.llvm_action_ver }}
       clang_format: ${{ matrix.clang_format }}
     strategy:
       fail-fast: false
@@ -323,7 +323,8 @@ jobs:
             python_ver: "3.10"
             simd: sse4.2
             setenvs: export CMAKE_BUILD_TYPE=Debug
-                            LLVM_VERSION=14.0.0 LLVM_DISTRO_NAME=ubuntu-18.04
+                            xLLVM_VERSION=14.0.0 xLLVM_DISTRO_NAME=ubuntu-18.04
+                            LLVM_VERSION=14 LLVM_APT=1
                             PUGIXML_VERSION=v1.9
                             CTEST_TEST_TIMEOUT=1800
                             OSL_CMAKE_FLAGS="-DOSL_TEST_BIG_TIMEOUT=1200"
@@ -338,7 +339,8 @@ jobs:
             pybind11_ver: v2.8.1
             python_ver: "3.10"
             simd: avx2,f16c
-            setenvs: export LLVM_VERSION=14.0.0 LLVM_DISTRO_NAME=ubuntu-18.04
+            setenvs: export xLLVM_VERSION=14.0.0 xLLVM_DISTRO_NAME=ubuntu-18.04
+                            LLVM_VERSION=14 LLVM_APT=1
                             OPENIMAGEIO_CMAKE_FLAGS="-DBUILD_FMT_VERSION=7.0.1"
                             PUGIXML_VERSION=v1.10
           - desc: latest releases gcc13/C++17 llvm20 oiio-rel exr3.4 py3.12 avx2 batch-b16avx512
@@ -418,8 +420,9 @@ jobs:
             python_ver: "3.10"
             simd: avx2,f16c
             batched: b8_AVX2,b8_AVX512,b16_AVX512
-            setenvs: export LLVM_VERSION=14.0.0
-                            LLVM_DISTRO_NAME=ubuntu-18.04
+            setenvs: export xLLVM_VERSION=14.0.0
+                            xLLVM_DISTRO_NAME=ubuntu-18.04
+                            LLVM_VERSION=14 LLVM_APT=1
                             PUGIXML_VERSION=v1.15
             # Test formatting. This test entry doesn't do a full build, it
             # just runs clang-format on everything, and passes if nothing is
@@ -537,7 +540,7 @@ jobs:
       extra_artifacts: ${{ matrix.extra_artifacts }}
       fmt_ver: ${{ matrix.fmt_ver }}
       fmt_commit: ${{ matrix.fmt_commit }}
-      llvm_action_ver: ${{ matrix.llvm_action_ver }}
+      # llvm_action_ver: ${{ matrix.llvm_action_ver }}
       opencolorio_ver: ${{ matrix.opencolorio_ver }}
       openexr_ver: ${{ matrix.openexr_ver }}
       openimageio_ver: ${{ matrix.openimageio_ver }}
@@ -623,7 +626,7 @@ jobs:
       ctest_test_timeout: ${{ matrix.ctest_test_timeout || '800' }}
       coverage: ${{ matrix.coverage || 0 }}
       sonar: ${{ matrix.sonar || 0 }}
-      llvm_action_ver: ${{ matrix.llvm_action_ver }}
+      # llvm_action_ver: ${{ matrix.llvm_action_ver }}
       clang_format: ${{ matrix.clang_format }}
     strategy:
       fail-fast: false

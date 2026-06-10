@@ -163,11 +163,11 @@ jobs:
         if: inputs.old_node == '1'
         # Must use an old checkout action for old containers
         uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
-      - name: Install LLVM and Clang
-        if: inputs.llvm_action_ver != ''
-        uses: KyleMayes/install-llvm-action@ebc0426251bc40c7cd31162802432c68818ab8f0 # v2.0.9
-        with:
-          version: ${{ inputs.llvm_action_ver }}
+      # - name: Install LLVM and Clang
+      #   if: inputs.llvm_action_ver != ''
+      #   uses: KyleMayes/install-llvm-action@ebc0426251bc40c7cd31162802432c68818ab8f0 # v2.0.9
+      #   with:
+      #     version: ${{ inputs.llvm_action_ver }}
       - name: Build setup
         shell: bash
         run: |

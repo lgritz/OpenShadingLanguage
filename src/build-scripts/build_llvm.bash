@@ -25,6 +25,7 @@ elif [[ `uname` == "Linux" ]] ; then
     # Older Linux installation from downloaded artifacts on the llvm GitHub
     # releases page. Needs full 3-part version (18.1.8). Only works for
     # versions 18 and older.
+    exit
     : ${LLVM_VERSION:=18.1.8}
     : ${LLVM_INSTALL_DIR:=${PWD}/llvm-install}
     : ${LLVM_DISTRO_NAME:=ubuntu-18.04}
