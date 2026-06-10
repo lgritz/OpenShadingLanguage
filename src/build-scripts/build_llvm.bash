@@ -12,8 +12,6 @@ set -ex
 echo "Building LLVM ${LLVM_VERSION}"
 uname
 
-mkdir -p $LLVM_INSTALL_DIR || true
-
 if [[ "$LLVM_APT" != "" ]] ; then
     # Modern Linux installation from LLVM's llvm.sh script that installs an
     # apt package from their repo. Needs 1-part version (e.g., 21).
@@ -42,7 +40,7 @@ elif [[ `uname` == "Linux" ]] ; then
     tar xf $LLVMTAR
     rm -f $LLVMTAR
     ls
-    mv ${LLVM_UNPACK_DIR}/* $LLVM_INSTALL_DIR
+    mv ${LLVM_UNPACK_DIR} $LLVM_INSTALL_DIR
 elif [[ `uname -s` == "Windows" || "${RUNNER_OS}" == "Windows" ]] ; then
     echo "Installing Windows LLVM"
     : ${LLVM_VERSION:=18.1.8}
@@ -53,7 +51,7 @@ elif [[ `uname -s` == "Windows" || "${RUNNER_OS}" == "Windows" ]] ; then
     ls -l $LLVMTAR
     tar xf $LLVMTAR
     rm -f $LLVMTAR
-    mv clang+llvm*/* $LLVM_INSTALL_DIR
+    mv clang+llvm* $LLVM_INSTALL_DIR
 else
     echo Bad uname `uname`
 fi
