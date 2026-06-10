@@ -1763,6 +1763,11 @@ LLVM_Util::validate_struct_data_layout(
             llvm::raw_os_ostream os_cout(std::cout);
             OSL_DEV_ONLY(et->print(os_cout));
         }
+        if (!(expected_offset_by_index[index] == actual_offset))
+            print(
+                "DEBUG index={} expected_offset_by_index[index]={}, actual_offset={}\n",
+                index, expected_offset_by_index[index],
+                static_cast<uint64_t>(actual_offset));
         OSL_ASSERT(expected_offset_by_index[index] == actual_offset);
         OSL_DEV_ONLY(std::cout << std::endl);
     }
