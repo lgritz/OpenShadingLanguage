@@ -1743,42 +1743,60 @@ LLVM_Util::validate_struct_data_layout(
     int number_of_elements = structTy->getNumElements();
 
     const llvm::StructLayout* layout = data_layout.getStructLayout(structTy);
-    OSL_DEV_ONLY(std::cout << "dump_struct_data_layout: getSizeInBytes("
-                           << layout->getSizeInBytes() << ") ")
-    OSL_DEV_ONLY(<< " getAlignment(" << get_alignment(layout) << ")")
-    OSL_DEV_ONLY(<< " hasPadding(" << layout->hasPadding() << ")" << std::endl);
+
+    std::string struct_name = structTy->hasName() ? structTy->getName().str()
+                                                   : std::string("<anonymous>");
+
+    // Detect any divergence between LLVM's computed layout and the host C++
+    // struct offsets first, so that on failure we can dump the *entire* table
+    // (struct name, every field) in a single run rather than aborting on the
+    // first mismatched field.
+    bool mismatch       = false;
+    int expected_count  = static_cast<int>(expected_offset_by_index.size());
+    int common = number_of_elements < expected_count ? number_of_elements
+                                                     : expected_count;
+    for (int index = 0; index < common; ++index) {
+        if (expected_offset_by_index[index] != layout->getElementOffset(index))
+            mismatch = true;
+    }
+    if (static_cast<int>(expected_offset_by_index.size()) != number_of_elements)
+        mismatch = true;
+
+    if (mismatch) {
+        print(
+            "validate_struct_data_layout MISMATCH for struct '{}': llvm sizeInBytes={} alignment={} hasPadding={} llvm_elements={} expected_elements={}\n",
+            struct_name, static_cast<uint64_t>(layout->getSizeInBytes()),
+            get_alignment(layout), layout->hasPadding(), number_of_elements,
+            expected_offset_by_index.size());
+        for (int index = 0; index < number_of_elements; ++index) {
+            llvm::Type* et = structTy->getElementType(index);
+            std::string type_str;
+            llvm::raw_string_ostream rso(type_str);
+            et->print(rso);
+            rso.flush();
+
+            uint64_t actual_offset
+                = static_cast<uint64_t>(layout->getElementOffset(index));
+            uint64_t elem_size
+                = static_cast<uint64_t>(data_layout.getTypeAllocSize(et));
+            bool have_expected
+                = index < static_cast<int>(expected_offset_by_index.size());
+            bool bad = have_expected
+                       && expected_offset_by_index[index] != actual_offset;
+            print("  [{}] expected={} actual={} size={} type={} {}\n", index,
+                  have_expected ? std::to_string(expected_offset_by_index[index])
+                                : std::string("<none>"),
+                  actual_offset, elem_size, type_str, bad ? "<-- MISMATCH" : "");
+        }
+    }
 
     for (int index = 0; index < number_of_elements; ++index) {
-        OSL_DEV_ONLY(llvm::Type* et = structTy->getElementType(index));
-
-        auto actual_offset = layout->getElementOffset(index);
-
         OSL_ASSERT(index < static_cast<int>(expected_offset_by_index.size()));
-        OSL_DEV_ONLY(std::cout << "   element[" << index
-                               << "] offset in bytes = " << actual_offset
-                               << " expect offset = "
-                               << expected_offset_by_index[index] <<)
-        OSL_DEV_ONLY(" type is ");
-        {
-            llvm::raw_os_ostream os_cout(std::cout);
-            OSL_DEV_ONLY(et->print(os_cout));
-        }
-        if (!(expected_offset_by_index[index] == actual_offset))
-            print(
-                "DEBUG index={} expected_offset_by_index[index]={}, actual_offset={}\n",
-                index, expected_offset_by_index[index],
-                static_cast<uint64_t>(actual_offset));
-        OSL_ASSERT(expected_offset_by_index[index] == actual_offset);
-        OSL_DEV_ONLY(std::cout << std::endl);
+        OSL_ASSERT(expected_offset_by_index[index]
+                   == layout->getElementOffset(index));
     }
-    if (static_cast<int>(expected_offset_by_index.size())
-        != number_of_elements) {
-        std::cout << "   expected " << expected_offset_by_index.size()
-                  << " members but actual member count is = "
-                  << number_of_elements << std::endl;
-        OSL_ASSERT(static_cast<int>(expected_offset_by_index.size())
-                   == number_of_elements);
-    }
+    OSL_ASSERT(static_cast<int>(expected_offset_by_index.size())
+               == number_of_elements);
 }
 
 
