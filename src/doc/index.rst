@@ -60,6 +60,12 @@ Open Shading Language |version| Documentation
 
 
 .. toctree::
+   :caption: OSL Tools
+
+   testshade
+   osltoy
+
+.. toctree::
    :caption: OSL C++ API
 
    oslquery
