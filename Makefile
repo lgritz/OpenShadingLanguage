@@ -290,6 +290,9 @@ test: build
 	    LD_LIBRARY_PATH=${INSTALL_PREFIX}/lib:${LD_LIBRARY_PATH} \
 	    DYLD_LIBRARY_PATH=${INSTALL_PREFIX}/lib:${DYLD_LIBRARY_PATH} \
 	    OIIO_LIBRARY_PATH=${INSTALL_PREFIX}/lib:${OIIO_LIBRARY_PATH} \
+	    `# PYTHONPATH here is a convenience for interactive use; the python` \
+	    `# tests set their own via a CTest ENVIRONMENT property, which wins,` \
+	    `# and which is how a backend-specific variant finds its module.` \
 	    PYTHONPATH=${working_dir}/${build_dir}/lib/python/site-packages:${PYTHONPATH} \
 	    ctest -E broken ${TEST_FLAGS} \
 	  )
