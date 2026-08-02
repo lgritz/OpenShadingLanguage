@@ -56,6 +56,9 @@ export TESTSUITE_CLEANUP_ON_SUCCESS=${TESTSUITE_CLEANUP_ON_SUCCESS:=1}
 export OpenImageIO_BUILD_MISSING_DEPS=${OpenImageIO_BUILD_MISSING_DEPS:=all}
 export OSL_BUILD_MISSING_DEPS=${OSL_BUILD_MISSING_DEPS:=all}
 
+# Build both set of python bindings in main/1.16 for now
+export OSL_PYTHON_BINDINGS_BACKEND=both
+
 # Sonar
 export BUILD_WRAPPER_OUT_DIR="${PWD}/bw_output"
 export BW_OUTPUT_DIR="${PWD}/bw_output"
