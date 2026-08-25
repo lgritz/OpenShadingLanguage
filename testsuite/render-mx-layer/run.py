@@ -8,5 +8,6 @@ failthresh = 0.03   # allow a little more LSB noise between platforms
 hardfail = 0.05
 idiff_program = "idiff"
 
-outputs = [ "out.exr" ]
+outputs = [ "out.exr", "out_add.exr" ]
 command = testrender("-r 160 120 -aa 6 scene.xml out.exr")
+command += testrender("-r 160 120 -aa 6 scene_add.xml out_add.exr")

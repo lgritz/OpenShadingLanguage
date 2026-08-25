@@ -11,5 +11,6 @@ shader envmap(float Kb = 1, string filename = "")
    float tu = 0.5 + r * cos(radial);
    float tv = 0.5 - r * sin(radial);
    color c = texture(filename, tu, tv);
-   Ci = Kb * c * background();
+   Ci = Kb * c * color(1, 1, 0) * background()
+        + Kb * c * color(0, 0, 1) * background();
 }

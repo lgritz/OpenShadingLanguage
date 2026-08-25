@@ -1,0 +1,18 @@
+// Copyright Contributors to the Open Shading Language project.
+// SPDX-License-Identifier: BSD-3-Clause
+// https://github.com/AcademySoftwareFoundation/OpenShadingLanguage
+
+surface layer_add(int distributed = 0)
+{
+    closure color red
+        = oren_nayar_diffuse_bsdf(N, color(1, 0, 0), 0.3);
+    closure color blue
+        = oren_nayar_diffuse_bsdf(N, color(0, 0, 1), 0.3);
+    closure color green
+        = oren_nayar_diffuse_bsdf(N, color(0, 1, 0), 0.3);
+
+    if (distributed)
+        Ci = 0.5 * layer(red, green) + 0.5 * layer(blue, green);
+    else
+        Ci = layer(0.5 * red + 0.5 * blue, green);
+}

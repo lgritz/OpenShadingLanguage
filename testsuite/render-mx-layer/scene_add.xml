@@ -1,0 +1,20 @@
+<World>
+   <Camera eye="0, 0, 10" look_at="0,0,0" fov="30" />
+
+   <ShaderGroup>
+      shader envmap layer1;
+   </ShaderGroup>
+   <Background resolution="1024" />
+
+   <ShaderGroup>
+      param int distributed 0;
+      shader layer_add layer1;
+   </ShaderGroup>
+   <Quad corner="-2,-1,0" edge_x="2,0,0" edge_y="0,2,0" />
+
+   <ShaderGroup>
+      param int distributed 1;
+      shader layer_add layer1;
+   </ShaderGroup>
+   <Quad corner="0,-1,0" edge_x="2,0,0" edge_y="0,2,0" />
+</World>

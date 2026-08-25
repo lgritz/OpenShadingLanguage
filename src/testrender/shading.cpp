@@ -1208,17 +1208,19 @@ evaluate_layer_opacity(const ShaderGlobalsType& sg, float path_roughness,
     int stack_idx        = 0;
     const ClosureColor* ptr_stack[STACK_SIZE];
     Color3 weight_stack[STACK_SIZE];
-    Color3 weight = Color3(1.0f);
+    // Track the active branch separately from completed branch contributions.
+    Color3 branch_weight      = Color3(1.0f);
+    Color3 accumulated_weight = Color3(0.0f);
 
     while (closure) {
         switch (closure->id) {
         case ClosureColor::MUL:
-            weight *= closure->as_mul()->weight;
+            branch_weight *= closure->as_mul()->weight;
             closure = closure->as_mul()->closure;
             break;
         case ClosureColor::ADD:
             ptr_stack[stack_idx]      = closure->as_add()->closureB;
-            weight_stack[stack_idx++] = weight;
+            weight_stack[stack_idx++] = branch_weight;
             closure                   = closure->as_add()->closureA;
             break;
         default: {
@@ -1229,13 +1231,13 @@ evaluate_layer_opacity(const ShaderGlobalsType& sg, float path_roughness,
                 const MxLayerParams* srcparams = comp->as<MxLayerParams>();
                 closure                        = srcparams->top;
                 ptr_stack[stack_idx]           = srcparams->base;
-                weight_stack[stack_idx++]      = weight * w;
+                weight_stack[stack_idx++]      = branch_weight * w;
                 break;
             }
             case REFLECTION_ID:
             case FRESNEL_REFLECTION_ID: {
                 Reflection bsdf(*comp->as<ReflectionParams>());
-                weight *= w * bsdf.get_albedo(-sg.I);
+                branch_weight *= w * bsdf.get_albedo(-sg.I);
                 closure = nullptr;
                 break;
             }
@@ -1243,7 +1245,7 @@ evaluate_layer_opacity(const ShaderGlobalsType& sg, float path_roughness,
                 const MxDielectric::Data& params
                     = *comp->as<MxDielectric::Data>();
                 MxDielectric d(params, -sg.I, sg.backfacing, path_roughness);
-                weight *= w * (Color3(1) - d.filter_o(-sg.I).toRGB(0));
+                branch_weight *= w * (Color3(1) - d.filter_o(-sg.I).toRGB(0));
                 closure = nullptr;
                 break;
             }
@@ -1257,13 +1259,13 @@ evaluate_layer_opacity(const ShaderGlobalsType& sg, float path_roughness,
                 }
                 MxGeneralizedSchlick d(params, -sg.I, sg.backfacing,
                                        path_roughness);
-                weight *= w * (Color3(1) - d.filter_o(-sg.I).toRGB(0));
+                branch_weight *= w * (Color3(1) - d.filter_o(-sg.I).toRGB(0));
                 break;
             }
             case MxSheen::closureid(): {
                 const MxSheen::Data& params = *comp->as<MxSheen::Data>();
                 MxSheen d(params, -sg.I, sg.backfacing, path_roughness);
-                weight *= w * (Color3(1) - d.filter_o(-sg.I).toRGB(0));
+                branch_weight *= w * (Color3(1) - d.filter_o(-sg.I).toRGB(0));
                 closure = nullptr;
                 break;
             }
@@ -1273,12 +1275,15 @@ evaluate_layer_opacity(const ShaderGlobalsType& sg, float path_roughness,
             }
         }
         }
-        if (closure == nullptr && stack_idx > 0) {
-            closure = ptr_stack[--stack_idx];
-            weight  = weight_stack[stack_idx];
+        if (closure == nullptr) {
+            accumulated_weight += branch_weight;
+            if (stack_idx > 0) {
+                closure       = ptr_stack[--stack_idx];
+                branch_weight = weight_stack[stack_idx];
+            }
         }
     }
-    return weight;
+    return accumulated_weight;
 }
 
 OSL_HOSTDEVICE void
@@ -1716,33 +1721,38 @@ process_background_closure(const ClosureColor* closure)
     int stack_idx        = 0;
     const ClosureColor* ptr_stack[STACK_SIZE];
     Color3 weight_stack[STACK_SIZE];
-    Color3 weight = Color3(1.0f);
+    // Track the active branch separately from completed branch contributions.
+    Color3 branch_weight      = Color3(1.0f);
+    Color3 accumulated_weight = Color3(0.0f);
 
     while (closure) {
         switch (closure->id) {
         case ClosureColor::MUL: {
-            weight *= closure->as_mul()->weight;
+            branch_weight *= closure->as_mul()->weight;
             closure = closure->as_mul()->closure;
             break;
         }
         case ClosureColor::ADD: {
             ptr_stack[stack_idx]      = closure->as_add()->closureB;
-            weight_stack[stack_idx++] = weight;
+            weight_stack[stack_idx++] = branch_weight;
             closure                   = closure->as_add()->closureA;
             break;
         }
         case BACKGROUND_ID: {
-            weight *= closure->as_comp()->w;
+            branch_weight *= closure->as_comp()->w;
             closure = nullptr;
             break;
         }
         }
-        if (closure == nullptr && stack_idx > 0) {
-            closure = ptr_stack[--stack_idx];
-            weight  = weight_stack[stack_idx];
+        if (closure == nullptr) {
+            accumulated_weight += branch_weight;
+            if (stack_idx > 0) {
+                closure       = ptr_stack[--stack_idx];
+                branch_weight = weight_stack[stack_idx];
+            }
         }
     }
-    return weight;
+    return accumulated_weight;
 }
 
 OSL_HOSTDEVICE Color3
