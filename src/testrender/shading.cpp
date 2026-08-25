@@ -1319,7 +1319,7 @@ process_medium_closure(const ShaderGlobalsType& sg, float path_roughness,
                                        0.f, 1.f));
             closure                   = params->top;
             ptr_stack[stack_idx]      = params->base;
-            weight_stack[stack_idx++] = weight * base_w;
+            weight_stack[stack_idx++] = base_w;
             break;
         }
         case MX_ANISOTROPIC_VDF_ID: {

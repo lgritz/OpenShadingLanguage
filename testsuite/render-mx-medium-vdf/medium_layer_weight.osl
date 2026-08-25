@@ -1,0 +1,16 @@
+// Copyright Contributors to the Open Shading Language project.
+// SPDX-License-Identifier: BSD-3-Clause
+// https://github.com/AcademySoftwareFoundation/OpenShadingLanguage
+
+surface medium_layer_weight(int layered = 0)
+{
+    closure color medium
+        = transparent() + anisotropic_vdf(color(0), color(2, 4, 8), 0);
+    // Keep the layer closure while making its top response negligible.
+    closure color negligible_top = 1.0e-6 * reflection(N, 1.5);
+
+    if (layered)
+        Ci = 0.5 * layer(negligible_top, medium);
+    else
+        Ci = 0.5 * medium;
+}

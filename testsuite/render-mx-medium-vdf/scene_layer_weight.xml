@@ -1,0 +1,23 @@
+<World>
+    <Camera eye="0, 0, 10" look_at="0,0,0" fov="30" />
+
+    <ShaderGroup is_light="yes">
+        param color sky 1 1 1;
+        param color horizon 1 1 1;
+        param color sun 0 0 0;
+        shader envmap layer1;
+    </ShaderGroup>
+    <Background resolution="1024" />
+
+    <ShaderGroup>
+        param int layered 0;
+        shader medium_layer_weight layer1;
+    </ShaderGroup>
+    <Sphere center="-1.1,0,0" radius="1" />
+
+    <ShaderGroup>
+        param int layered 1;
+        shader medium_layer_weight layer1;
+    </ShaderGroup>
+    <Sphere center="1.1,0,0" radius="1" />
+</World>
