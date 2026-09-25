@@ -138,11 +138,26 @@ else :
         os.symlink (test_source_dir, "./data")
 
 pythonbin = sys.executable
+
+# Command names that run_app() will recognize as the first word of a command
+# and replace with the full path to the corresponding built app.
+osl_app_list = ("oslc", "oslinfo", "testshade", "testrender", "testoptix")
+oiio_app_list = ("oiiotool", "iinfo", "idiff", "maketx", "iconvert", "igrep",
+                 "testtex", "iv")
 #print ("pythonbin = ", pythonbin)
 
 ###########################################################################
 
 # Handy functions...
+
+# Strip trailing spaces/tabs from a line, but leave its line ending (if any)
+# alone. Used to make text_diff tolerant of trailing whitespace, which can
+# vary by platform (e.g. cmd.exe's `echo` bakes in a trailing space that a
+# Unix shell would not) without being a meaningful difference in output.
+def _rstrip_line (line):
+    ending = line[len (line.rstrip ('\r\n')):]
+    return line.rstrip () + ending
+
 
 # Compare two text files. Returns 0 if they are equal otherwise returns
 # a non-zero value and writes the differences to "diff_file".
@@ -157,9 +172,11 @@ def text_diff (fromfile, tofile, diff_file=None, filter_re=None):
           filt = re.compile(filter_re)
           fromlines = [l for l in open (fromfile, 'r').readlines() if filt.match(l) is not None]
           tolines   = [l for l in open (tofile, 'r').readlines() if filt.match(l) is not None]
-        else:         
+        else:
           fromlines = open (fromfile, 'r').readlines()
           tolines   = open (tofile, 'r').readlines()
+        fromlines = [_rstrip_line(l) for l in fromlines]
+        tolines   = [_rstrip_line(l) for l in tolines]
     except:
         print ("Unexpected error:", sys.exc_info()[0])
         return -1
@@ -183,13 +200,41 @@ def text_diff (fromfile, tofile, diff_file=None, filter_re=None):
 
 
 
-def run_app (app, silent=False, concat=True) :
-    command = app
+# Construct a command that runs `app` (a full command line), appending its
+# console output to the file "out.txt" unless `silent`. If the first word of
+# the command is the name of an OSL or OIIO app, substitute the full path to
+# the built app.
+def run_app (app, silent=False, failureok=False, concat=True) :
+    cmd = app.strip()
+    words = cmd.split(maxsplit=1)
+    if not words :
+        return ""
+    if words[0] in osl_app_list or words[0] in oiio_app_list :
+        cmd = app_path(words[0]) + (" " + words[1] if len(words) > 1 else "")
     if not silent :
-        command += redirect
+        cmd += redirect
+    if failureok :
+        cmd += " || true "
     if concat:
-        command += " ;\n"
-    return command
+        cmd += " ;\n"
+    return cmd
+
+
+# Take shell `commands`, split at newlines, adorn each with redirects, etc.,
+# then re-join with semicolons to make a single command. Blank lines and
+# comment lines (first non-whitespace character is `#`) are skipped.
+# Note: `failureok` defaults to None, meaning "use the global `failureok`
+# value at the time this is called", which a run.py may have set.
+def run_commands (commands, silent=False, failureok=None, concat=True) :
+    if failureok is None :
+        failureok = globals()["failureok"]
+    result = ""
+    for line in commands.splitlines() :
+        cmd = line.strip()
+        if cmd == "" or cmd.startswith("#") :
+            continue
+        result += run_app(cmd, silent=silent, failureok=failureok, concat=concat)
+    return result
 
 
 def osl_app (app):
@@ -208,31 +253,41 @@ def oiio_app (app):
         return app + " "
 
 
+# Return the full path to use for the named OSL or OIIO app.
+def app_path (app):
+    if app == "testshade" and 'OSL_TESTSHADE_NAME' in os.environ :
+        return os.environ['OSL_TESTSHADE_NAME']
+    if app in ("testrender", "testoptix") :
+        # Disable OptiX logging to prevent messages from the library from
+        # appearing in the program output.
+        os.environ["optix_log_level"] = "0"
+    if app in osl_app_list :
+        return osl_app(app).strip()
+    return oiio_app(app).strip()
+
+
 # Construct a command that will compile the shader file, appending output to
 # the file "out.txt".
 def oslc (args) :
-    return (osl_app("oslc") + oslcargs + " " + args + redirect + " ;\n")
+    return run_app(f"oslc {oslcargs} {args}")
 
 
 # Construct a command that will run oslinfo, appending output to
 # the file "out.txt".
 def oslinfo (args) :
-    return (osl_app("oslinfo") + args + redirect + " ;\n")
+    return run_app(f"oslinfo {args}")
 
 
 # Construct a command that runs oiiotool, appending console output
 # to the file "out.txt".
-def oiiotool (args, silent=False) :
-    oiiotool_cmd = (oiio_app("oiiotool") + args)
-    if not silent :
-        oiiotool_cmd += redirect
-    oiiotool_cmd += " ;\n"
-    return oiiotool_cmd
+def oiiotool (args, silent=False, failureok=False, concat=True) :
+    return run_app(f"oiiotool {args}", silent=silent, failureok=failureok,
+                   concat=concat)
 
 # Construct a command that runs maketx, appending console output
 # to the file "out.txt".
 def maketx (args) :
-    return (oiio_app("maketx") + args + redirect + " ;\n")
+    return run_app(f"maketx {args}")
 
 # Construct a command that will compare two images, appending output to
 # the file "out.txt".  We allow a small number of pixels to have up to
@@ -247,43 +302,29 @@ def oiiodiff (fileA, fileB, extraargs="", silent=True, concat=True) :
     if idiff_program == "idiff" :
         threshargs += (" -failrelative " + str(failrelative)
                      + " -allowfailures " + str(allowfailures))
-    command = (oiio_app(idiff_program) + "-a"
-               + " " + threshargs
-               + " " + extraargs
-               + " " + make_relpath(fileA,tmpdir) + idiff_postfilecmd
-               + " " + make_relpath(fileB,tmpdir) + idiff_postfilecmd
-               + (" --diff" if idiff_program == "oiiotool" else ""))
-    if not silent :
-        command += redirect
-    if concat:
-        command += " ;\n"
-    return command
+    return run_app(f"{idiff_program} -a {threshargs} {extraargs}"
+                   f" {make_relpath(fileA,tmpdir)}{idiff_postfilecmd}"
+                   f" {make_relpath(fileB,tmpdir)}{idiff_postfilecmd}"
+                   + (" --diff" if idiff_program == "oiiotool" else ""),
+                   silent=silent, concat=concat)
 
 
 # Construct a command that run testshade with the specified arguments,
 # appending output to the file "out.txt".
 def testshade (args) :
-    if os.environ.__contains__('OSL_TESTSHADE_NAME') :
-        testshadename = os.environ['OSL_TESTSHADE_NAME'] + " "
-    else :
-        testshadename = osl_app("testshade")
-    return (testshadename + args + redirect + " ;\n")
+    return run_app(f"testshade {args}")
 
 
 # Construct a command that run testrender with the specified arguments,
 # appending output to the file "out.txt".
 def testrender (args) :
-    os.environ["optix_log_level"] = "0"
-    return (osl_app("testrender") + " " + args + redirect + " ;\n")
+    return run_app(f"testrender {args}")
 
 
 # Construct a command that run testoptix with the specified arguments,
 # appending output to the file "out.txt".
 def testoptix (args) :
-    # Disable OptiX logging to prevent messages from the library from
-    # appearing in the program output.
-    os.environ["optix_log_level"] = "0"
-    return (osl_app("testoptix") + " " + args + redirect + " ;\n")
+    return run_app(f"testoptix {args}")
 
 
 # Run 'command'.  For each file in 'outputs', compare it to the copy
@@ -322,7 +363,7 @@ def runtest (command, outputs, failureok=0, failthresh=0, failpercent=0, regress
         sub_command = sub_command.lstrip().rstrip()
         #print ("running = ", sub_command)
         cmdret = subprocess.call (sub_command, shell=True, env=test_environ)
-        if cmdret != 0 and failureok == 0 :
+        if cmdret != 0 and not failureok :
             print ("#### Error: this command failed: ", sub_command)
             print ("FAIL")
             print ("Output was:\n--------")
