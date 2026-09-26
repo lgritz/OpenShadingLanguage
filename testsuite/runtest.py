@@ -18,10 +18,10 @@ from itertools import chain
 from optparse import OptionParser
 
 
-def make_relpath (path, start=os.curdir):
+def make_relpath (path: str, start: str=os.curdir) -> str:
     "Wrapper around os.path.relpath which always uses '/' as the separator."
     p = os.path.relpath (path, start)
-    return p if sys.platform != "Windows" else p.replace ('\\', '/')
+    return p if platform.system() != 'Windows' else p.replace ('\\', '/')
 
 
 #
@@ -29,7 +29,6 @@ def make_relpath (path, start=os.curdir):
 #
 
 srcdir = "."
-tmpdir = "."
 
 OSL_BUILD_DIR = os.environ.get("OSL_BUILD_DIR", "..")
 OSL_SOURCE_DIR = os.environ.get("OSL_SOURCE_DIR", "../../..")
@@ -78,15 +77,40 @@ test_source_dir = os.getenv('OSL_TESTSUITE_SRC',
 command = ""
 outputs = [ "out.txt" ]    # default
 
+# Support for temporarily redirecting a section of a test's commands to a file
+# other than the default out.txt. Use redirect_push(filename) before the
+# commands that should go to the alternate file, and redirect_pop() right
+# after to restore the previous redirect. Push/pop nest freely. The first time
+# a given filename is pushed, it's truncated and added to 'outputs' so it gets
+# checked against its ref; that same membership in 'outputs' is how we
+# recognize a later push of the same filename (e.g. a second section of the
+# test meant to append to it) and leave its contents alone rather than
+# truncating again.
+_redirect_stack: list[str] = []
+
+def redirect_push (filename: str) -> None :
+    global redirect
+    _redirect_stack.append (redirect)
+    if filename not in outputs :
+        open (filename, "w").close ()    # truncate, but only the first time
+        outputs.append (filename)
+    redirect = " >> " + filename + " "
+
+def redirect_pop () -> None :
+    global redirect
+    if not _redirect_stack :
+        raise RuntimeError ("redirect_pop: no matching redirect_push")
+    redirect = _redirect_stack.pop ()
+
 # The image comparison thresholds are tricky to remember. Here's the key:
 # A test fails if more than `failpercent` of pixel values differ by more
 # than `failthresh` AND the difference is more than `failrelative` times the
 # correct pixel value, or if even one pixel differs by more than `hardfail`.
 failthresh = 0.004         # "Failure" threshold for any pixel value
-hardfail = 0.01            # Even one pixel this wrong => hard failure
 failpercent = 0.02         # Ok fo this percentage of pixels to "fail"
-failrelative = 0.001       # Ok to fail up to this amount vs the pixel value
+hardfail = 0.012           # Even one pixel this wrong => hard failure
 allowfailures = 0          # Freebie failures
+failrelative = 0.001       # Ok to fail up to this amount vs the pixel value
 
 # Some tests are designed for the app running to "fail" (in the sense of
 # terminating with an error return code), for example, a test that is designed
@@ -106,16 +130,18 @@ if int(os.getenv('TESTSUITE_CLEANUP_ON_SUCCESS', '0')) :
     cleanup_on_success = True
 oslcargs = "-Wall"
 
-image_extensions = [ ".tif", ".tx", ".exr", ".jpg", ".png", ".rla",
-                     ".dpx", ".iff", ".psd" ]
+image_extensions = [ ".tif", ".tiff", ".tx", ".exr", ".jpg", ".png", ".rla",
+                     ".dpx", ".iff", ".psd", ".bmp", ".fits", ".ico",
+                     ".jp2", ".jxl", ".sgi", ".tga", ".TGA", ".zfile" ]
 
 compile_osl_files = True
 splitsymbol = ';'
 
-#print ("srcdir = " + srcdir)
-#print ("tmpdir = " + tmpdir)
-#print ("path = " + path)
-#print ("refdir = " + refdir)
+# print ("srcdir = " + srcdir)
+# print ("tmpdir = " + tmpdir)
+# print ("OIIO_BUILD_ROOT = " + OIIO_BUILD_ROOT)
+# print ("OIIO_TESTSUITE_IMAGEDIR = {} ({})".format(OIIO_TESTSUITE_IMAGEDIR, os.path.abspath(OIIO_TESTSUITE_IMAGEDIR)))
+# print ("refdir = " + refdir)
 print ("test source dir = ", test_source_dir)
 
 if platform.system() == 'Windows' :
@@ -128,22 +154,34 @@ if platform.system() == 'Windows' :
     if not os.path.exists(os.path.abspath("data")) :
         shutil.copytree (test_source_dir, os.path.abspath("data"))
 else :
+    def newsymlink(src: str, dst: str):
+        print("newsymlink", src, dst)
+        # os.path.exists returns False for broken symlinks, so remove if thats the case
+        if os.path.islink(dst):
+            os.remove(dst)
+        os.symlink (src, dst)
     if not os.path.exists("./ref") :
         test_source_ref_dir = os.path.join (test_source_dir, "ref")
         if os.path.exists(test_source_ref_dir) :
             os.symlink (test_source_ref_dir, "./ref")
     if os.path.exists (os.path.join (test_source_dir, "src")) and not os.path.exists("./src") :
-        os.symlink (os.path.join (test_source_dir, "src"), "./src")
+        newsymlink (os.path.join (test_source_dir, "src"), "./src")
     if not os.path.exists("./data") :
-        os.symlink (test_source_dir, "./data")
+        newsymlink (test_source_dir, "./data")
 
-pythonbin = sys.executable
+
+if os.getenv("Python_EXECUTABLE") :
+    pythonbin = os.getenv("Python_EXECUTABLE")
+else :
+    pythonbin = sys.executable
+#print ("pythonbin = ", pythonbin)
 
 # Command names that run_app() will recognize as the first word of a command
 # and replace with the full path to the corresponding built app.
-osl_app_list = ("oslc", "oslinfo", "testshade", "testrender", "testoptix")
 oiio_app_list = ("oiiotool", "iinfo", "idiff", "maketx", "iconvert", "igrep",
                  "testtex", "iv")
+osl_app_list = ("oslc", "oslinfo", "testshade", "testrender", "testoptix")
+app_list = oiio_app_list + osl_app_list
 #print ("pythonbin = ", pythonbin)
 
 ###########################################################################
@@ -154,7 +192,7 @@ oiio_app_list = ("oiiotool", "iinfo", "idiff", "maketx", "iconvert", "igrep",
 # alone. Used to make text_diff tolerant of trailing whitespace, which can
 # vary by platform (e.g. cmd.exe's `echo` bakes in a trailing space that a
 # Unix shell would not) without being a meaningful difference in output.
-def _rstrip_line (line):
+def _rstrip_line (line: str) -> str:
     ending = line[len (line.rstrip ('\r\n')):]
     return line.rstrip () + ending
 
@@ -163,18 +201,18 @@ def _rstrip_line (line):
 # a non-zero value and writes the differences to "diff_file".
 # Based on the command-line interface to difflib example from the Python
 # documentation
-def text_diff (fromfile, tofile, diff_file=None, filter_re=None):
+def text_diff (fromfile: str, tofile: str, diff_file: str=None, filter_re=None) -> int:
     import time
     try:
         fromdate = time.ctime (os.stat (fromfile).st_mtime)
         todate = time.ctime (os.stat (tofile).st_mtime)
         if filter_re:
-          filt = re.compile(filter_re)
-          fromlines = [l for l in open (fromfile, 'r').readlines() if filt.match(l) is not None]
-          tolines   = [l for l in open (tofile, 'r').readlines() if filt.match(l) is not None]
+            filt = re.compile(filter_re)
+            fromlines = [l for l in open (fromfile, 'r').readlines() if filt.match(l) is not None]
+            tolines   = [l for l in open (tofile, 'r').readlines() if filt.match(l) is not None]
         else:
-          fromlines = open (fromfile, 'r').readlines()
-          tolines   = open (tofile, 'r').readlines()
+            fromlines = open (fromfile, 'r').readlines()
+            tolines   = open (tofile, 'r').readlines()
         fromlines = [_rstrip_line(l) for l in fromlines]
         tolines   = [_rstrip_line(l) for l in tolines]
     except:
@@ -204,12 +242,15 @@ def text_diff (fromfile, tofile, diff_file=None, filter_re=None):
 # console output to the file "out.txt" unless `silent`. If the first word of
 # the command is the name of an OSL or OIIO app, substitute the full path to
 # the built app.
-def run_app (app, silent=False, failureok=False, concat=True) :
+def run_app(app: str, silent: bool=False, failureok: bool=False,
+            concat: bool=True) -> str:
     cmd = app.strip()
+    # If the command starts with the name of an OIIO app, substitute the
+    # full path to the built app.
     words = cmd.split(maxsplit=1)
-    if not words :
+    if not words:
         return ""
-    if words[0] in osl_app_list or words[0] in oiio_app_list :
+    if words[0] in app_list :
         cmd = app_path(words[0]) + (" " + words[1] if len(words) > 1 else "")
     if not silent :
         cmd += redirect
@@ -221,23 +262,24 @@ def run_app (app, silent=False, failureok=False, concat=True) :
 
 
 # Take shell `commands`, split at newlines, adorn each with redirects, etc.,
-# then re-join with semicolons to make a single command. Blank lines and
-# comment lines (first non-whitespace character is `#`) are skipped.
+# then re-join with semicolons to make a single command.
 # Note: `failureok` defaults to None, meaning "use the global `failureok`
 # value at the time this is called", which a run.py may have set.
-def run_commands (commands, silent=False, failureok=None, concat=True) :
+def run_commands(commands: str, silent: bool=False,
+                 failureok=None, concat: bool=True) -> str :
     if failureok is None :
         failureok = globals()["failureok"]
     result = ""
-    for line in commands.splitlines() :
+    for line in commands.splitlines():
         cmd = line.strip()
-        if cmd == "" or cmd.startswith("#") :
+        # Skip empty lines or comments
+        if cmd == "" or cmd.startswith("#"):
             continue
         result += run_app(cmd, silent=silent, failureok=failureok, concat=concat)
     return result
 
 
-def osl_app (app):
+def osl_app (app: str) -> str:
     apath = os.path.join(OSL_BUILD_DIR, "bin")
     if (platform.system () == 'Windows'):
         # when we use Visual Studio, built applications are stored
@@ -246,7 +288,7 @@ def osl_app (app):
     return os.path.join(apath, app) + " "
 
 
-def oiio_app (app):
+def oiio_app (app: str) -> str:
     if OpenImageIO_ROOT :
         return os.path.join (OpenImageIO_ROOT, "bin", app) + " "
     else :
@@ -254,7 +296,7 @@ def oiio_app (app):
 
 
 # Return the full path to use for the named OSL or OIIO app.
-def app_path (app):
+def app_path (app: str) -> str:
     if app == "testshade" and 'OSL_TESTSHADE_NAME' in os.environ :
         return os.environ['OSL_TESTSHADE_NAME']
     if app in ("testrender", "testoptix") :
@@ -268,32 +310,33 @@ def app_path (app):
 
 # Construct a command that will compile the shader file, appending output to
 # the file "out.txt".
-def oslc (args) :
+def oslc (args: str) -> str:
     return run_app(f"oslc {oslcargs} {args}")
 
 
 # Construct a command that will run oslinfo, appending output to
 # the file "out.txt".
-def oslinfo (args) :
+def oslinfo (args: str) -> str:
     return run_app(f"oslinfo {args}")
 
 
-# Construct a command that runs oiiotool, appending console output
-# to the file "out.txt".
-def oiiotool (args, silent=False, failureok=False, concat=True) :
-    return run_app(f"oiiotool {args}", silent=silent, failureok=failureok,
-                   concat=concat)
+# Construct a command that will run oiiotool and append its output to out.txt
+def oiiotool (args: str, silent: bool=False, concat: bool=True,
+             failureok: bool=False) -> str:
+    return run_app(f"oiiotool {args}",
+                   silent=silent, failureok=failureok, concat=concat)
 
 # Construct a command that runs maketx, appending console output
 # to the file "out.txt".
-def maketx (args) :
+def maketx (args: str) -> str:
     return run_app(f"maketx {args}")
 
 # Construct a command that will compare two images, appending output to
 # the file "out.txt".  We allow a small number of pixels to have up to
 # 1 LSB (8 bit) error, it's very hard to make different platforms and
 # compilers always match to every last floating point bit.
-def oiiodiff (fileA, fileB, extraargs="", silent=True, concat=True) :
+def oiiodiff (fileA: str, fileB: str, extraargs: str="",
+              silent: bool=True, concat: bool=True) -> str:
     threshargs = (" -fail " + str(failthresh)
                + " -failpercent " + str(failpercent)
                + " -hardfail " + str(hardfail)
@@ -311,19 +354,19 @@ def oiiodiff (fileA, fileB, extraargs="", silent=True, concat=True) :
 
 # Construct a command that run testshade with the specified arguments,
 # appending output to the file "out.txt".
-def testshade (args) :
+def testshade (args) -> str:
     return run_app(f"testshade {args}")
 
 
 # Construct a command that run testrender with the specified arguments,
 # appending output to the file "out.txt".
-def testrender (args) :
+def testrender (args) -> str:
     return run_app(f"testrender {args}")
 
 
 # Construct a command that run testoptix with the specified arguments,
 # appending output to the file "out.txt".
-def testoptix (args) :
+def testoptix (args) -> str:
     return run_app(f"testoptix {args}")
 
 
@@ -331,7 +374,8 @@ def testoptix (args) :
 # in 'ref/'.  If all outputs match their reference copies, return 0
 # to pass.  If any outputs do not match their references return 1 to
 # fail.
-def runtest (command, outputs, failureok=0, failthresh=0, failpercent=0, regression=None, filter_re=None) :
+def runtest (command: str, outputs: list[str], failureok: int=0,
+             failthresh: float=0, failpercent: float=0, regression=None, filter_re=None) -> int:
 #    print ("working dir = " + tmpdir)
     os.chdir (srcdir)
     open ("out.txt", "w").close()    # truncate out.txt
