@@ -134,8 +134,19 @@ In parallel after T008:
 ## Findings
 
 Recorded 2026-11-19, local macOS arm64 run (brew llvm@22 clang, Release,
-ASan+UBSan, fuzzer-no-link libs). Not fixed here; each needs its own PR with
-a regression test.
+ASan+UBSan, fuzzer-no-link libs) and the first CI runs. Each OSL fix is on
+its own branch off main for a separate PR, and is also included on lg-fuzz:
+
+| Finding | Fix branch | Test |
+|---------|------------|------|
+| 1 jump targets | `lg-oso-jumps` | new `testsuite/oso-bad-jumps` |
+| 2 insert_code overflow | `lg-insertcode-overflow` | existing shaders (UBSan only) |
+| 3 OIIO `fast_safe_pow` shift | none -- OIIO bug (`j << 31` on signed int); fix in OIIO | -- |
+| 4 simplex table alignment | `lg-simplex-align` | existing noise tests (UBSan only) |
+| 5 oslc downcast | `lg-codegen-ub` | existing shaders (UBSan only) |
+| 6 %structfields on non-struct | `lg-oso-structfields` | new `testsuite/oso-bad-structfields` |
+| 7 %argderivs before any op | `lg-oso-argderivs` | new `testsuite/oso-bad-argderivs` |
+| 8 normalize() of non-triple | `lg-constfold-normalize` | reproducer only (JIT also assumes a triple) |
 
 1. **CRASH -- heap-buffer-overflow WRITE in `OSOProcessorBase::find_conditionals()`**
    (`src/liboslexec/runtimeoptimize.cpp:1097`), found in the first seconds of
@@ -186,6 +197,22 @@ a regression test.
    in `fuzz-crashes-oso-44476247320`. The same run's other three workers all
    hit finding 1 (artifacts `crash_oso_crash-64b7e3ff...`, `-885a83b1...`,
    `-fa8f7d30...`).
+
+7. **CRASH -- null dereference in `OSOReaderToMaster::hint()`** (the
+   `%argderivs{` branch, `loadshader.cpp`), found by CI run 44489938794 (3
+   of 4 workers). The hint was applied to `m_ops.back()` with no ops read
+   yet (hint on a symbol line), so back() on an empty vector. `%argrw`
+   already guarded with `m_ops.size()`; `%argderivs` now does too, and a
+   stray hint is ignored. Artifacts `crash_oso_crash-2d01f491...`,
+   `-9bf4a0d7...`, `-d8d928fa...`.
+
+8. **CRASH -- heap-buffer-overflow READ in `constfold_normalize`**
+   (`constfold.cpp`), same CI run. A mutated .oso passes a float to
+   `normalize`; the folder only `OSL_DASSERT`ed a triple, then read 12 bytes
+   from a 4-byte constant. Now it skips the fold for non-triples. Artifact
+   `crash_oso_crash-365e3f31...`. This is one instance of a general gap: the
+   loader does not check op argument types, and most constant folders (and
+   the JIT) assume oslc-correct types, guarded only by `OSL_DASSERT`.
 
 Performance (T012/T013): 1425 seeds (1416 compiled of 1438 shaders = 98.5%,
 22 intentional compile failures, 9 hand-written .oso). Seeds-only pass: no
