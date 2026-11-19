@@ -162,6 +162,20 @@ a regression test.
    requires 128-byte alignment. Fires on every process start (static init in
    `simplexnoise.cpp`), so it shows up as noise in every fuzz/sanitizer run.
 
+5. **UBSan (recoverable) -- bad downcast in the compiler** (found by CI run
+   44471073927, Linux): `ASTNode::one_default_literal`
+   (`src/liboslcomp/codegen.cpp:623`) does `static_cast<ASTliteral*>(init)`
+   before checking `islit`. All uses are guarded by `islit`, so it is benign
+   in practice, but UBSan's vptr check reports it, and the demangling it does
+   for the report leaks 128 bytes, so LeakSanitizer fails `oslc` on
+   `src/shaders/image.osl` and `mandelbrot.osl`. That broke the fuzz job's
+   build. FIXED on this branch (and separately on branch `lg-codegen-ub` for
+   its own PR): only downcast when `islit`. Independently, the fuzz workflow
+   now passes `-DOSL_BUILD_SHADERS=OFF`: the fuzz build has no use for the
+   installed shaders (the seed script compiles them itself, with leak
+   detection off), so this also saves build time and keeps a future
+   compiler UB report from breaking the fuzz build before fuzzing starts.
+
 Performance (T012/T013): 1425 seeds (1416 compiled of 1438 shaders = 98.5%,
 22 intentional compile failures, 9 hand-written .oso). Seeds-only pass: no
 crash, cov 11809, ft 46826, ~490 exec/s, RSS 725 MB.
@@ -172,4 +186,6 @@ signal in `OSOReaderToMaster::add_param_default`; the libc++ hardening trap
 fires before ASan); with the fix, clean rejection, and `OSL_FUZZ_VERBOSE=1`
 shows "too many initial values".
 
-T021: pending -- needs the user to push the branch.
+T021: first CI run 44471073927 -- corpus lint passed (the
+`aswf/ci-osl:2026-clang20` clang has the libFuzzer runtime, resolving the
+research.md R8 risk); the oso job failed in Build (finding 5). Re-run pending.

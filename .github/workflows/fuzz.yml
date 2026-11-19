@@ -77,7 +77,7 @@ jobs:
       fuzz_max_time: ${{ matrix.max_total_time }}
       setenvs: export SANITIZE=address,undefined
                       OSL_BUILD_FUZZ_TARGETS=ON
-                      OSL_CMAKE_FLAGS="-DOSL_BUILD_TESTS=OFF"
+                      OSL_CMAKE_FLAGS="-DOSL_BUILD_TESTS=OFF -DOSL_BUILD_SHADERS=OFF"
                       USE_PYTHON=0
 
   #
@@ -102,5 +102,5 @@ jobs:
       skip_tests: '1'
       fuzz_corpus_lint: true
       setenvs: export OSL_BUILD_FUZZ_TARGETS=ON
-                      OSL_CMAKE_FLAGS="-DOSL_BUILD_TESTS=OFF"
+                      OSL_CMAKE_FLAGS="-DOSL_BUILD_TESTS=OFF -DOSL_BUILD_SHADERS=OFF"
                       USE_PYTHON=0
