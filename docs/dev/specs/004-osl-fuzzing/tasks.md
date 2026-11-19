@@ -176,6 +176,17 @@ a regression test.
    detection off), so this also saves build time and keeps a future
    compiler UB report from breaking the fuzz build before fuzzing starts.
 
+6. **CRASH -- out-of-bounds read in `TypeSpec::structspec(int)`**
+   (`src/include/osl_pvt.h:179`), found by CI run 44476247320 within ~30 s.
+   `OSOReaderToMaster::hint()` (`loadshader.cpp`, the `%structfields{`
+   branch) calls `sym.typespec().structspec()`, which indexes the global
+   struct list with an id taken from the .oso without range checking, and
+   then uses the result without a null check (a non-struct symbol gives
+   nullptr). Artifact: `crash_oso_crash-6f0487c9aaa04d72dba52140cf513fc010295efb`
+   in `fuzz-crashes-oso-44476247320`. The same run's other three workers all
+   hit finding 1 (artifacts `crash_oso_crash-64b7e3ff...`, `-885a83b1...`,
+   `-fa8f7d30...`).
+
 Performance (T012/T013): 1425 seeds (1416 compiled of 1438 shaders = 98.5%,
 22 intentional compile failures, 9 hand-written .oso). Seeds-only pass: no
 crash, cov 11809, ft 46826, ~490 exec/s, RSS 725 MB.
@@ -188,4 +199,11 @@ shows "too many initial values".
 
 T021: first CI run 44471073927 -- corpus lint passed (the
 `aswf/ci-osl:2026-clang20` clang has the libFuzzer runtime, resolving the
-research.md R8 risk); the oso job failed in Build (finding 5). Re-run pending.
+research.md R8 risk); the oso job failed in Build (finding 5).
+Second run 44476247320: build, seed, merge (402 of 483 seeds kept, cov
+12429), 4 parallel workers, artifact upload all worked; all 4 workers
+crashed within ~30 s (findings 1 and 6). Seeding compiled only 474 of 1438
+shaders: with `OSL_BUILD_SHADERS=OFF` no `stdosl.h` was installed for oslc
+to find. Fixed by having `populate_corpora.py` always pass `-I src/shaders`
+(and print a sample of compile errors). Pipeline verified; the job will stay
+red until findings 1 and 6 are fixed.

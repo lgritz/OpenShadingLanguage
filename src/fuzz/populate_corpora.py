@@ -106,15 +106,26 @@ def seed_name(src, ext):
     return "_".join(rel.parts) + "." + ext
 
 
+# Always compile against the repo's own stdosl.h rather than whatever the
+# oslc install can find: fuzz builds don't install the shaders, and an
+# unrelated OSL install found via OSL_ROOT/OSLHOME could be a different
+# version.
+STDOSL_DIR = REPO_ROOT / "src" / "shaders"
+
+
 def compile_one(oslc, src, dst):
-    """Compile src to dst. Return True if dst was produced."""
-    cmd = [str(oslc), "-q", "-I" + str(src.parent), "-o", str(dst), str(src)]
+    """Compile src to dst. Return (ok, error_text)."""
+    cmd = [str(oslc), "-q", "-I" + str(src.parent), "-I" + str(STDOSL_DIR),
+           "-o", str(dst), str(src)]
     try:
-        r = subprocess.run(cmd, cwd=src.parent, stdout=subprocess.DEVNULL,
-                           stderr=subprocess.DEVNULL, timeout=120)
-    except (OSError, subprocess.TimeoutExpired):
-        return False
-    return r.returncode == 0 and dst.is_file()
+        r = subprocess.run(cmd, cwd=src.parent, stdout=subprocess.PIPE,
+                           stderr=subprocess.STDOUT, text=True,
+                           errors="replace", timeout=120)
+    except (OSError, subprocess.TimeoutExpired) as e:
+        return False, str(e)
+    if r.returncode == 0 and dst.is_file():
+        return True, ""
+    return False, r.stdout
 
 
 def populate_target(target, dest, oslc, dry_run):
@@ -124,6 +135,7 @@ def populate_target(target, dest, oslc, dry_run):
     """
     counts = dict(copied=0, compiled=0, compile_failed=0, too_big=0,
                   skipped=0)
+    failures = []  # (src, error text) for compile failures
     jobs = []
     for kind, root, exts in TARGET_SOURCES[target]:
         for src in candidate_files(root, exts):
@@ -156,14 +168,22 @@ def populate_target(target, dest, oslc, dry_run):
         else:
             with ThreadPoolExecutor(max_workers=os.cpu_count() or 4) as ex:
                 results = list(ex.map(lambda j: compile_one(oslc, *j), jobs))
-            for (src, dst), ok in zip(jobs, results):
+            for (src, dst), (ok, err) in zip(jobs, results):
                 if not ok:
                     counts["compile_failed"] += 1
+                    failures.append((src, err))
                 elif dst.stat().st_size > MAX_BYTES:
                     dst.unlink()
                     counts["too_big"] += 1
                 else:
                     counts["compiled"] += 1
+    # Show a few failures so a systematic problem (e.g. stdosl.h not found)
+    # is visible in CI logs rather than just a large failure count.
+    for src, err in failures[:3]:
+        lines = [l for l in err.splitlines() if "rror" in l] or err.splitlines()
+        print(f"  {target}: failed to compile "
+              f"{src.relative_to(REPO_ROOT)}: "
+              f"{lines[0].strip() if lines else '(no output)'}")
     return counts
 
 
