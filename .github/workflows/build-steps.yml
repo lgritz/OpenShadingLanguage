@@ -101,6 +101,18 @@ on:
         type: string
       build_local_deps:
         type: string
+      fuzz_target:
+        type: string
+        default: ''
+        description: "If non-empty, run fuzz tests for this osl_fuzz target after the build"
+      fuzz_max_time:
+        type: string
+        default: '3600'
+        description: "Max seconds for the fuzz run (-max_total_time)"
+      fuzz_corpus_lint:
+        type: boolean
+        default: false
+        description: "If true, verify every fuzz target has a corpus directory"
     secrets:
         PASSED_GITHUB_TOKEN:
           required: false
@@ -279,6 +291,38 @@ jobs:
         with:
           path: ${{ env.CCACHE_DIR }}
           key: ${{inputs.nametag}}-${{steps.ccache_cache_keys.outputs.date}}
+      - name: Restore fuzz corpus cache
+        if: inputs.fuzz_target != ''
+        uses: actions/cache/restore@v6.1.0
+        with:
+          key: fuzz-corpus-${{ inputs.fuzz_target }}-${{ github.ref_name }}-${{ github.run_id }}
+          restore-keys: |
+            fuzz-corpus-${{ inputs.fuzz_target }}-${{ github.ref_name }}-
+            fuzz-corpus-${{ inputs.fuzz_target }}-
+          path: corpus/${{ inputs.fuzz_target }}
+      - name: Fuzz
+        id: fuzz
+        if: inputs.fuzz_target != '' || inputs.fuzz_corpus_lint
+        shell: bash
+        env:
+          OSL_FUZZ_TARGET: ${{ inputs.fuzz_target }}
+          OSL_FUZZ_MAX_TIME: ${{ inputs.fuzz_max_time }}
+          OSL_FUZZ_CORPUS_LINT: ${{ inputs.fuzz_corpus_lint }}
+        run: src/build-scripts/ci-fuzztest.bash
+      - name: Save fuzz corpus cache
+        if: always() && inputs.fuzz_target != ''
+        uses: actions/cache/save@v6.1.0
+        with:
+          key: fuzz-corpus-${{ inputs.fuzz_target }}-${{ github.ref_name }}-${{ github.run_id }}
+          path: corpus/${{ inputs.fuzz_target }}
+      - name: Upload fuzz crash artifacts
+        if: always() && inputs.fuzz_target != '' && steps.fuzz.outcome == 'failure'
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: fuzz-crashes-${{ inputs.fuzz_target }}-${{ github.run_id }}
+          path: crash_${{ inputs.fuzz_target }}_*
+          if-no-files-found: ignore
+          retention-days: 30
       - name: Testsuite
         if: inputs.skip_tests != '1'
         shell: bash

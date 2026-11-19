@@ -34,6 +34,8 @@ render time. C++17 codebase.
 - `src/testrender/` — Minimal path-tracing renderer demonstrating OSL
   integration.
 - `src/osltoy/` — Qt-based GUI shader editor (optional)
+- `src/fuzz/` - libFuzzer harness `osl_fuzz` (built only with
+  `OSL_BUILD_FUZZ_TARGETS=ON`); see `docs/dev/fuzzing.md`.
 
 **Public APIs/headers**
 

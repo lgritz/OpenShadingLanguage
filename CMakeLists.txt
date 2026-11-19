@@ -248,6 +248,10 @@ add_subdirectory (src/libbsdl)
 add_subdirectory (src/oslc)
 add_subdirectory (src/oslinfo)
 
+if (OSL_BUILD_FUZZ_TARGETS)
+    add_subdirectory (src/fuzz)
+endif ()
+
 if (OSL_BUILD_TESTS AND BUILD_TESTING)
     add_subdirectory (src/testshade)
     add_subdirectory (src/testrender)

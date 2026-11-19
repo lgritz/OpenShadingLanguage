@@ -1,0 +1,106 @@
+# Copyright Contributors to the Open Shading Language project.
+# SPDX-License-Identifier: BSD-3-Clause
+# https://github.com/AcademySoftwareFoundation/OpenShadingLanguage
+
+# NOTE: Actions used here are locked in .github/workflows/actions.lock.
+# If you add, remove, or change the version of any `uses:` action (or add
+# a new workflow file), regenerate the lockfile and commit it:
+#     gh extension install github/gh-actions-lock   # once
+#     gh actions-lock
+# CI (lockfile.yml) runs `gh actions-lock --verify` and fails if stale.
+
+# libFuzzer fuzzing of OSL inputs. Modeled on OpenImageIO's fuzz.yml; see
+# docs/dev/fuzzing.md.
+
+name: Fuzz
+
+on:
+  schedule:
+    # Nightly at 10:00 UTC -- main fork only (filtered via job condition below)
+    - cron: "0 10 * * *"
+  push:
+    # Run on any branch whose name contains "fuzz"
+    branches:
+      - '*fuzz*'
+    paths:
+      - 'src/**'
+      - '!src/doc/**'
+      - '.github/workflows/fuzz.yml'
+      - '.github/workflows/build-steps.yml'
+  pull_request:
+    # Run on PRs only if the branch name contains "fuzz"
+    branches:
+      - '*fuzz*'
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Fuzz target to run (leave empty for all)"
+        required: false
+        default: ""
+
+permissions: read-all
+
+# Allow subsequent pushes to the same PR or REF to cancel any previous jobs.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+
+jobs:
+  fuzz:
+    name: "Fuzz ${{ matrix.target }} (tier ${{ matrix.tier }})"
+    # Scheduled runs only on the canonical fork; push runs anywhere (branch
+    # filter above ensures "fuzz" substring)
+    if: github.event_name != 'schedule' || github.repository == 'AcademySoftwareFoundation/OpenShadingLanguage'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Tier 1: highest-risk inputs -- 60 min fuzz window each.
+          - { target: oso, tier: 1, max_total_time: 3600 }
+          # Tier 2 (future): 30 min fuzz window each.
+    uses: ./.github/workflows/build-steps.yml
+    with:
+      # A manual dispatch naming one target disables the other matrix jobs.
+      disable: ${{ github.event_name == 'workflow_dispatch' && inputs.target != '' && inputs.target != matrix.target }}
+      runner: ubuntu-latest
+      nametag: fuzz-linux-clang
+      container: aswf/ci-osl:2026-clang20
+      cc_compiler: clang
+      cxx_compiler: clang++
+      build_type: Release
+      cxx_std: 20
+      python_ver: "3.13"
+      simd: "avx2,f16c"
+      skip_tests: '1'
+      fuzz_target: ${{ matrix.target }}
+      fuzz_max_time: ${{ matrix.max_total_time }}
+      setenvs: export SANITIZE=address,undefined
+                      OSL_BUILD_FUZZ_TARGETS=ON
+                      OSL_CMAKE_FLAGS="-DOSL_BUILD_TESTS=OFF"
+                      USE_PYTHON=0
+
+  #
+  # Verify every target reported by osl_fuzz --list-targets has a corpus
+  # directory in src/fuzz/corpora/. Fails with a clear message when a new
+  # target is added without a corresponding corpus directory.
+  #
+  fuzz-corpus-lint:
+    name: "Fuzz corpus coverage lint"
+    if: github.event_name != 'schedule' || github.repository == 'AcademySoftwareFoundation/OpenShadingLanguage'
+    uses: ./.github/workflows/build-steps.yml
+    with:
+      runner: ubuntu-latest
+      nametag: fuzz-corpus-lint
+      container: aswf/ci-osl:2026-clang20
+      cc_compiler: clang
+      cxx_compiler: clang++
+      build_type: Release
+      cxx_std: 20
+      python_ver: "3.13"
+      simd: "avx2,f16c"
+      skip_tests: '1'
+      fuzz_corpus_lint: true
+      setenvs: export OSL_BUILD_FUZZ_TARGETS=ON
+                      OSL_CMAKE_FLAGS="-DOSL_BUILD_TESTS=OFF"
+                      USE_PYTHON=0
