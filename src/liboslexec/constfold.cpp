@@ -1927,8 +1927,7 @@ DECLFOLDER(constfold_normalize)
     // Try to turn R=normalize(x) into R=C
     Opcode& op(rop.inst()->ops()[opnum]);
     Symbol& X(*rop.inst()->argsymbol(op.firstarg() + 1));
-    OSL_DASSERT(X.typespec().is_triple());
-    if (X.is_constant()) {
+    if (X.is_constant() && X.typespec().is_triple()) {
         Vec3 result = X.get_vec3();
         result.normalize();
         int cind = rop.add_constant(X.typespec(), &result);
